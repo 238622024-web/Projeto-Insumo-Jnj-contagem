@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão de Insumos - Johnson & Johnson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: white;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d40000;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a30000;
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen bg-white md:grid md:grid-cols-2 lg:grid-cols-2">
+        <!-- Left Panel -->
+        <div class="hidden md:flex flex-col items-center justify-center bg-gray-50 p-10 lg:p-12 border-r border-gray-200">
+            <div class="w-full max-w-md">
+                <img class="w-full h-auto" src="logo.jpg" alt="Logo Johnson & Johnson">
+            </div>
+        </div>
+
+        <!-- Right Panel (Login Form) -->
+        <div class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <img class="mx-auto h-16 w-auto md:hidden" src="images/logo.jpg" alt="Logo Johnson & Johnson">
+                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Acesse sua conta
+                    </h2>
+                    <p class="mt-2 text-center text-sm text-gray-600">
+                        Sistema de Gestão de Insumos
+                    </p>
+                </div>
+                <form id="login-form" class="mt-8 space-y-6" action="#" method="POST">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email-address" class="sr-only">Endereço de e-mail</label>
+                            <input id="email-address" name="email" type="email" autocomplete="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm" placeholder="Endereço de e-mail" value="usuario@jnj.com">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Senha</label>
+                            <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm" placeholder="Senha" value="senha123">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                                Lembrar-me
+                            </label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="forgot-password.html" id="forgot-password-link" class="font-medium text-red-600 hover:text-red-500">
+                                Esqueceu sua senha?
+                            </a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Entrar
+                        </button>
+                    </div>
+                     <p id="login-error" class="mt-2 text-center text-sm text-red-600 hidden">E-mail ou senha inválidos.</p>
+                </form>
+                <div class="text-sm text-center">
+                    <p class="text-gray-600">Não tem uma conta?
+                        <a href="create-account.html" id="create-account-link" class="font-medium text-red-600 hover:text-red-500">
+                            Crie uma agora
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            const loginError = document.getElementById('login-error');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                const password = e.target.password.value;
+
+                // Mock authentication
+                if (email === 'usuario@jnj.com' && password === 'senha123') {
+                    // Redirect to the dashboard page after successful login
+                    window.location.href = 'dashboard.html';
+                } else {
+                    loginError.classList.remove('hidden');
+                }
+            });
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    // Redirect to the login page
+                    window.location.href = 'index.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

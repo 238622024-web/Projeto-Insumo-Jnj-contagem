@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    container_name: jnj-app
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: controle_insumos_jnj
+      DB_USER: root
+      DB_PASS: rootpass
+      DB_PORT: 3306
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: jnj-mysql
+    environment:
+      MYSQL_DATABASE: controle_insumos_jnj
+      MYSQL_USER: jnj
+      MYSQL_PASSWORD: jnj123
+      MYSQL_ROOT_PASSWORD: rootpass
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: jnj-phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: jnj
+      PMA_PASSWORD: jnj123
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fornecedores - Sistema de Gestão de Insumos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://storage.googleapis.com/gemini-prod-us-west1-d00d-uploads/a9d3eb80f9f821c9ed71eeed139349d0.jpg" alt="Logo Johnson & Johnson" class="h-10 w-auto">
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="dashboard.html" class="text-gray-600 hover:text-red-700 font-medium">Dashboard</a>
+                <a href="insumos.html" class="text-gray-600 hover:text-red-700 font-medium">Insumos</a>
+                <a href="fornecedores.html" class="text-gray-600 hover:text-red-700 font-medium pb-1 border-b-2 border-red-600">Fornecedores</a>
+                <a href="relatorios.html" class="text-gray-600 hover:text-red-700 font-medium">Relatórios</a>
+                <a href="configuracoes.html" class="text-gray-600 hover:text-red-700 font-medium">Configurações</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <img class="h-16 w-16 rounded-full object-cover" src="https://placehold.co/150x150/E2E8F0/4A5568?text=AV" alt="User avatar">
+                <button id="logout-btn" class="text-sm font-medium text-gray-600 hover:text-red-700">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Gerenciamento de Fornecedores</h1>
+        <p class="text-gray-600 mb-6">Aqui você pode visualizar e gerenciar os fornecedores.</p>
+
+        <!-- Botão para adicionar fornecedores -->
+        <div class="mb-6">
+            <button id="add-supplier-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Adicionar Fornecedor
+            </button>
+        </div>
+
+        <!-- Tabela de Fornecedores -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">ID do Fornecedor</th>
+                        <th scope="col" class="px-6 py-3">Nome</th>
+                        <th scope="col" class="px-6 py-3">Contato</th>
+                        <th scope="col" class="px-6 py-3">E-mail</th>
+                        <th scope="col" class="px-6 py-3 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="suppliers-table-body">
+                    <!-- Linhas serão injetadas dinamicamente -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal para Adicionar/Editar Fornecedores -->
+    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg transform scale-95 transition-transform duration-300" role="dialog" aria-modal="true">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-900">Adicionar Novo Fornecedor</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="supplier-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="supplier-name" class="block text-sm font-medium text-gray-700">Nome</label>
+                        <input type="text" id="supplier-name" name="name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="supplier-contact" class="block text-sm font-medium text-gray-700">Contato</label>
+                        <input type="text" id="supplier-contact" name="contact" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="supplier-email" class="block text-sm font-medium text-gray-700">E-mail</label>
+                        <input type="email" id="supplier-email" name="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button type="button" id="cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-300">Cancelar</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableBody = document.getElementById('suppliers-table-body');
+            const addSupplierBtn = document.getElementById('add-supplier-btn');
+            const modal = document.getElementById('modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const supplierForm = document.getElementById('supplier-form');
+
+            let suppliers = []; // Lista de fornecedores
+
+            const renderTable = () => {
+                tableBody.innerHTML = '';
+                suppliers.forEach((supplier, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${supplier.id}</td>
+                        <td class="px-6 py-4">${supplier.name}</td>
+                        <td class="px-6 py-4">${supplier.contact}</td>
+                        <td class="px-6 py-4">${supplier.email}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button class="font-medium text-red-600 hover:underline delete-btn" data-index="${index}">Excluir</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            };
+
+            const showModal = () => {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('[role="dialog"]').classList.remove('scale-95');
+                }, 10);
+            };
+
+            const hideModal = () => {
+                modal.classList.add('opacity-0');
+                modal.querySelector('[role="dialog"]').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            };
+
+            addSupplierBtn.addEventListener('click', showModal);
+            closeModalBtn.addEventListener('click', hideModal);
+            cancelBtn.addEventListener('click', hideModal);
+
+            supplierForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newSupplier = {
+                    id: `SUP-${Date.now()}`,
+                    name: supplierForm.name.value,
+                    contact: supplierForm.contact.value,
+                    email: supplierForm.email.value,
+                };
+                suppliers.push(newSupplier);
+                renderTable();
+                hideModal();
+            });
+
+            tableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const index = e.target.dataset.index;
+                    suppliers.splice(index, 1);
+                    renderTable();
+                }
+            });
+
+            renderTable();
+        });
+    </script>
+</body>
+</html>

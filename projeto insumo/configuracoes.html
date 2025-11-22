@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Sistema de Gestão de Insumos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://storage.googleapis.com/gemini-prod-us-west1-d00d-uploads/a9d3eb80f9f821c9ed71eeed139349d0.jpg" alt="Logo Johnson & Johnson" class="h-10 w-auto">
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="dashboard.html" class="text-gray-600 hover:text-red-700 font-medium">Dashboard</a>
+                <a href="insumos.html" class="text-gray-600 hover:text-red-700 font-medium">Insumos</a>
+                <a href="fornecedores.html" class="text-gray-600 hover:text-red-700 font-medium">Fornecedores</a>
+                <a href="relatorios.html" class="text-gray-600 hover:text-red-700 font-medium">Relatórios</a>
+                <a href="configuracoes.html" class="text-gray-600 hover:text-red-700 font-medium pb-1 border-b-2 border-red-600">Configurações</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/100x100/E2E8F0/4A5568?text=AV" alt="User avatar">
+                <button id="logout-btn" class="text-sm font-medium text-gray-600 hover:text-red-700">Sair</button>
+            </div>
+        </div>
+    </header>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    // Redirect to the login page
+                    window.location.href = 'index.html';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
