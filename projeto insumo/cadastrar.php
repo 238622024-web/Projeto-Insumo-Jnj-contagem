@@ -12,8 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data_contagem = $_POST['data_contagem'] ?? '';
     // unidade: select with options; allow optional custom override
     $unidade_selected = trim($_POST['unidade'] ?? '');
-    $unidade_custom = trim($_POST['unidade_custom'] ?? '');
-    $unidade = $unidade_custom !== '' ? $unidade_custom : $unidade_selected;
+    $unidade = $unidade_selected;
     $data_entrada = $_POST['data_entrada'] ?? '';
     $validade = $_POST['validade'] ?? '';
     $observacoes = trim($_POST['observacoes'] ?? '');
@@ -83,8 +82,7 @@ include __DIR__ . '/includes/header.php';
         <option value="<?= h($op) ?>" <?= (isset($_POST['unidade']) && $_POST['unidade']===$op)?'selected':'' ?>><?= h($op) ?></option>
       <?php endforeach; ?>
     </select>
-    <small class="text-muted">Se não encontrar, informe abaixo</small>
-    <input type="text" name="unidade_custom" class="form-control mt-1" placeholder="Outra unidade (ex: CAIXA)" value="<?= h($_POST['unidade_custom'] ?? '') ?>">
+    
   </div>
   <div class="col-md-6">
     <label class="form-label">Nome do material *</label>

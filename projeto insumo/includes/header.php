@@ -54,7 +54,7 @@ if (!empty($logoPath)) {
 
     <nav class="d-flex gap-2">
       <?php if ($user): ?>
-        <a class="btn btn-sm btn-light" href="index.php"><i class="fa-solid fa-table me-1"></i>Insumos</a>
+        <a class="btn btn-sm btn-light" href="index.php"><i class="fa-solid fa-table me-1"></i>Inicio</a>
         <a class="btn btn-sm btn-light" href="cadastrar.php"><i class="fa-solid fa-plus me-1"></i>Novo</a>
         <a class="btn btn-sm btn-light" href="perfil.php"><i class="fa-solid fa-user me-1"></i>Perfil</a>
         <a class="btn btn-sm btn-light" href="configuracoes.php"><i class="fa-solid fa-gear me-1"></i>Configurações</a>
