@@ -64,6 +64,8 @@ include __DIR__ . '/includes/header.php';
     <thead>
       <tr>
         <th>ID</th>
+        <th>Data de Contagem</th>
+        <th>Unidade</th>
         <th>Nome</th>
         <th>Posição</th>
         <?php $mostrarLote = getSetting('mostrar_lote','1')==='1'; if ($mostrarLote): ?>
@@ -89,6 +91,8 @@ include __DIR__ . '/includes/header.php';
     ?>
       <tr class="<?= $classeLinha ?>">
         <td><?= h($row['id']) ?></td>
+        <td><?= !empty($row['data_contagem']) ? h(date('d/m/Y', strtotime($row['data_contagem'])) ) : '' ?></td>
+        <td><?= h($row['unidade'] ?? '') ?></td>
         <td><?= h($row['nome']) ?></td>
         <td><?= h($row['posicao']) ?></td>
         <?php if ($mostrarLote): ?>
@@ -105,7 +109,7 @@ include __DIR__ . '/includes/header.php';
       </tr>
     <?php endforeach; ?>
     <?php if ($total === 0): ?>
-      <tr><td colspan="<?= 8 + ($mostrarLote?1:0) ?>" class="text-center text-muted py-4">Nenhum material cadastrado.</td></tr>
+      <tr><td colspan="<?= 10 + ($mostrarLote?1:0) ?>" class="text-center text-muted py-4">Nenhum material cadastrado.</td></tr>
     <?php endif; ?>
     </tbody>
   </table>

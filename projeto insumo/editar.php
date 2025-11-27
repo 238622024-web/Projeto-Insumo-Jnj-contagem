@@ -16,6 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posicao = trim($_POST['posicao'] ?? '');
   $lote = trim($_POST['lote'] ?? '');
     $quantidade = (int)($_POST['quantidade'] ?? 0);
+    $data_contagem = $_POST['data_contagem'] ?? '';
+    $unidade_selected = trim($_POST['unidade'] ?? '');
+    $unidade_custom = trim($_POST['unidade_custom'] ?? '');
+    $unidade = $unidade_custom !== '' ? $unidade_custom : $unidade_selected;
     $data_entrada = $_POST['data_entrada'] ?? '';
     $validade = $_POST['validade'] ?? '';
     $observacoes = trim($_POST['observacoes'] ?? '');
@@ -25,8 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($data_entrada === '') $erros[] = 'Data de entrada obrigatória.';
     if ($validade === '') $erros[] = 'Validade obrigatória.';
     if (!$erros) {
-      $up = $pdo->prepare('UPDATE insumos_jnj SET nome=?, posicao=?, lote=?, quantidade=?, data_entrada=?, validade=?, observacoes=? WHERE id=?');
-      $up->execute([$nome,$posicao,$lote,$quantidade,$data_entrada,$validade,$observacoes,$id]);
+      // valida e formata data de contagem se informada
+      $formatted_data_contagem = $data_contagem !== '' ? (function($s){
+        $d = DateTime::createFromFormat('Y-m-d', $s);
+        return $d ? $d->format('Y-m-d') : false;
+      })($data_contagem) : null;
+      if ($data_contagem !== '' && $formatted_data_contagem === false) { $erros[] = 'Data de contagem inválida.'; }
+    }
+
+    if (!$erros) {
+      $up = $pdo->prepare('UPDATE insumos_jnj SET nome=?, posicao=?, lote=?, quantidade=?, data_contagem=?, data_entrada=?, validade=?, observacoes=?, unidade=? WHERE id=?');
+      $up->execute([$nome,$posicao,$lote,$quantidade,$formatted_data_contagem,$data_entrada,$validade,$observacoes,$unidade,$id]);
         flash('success','Material atualizado com sucesso!');
         header('Location: index.php');
         exit;
@@ -39,6 +52,23 @@ include __DIR__ . '/includes/header.php';
 ?>
 <h2 class="h4 mb-3"><i class="fa fa-pen me-2"></i>Editar Material #<?= h($item['id']) ?></h2>
 <form method="post" class="row g-3 shadow-sm bg-white p-4 rounded">
+  <div class="col-md-3">
+    <label class="form-label">Data de Contagem</label>
+    <input type="date" name="data_contagem" class="form-control" value="<?= h($item['data_contagem'] ?? ($_POST['data_contagem'] ?? '')) ?>">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Unidade</label>
+    <select name="unidade" class="form-control">
+      <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): $sel = '';
+        if (isset($_POST['unidade'])) { $sel = $_POST['unidade']===$op ? 'selected' : ''; }
+        else { $sel = (isset($item['unidade']) && $item['unidade']===$op) ? 'selected' : ''; }
+      ?>
+        <option value="<?= h($op) ?>" <?= $sel ?>><?= h($op) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <small class="text-muted">Se não encontrar, informe abaixo</small>
+    <input type="text" name="unidade_custom" class="form-control mt-1" placeholder="Outra unidade (ex: CAIXA)" value="<?= h($_POST['unidade_custom'] ?? ($item['unidade'] ?? '')) ?>">
+  </div>
   <div class="col-md-6">
     <label class="form-label">Nome *</label>
     <input type="text" name="nome" class="form-control" required value="<?= h($item['nome']) ?>">

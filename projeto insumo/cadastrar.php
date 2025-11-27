@@ -9,6 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posicao = trim($_POST['posicao'] ?? '');
   $lote = trim($_POST['lote'] ?? '');
     $quantidade = (int)($_POST['quantidade'] ?? 0);
+    $data_contagem = $_POST['data_contagem'] ?? '';
+    // unidade: select with options; allow optional custom override
+    $unidade_selected = trim($_POST['unidade'] ?? '');
+    $unidade_custom = trim($_POST['unidade_custom'] ?? '');
+    $unidade = $unidade_custom !== '' ? $unidade_custom : $unidade_selected;
     $data_entrada = $_POST['data_entrada'] ?? '';
     $validade = $_POST['validade'] ?? '';
     $observacoes = trim($_POST['observacoes'] ?? '');
@@ -44,15 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$erros) {
+      $formatted_data_contagem = $data_contagem !== '' ? parseDateToYmd($data_contagem) : null;
       $formatted_data_entrada = parseDateToYmd($data_entrada);
       $formatted_validade = parseDateToYmd($validade);
       if ($formatted_data_entrada === false) $erros[] = 'Data de entrada inválida.';
       if ($formatted_validade === false) $erros[] = 'Validade inválida.';
+      if ($data_contagem !== '' && $formatted_data_contagem === false) $erros[] = 'Data de contagem inválida.';
     }
 
     if (!$erros) {
-      $stmt = $pdo->prepare("INSERT INTO insumos_jnj (nome,posicao,lote,quantidade,data_entrada,validade,observacoes) VALUES (?,?,?,?,?,?,?)");
-      $stmt->execute([$nome, $posicao, $lote, $quantidade, $formatted_data_entrada, $formatted_validade, $observacoes]);
+      $stmt = $pdo->prepare("INSERT INTO insumos_jnj (nome,posicao,lote,quantidade,data_contagem,data_entrada,validade,observacoes,unidade) VALUES (?,?,?,?,?,?,?,?,?)");
+      $stmt->execute([$nome, $posicao, $lote, $quantidade, $formatted_data_contagem, $formatted_data_entrada, $formatted_validade, $observacoes, $unidade]);
       flash('success', 'Material cadastrado com sucesso!');
       header('Location: index.php');
       exit;
@@ -65,6 +72,20 @@ include __DIR__ . '/includes/header.php';
 <div class="cadastro-insumo">
 <h2 class="h4 mb-3"><i class="fa fa-plus me-2"></i>Novo Material</h2>
 <form method="post" class="row g-3 shadow-sm bg-white p-4 rounded">
+  <div class="col-md-3">
+    <label class="form-label">Data de Contagem</label>
+    <input type="date" name="data_contagem" class="form-control" value="<?= h($_POST['data_contagem'] ?? '') ?>">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Unidade</label>
+    <select name="unidade" class="form-control">
+      <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): ?>
+        <option value="<?= h($op) ?>" <?= (isset($_POST['unidade']) && $_POST['unidade']===$op)?'selected':'' ?>><?= h($op) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <small class="text-muted">Se não encontrar, informe abaixo</small>
+    <input type="text" name="unidade_custom" class="form-control mt-1" placeholder="Outra unidade (ex: CAIXA)" value="<?= h($_POST['unidade_custom'] ?? '') ?>">
+  </div>
   <div class="col-md-6">
     <label class="form-label">Nome do material *</label>
     <input type="text" name="nome" class="form-control" required value="<?= h($_POST['nome'] ?? '') ?>">

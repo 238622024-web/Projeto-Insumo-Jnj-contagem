@@ -44,7 +44,7 @@ $html .= '<table cellspacing="0" cellpadding="6" style="font-size:11px;margin:0 
 
 // Tabela de dados
 $html .= '<table width="100%" border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-size:12px;">';
-$html .= '<thead><tr style="background:#C00000;color:#fff"><th>ID</th><th>Nome</th><th>Posição</th><th>Lote</th><th>Qtd</th><th>Entrada</th><th>Validade</th><th>Observações</th></tr></thead><tbody>';
+$html .= '<thead><tr style="background:#C00000;color:#fff"><th>Data de Contagem</th><th>Unidade</th><th>ID</th><th>Nome</th><th>Posição</th><th>Lote</th><th>Qtd</th><th>Entrada</th><th>Validade</th><th>Observações</th></tr></thead><tbody>';
 if ($rows) {
     $i=0;
     foreach ($rows as $r) {
@@ -61,6 +61,8 @@ if ($rows) {
             }
         }
         $html .= '<tr'.$bg.'>'
+            .'<td>'.(!empty($r['data_contagem'])?h(date('d/m/Y', strtotime($r['data_contagem']))):'').'</td>'
+            .'<td>'.h($r['unidade'] ?? '').'</td>'
             .'<td>'.$r['id'].'</td>'
             .'<td>'.h($r['nome']).'</td>'
             .'<td>'.h($r['posicao']).'</td>'
@@ -72,7 +74,7 @@ if ($rows) {
             .'</tr>';
     }
 } else {
-    $html .= '<tr><td colspan="8">Sem dados.</td></tr>';
+    $html .= '<tr><td colspan="10">Sem dados.</td></tr>';
 }
 $html .= '</tbody></table>';
 $html .= '</div>';

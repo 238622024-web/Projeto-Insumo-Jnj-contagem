@@ -111,5 +111,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     })();
   </script>
+  <script>
+    // Toggle .filled on .mb-3 when inputs have value so labels stay floated
+    (function(){
+      function updateFilled(el){
+        var wrapper = el.closest('.mb-3');
+        if (!wrapper) return;
+        if (el.value && el.value.trim() !== '') wrapper.classList.add('filled');
+        else wrapper.classList.remove('filled');
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        var inputs = document.querySelectorAll('.mb-3 input, .mb-3 textarea');
+        inputs.forEach(function(inp){
+          // initialize
+          updateFilled(inp);
+          // update on input/change
+          inp.addEventListener('input', function(){ updateFilled(inp); });
+          inp.addEventListener('change', function(){ updateFilled(inp); });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

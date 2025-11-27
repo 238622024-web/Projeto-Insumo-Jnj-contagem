@@ -29,6 +29,8 @@ CREATE TABLE `usuarios` (
 -- Tabela de insumos
 CREATE TABLE `insumos_jnj` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `data_contagem` DATE NULL,
+  `unidade` VARCHAR(30) DEFAULT 'UN',
   `nome` VARCHAR(150) NOT NULL,
   `posicao` VARCHAR(20) NOT NULL,
   `lote` VARCHAR(100) NULL,

@@ -22,8 +22,9 @@ if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
     $sheet = $spreadsheet->getActiveSheet();
     $sheet->setTitle('Insumos');
 
-    // Cabeçalhos
-    $headers = ['ID','Nome','Posição','Lote','Quantidade','Data Entrada','Validade','Observações'];
+    // Cabeçalhos (Data de Contagem primeiro)
+    // Cabeçalhos (Data de Contagem, Unidade)
+    $headers = ['Data de Contagem','Unidade','ID','Nome','Posição','Lote','Quantidade','Data Entrada','Validade','Observações'];
     $col = 1;
     foreach ($headers as $h) { $sheet->setCellValueByColumnAndRow($col,1,$h); $col++; }
 
@@ -41,25 +42,31 @@ if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
     $today = new DateTime('today');
     $countTotal = 0; $countExp = 0; $countCurta = 0; $countMedia = 0; $countOk = 0;
     foreach ($rows as $r) {
-      $sheet->setCellValueByColumnAndRow(1,$rowNumber,$r['id']);
-      $sheet->setCellValueByColumnAndRow(2,$rowNumber,$r['nome']);
-      $sheet->setCellValueByColumnAndRow(3,$rowNumber,$r['posicao']);
-      $sheet->setCellValueByColumnAndRow(4,$rowNumber,$r['lote'] ?? '');
-      $sheet->setCellValueByColumnAndRow(5,$rowNumber,(int)$r['quantidade']);
-      // Datas como objetos para formatar dd/mm/yyyy
+      // Data de contagem (col 1)
+      if (!empty($r['data_contagem'])) {
+        $dc = DateTime::createFromFormat('Y-m-d', $r['data_contagem']);
+        if ($dc) $sheet->setCellValueByColumnAndRow(1,$rowNumber, $dc->format('d/m/Y'));
+      }
+        $sheet->setCellValueByColumnAndRow(2,$rowNumber,$r['unidade'] ?? '');
+        $sheet->setCellValueByColumnAndRow(3,$rowNumber,$r['id']);
+        $sheet->setCellValueByColumnAndRow(4,$rowNumber,$r['nome']);
+        $sheet->setCellValueByColumnAndRow(5,$rowNumber,$r['posicao']);
+        $sheet->setCellValueByColumnAndRow(6,$rowNumber,$r['lote'] ?? '');
+        $sheet->setCellValueByColumnAndRow(7,$rowNumber,(int)$r['quantidade']);
+      // Datas como objetos para formatar dd/mm/yyyy (Data Entrada col 7)
       if (!empty($r['data_entrada'])) {
         $de = DateTime::createFromFormat('Y-m-d', $r['data_entrada']);
-          if ($de) { $sheet->setCellValueByColumnAndRow(6,$rowNumber, $de->format('d/m/Y')); }
+          if ($de) { $sheet->setCellValueByColumnAndRow(7,$rowNumber, $de->format('d/m/Y')); }
       }
       if (!empty($r['validade'])) {
         $dv = DateTime::createFromFormat('Y-m-d', $r['validade']);
-          if ($dv) { $sheet->setCellValueByColumnAndRow(7,$rowNumber, $dv->format('d/m/Y')); }
+          if ($dv) { $sheet->setCellValueByColumnAndRow(8,$rowNumber, $dv->format('d/m/Y')); }
       }
-      $sheet->setCellValueByColumnAndRow(8,$rowNumber,$r['observacoes']);
+      $sheet->setCellValueByColumnAndRow(9,$rowNumber,$r['observacoes']);
 
       // Zebra striping
       if ($rowNumber % 2 === 0) {
-          $sheet->getStyle('A'.$rowNumber.':H'.$rowNumber)->applyFromArray([
+            $sheet->getStyle('A'.$rowNumber.':J'.$rowNumber)->applyFromArray([
             'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'F9F9F9']]
           ]);
       }
@@ -93,13 +100,14 @@ if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
     }
 
     // Formatação de colunas: auto width e datas
-    foreach (range('A','H') as $colL) { $sheet->getColumnDimension($colL)->setAutoSize(true); }
-      $sheet->getStyle('F2:F'.$rowNumber)->getNumberFormat()->setFormatCode('dd/mm/yyyy'); // Formatação de datas
-      $sheet->getStyle('G2:G'.$rowNumber)->getNumberFormat()->setFormatCode('dd/mm/yyyy'); // Formatação de datas
+    foreach (range('A','I') as $colL) { $sheet->getColumnDimension($colL)->setAutoSize(true); }
+     foreach (range('A','J') as $colL) { $sheet->getColumnDimension($colL)->setAutoSize(true); }
+      $sheet->getStyle('H2:H'.$rowNumber)->getNumberFormat()->setFormatCode('dd/mm/yyyy'); // Formatação de datas (Data Entrada)
+      $sheet->getStyle('I2:I'.$rowNumber)->getNumberFormat()->setFormatCode('dd/mm/yyyy'); // Formatação de datas (Validade)
 
     // Bordas e alinhamentos no corpo
     $lastRow = max(1, $rowNumber - 1);
-    $dataRange = 'A1:H'.$lastRow;
+      $dataRange = 'A1:J'.$lastRow;
     $sheet->getStyle($dataRange)->applyFromArray([
       'borders' => [
         'allBorders' => ['borderStyle' => 'thin', 'color' => ['rgb' => 'DDDDDD']]
@@ -107,9 +115,9 @@ if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
     ]);
     // Alinhar números e quantidades
     $sheet->getStyle('A2:A'.$lastRow)->applyFromArray(['alignment' => ['horizontal' => 'right']]);
-    $sheet->getStyle('E2:E'.$lastRow)->applyFromArray(['alignment' => ['horizontal' => 'right']]);
+      $sheet->getStyle('G2:G'.$lastRow)->applyFromArray(['alignment' => ['horizontal' => 'right']]);
     // Observações com quebra de linha
-    $sheet->getStyle('H2:H'.$lastRow)->applyFromArray(['alignment' => ['wrapText' => true]]);
+      $sheet->getStyle('J2:J'.$lastRow)->applyFromArray(['alignment' => ['wrapText' => true]]);
     $sheet->freezePane('A2');
     $sheet->setAutoFilter($headerRange);
 
@@ -153,9 +161,9 @@ if (class_exists('PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="'.$filenameBase.'.csv"');
 $out = fopen('php://output','w');
-fputcsv($out,['ID','Nome','Posição','Lote','Quantidade','Data Entrada','Validade','Observações']);
+fputcsv($out,['Data de Contagem','Unidade','ID','Nome','Posição','Lote','Quantidade','Data Entrada','Validade','Observações']);
 foreach ($rows as $r) {
-  fputcsv($out,[$r['id'],$r['nome'],$r['posicao'],$r['lote'] ?? '',$r['quantidade'],$r['data_entrada'],$r['validade'],$r['observacoes']]);
+  fputcsv($out,[(!empty($r['data_contagem'])?date('d/m/Y',strtotime($r['data_contagem'])):''),($r['unidade'] ?? ''),$r['id'],$r['nome'],$r['posicao'],$r['lote'] ?? '',$r['quantidade'],$r['data_entrada'],$r['validade'],$r['observacoes']]);
 }
 fclose($out);
 exit;

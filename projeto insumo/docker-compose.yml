@@ -13,6 +13,7 @@ services:
       DB_PORT: 3306
     volumes:
       - .:/var/www/html
+      - ./php.ini:/usr/local/etc/php/php.ini:ro
     depends_on:
       - db
 

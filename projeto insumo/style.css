@@ -51,3 +51,30 @@ table tbody tr:nth-child(odd){ background: #f8fafc; }
 .theme-dark .btn-primary { background:#bb0b0b; border-color:#a00b0b; }
 
 /* (removido) estilos btn-nav e avatar-thumb revertidos para layout anterior */
+
+/* Login input animations */
+.mb-3 { position: relative; }
+.mb-3 .form-label { transition: transform .18s ease, color .18s ease, font-size .18s ease; transform-origin: left top; }
+.mb-3:focus-within .form-label { transform: translateY(-8px) scale(.95); color: var(--color-primary); }
+.mb-3.filled .form-label { transform: translateY(-8px) scale(.95); color: var(--color-primary); }
+
+.input-group .form-control {
+	transition: box-shadow .18s ease, border-color .18s ease, transform .12s ease;
+	border: 1px solid rgba(0,0,0,0.12);
+}
+.input-group:focus-within .form-control {
+	border-color: var(--color-primary);
+	box-shadow: 0 6px 18px rgba(181,0,0,0.08), 0 0 0 4px rgba(181,0,0,0.06);
+	transform: translateY(-1px);
+}
+.input-group-text { transition: background .12s ease, color .12s ease, transform .12s ease; }
+.input-group:focus-within .input-group-text { background: rgba(181,0,0,0.06); color: var(--color-primary); transform: translateY(-1px); }
+
+/* subtle floating placeholder support: hide placeholder when focused to emphasize label */
+.input-group .form-control::placeholder { color: rgba(0,0,0,0.35); transition: opacity .12s ease; }
+.input-group:focus-within .form-control::placeholder { opacity: 0.3; }
+
+/* small responsive tweak for stacked forms */
+@media (prefers-reduced-motion: reduce) {
+	.mb-3 .form-label, .input-group .form-control, .input-group-text { transition: none !important; }
+}

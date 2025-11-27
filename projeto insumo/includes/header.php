@@ -58,7 +58,7 @@ if (!empty($logoPath)) {
         <a class="btn btn-sm btn-light" href="cadastrar.php"><i class="fa-solid fa-plus me-1"></i>Novo</a>
         <a class="btn btn-sm btn-light" href="perfil.php"><i class="fa-solid fa-user me-1"></i>Perfil</a>
         <a class="btn btn-sm btn-light" href="configuracoes.php"><i class="fa-solid fa-gear me-1"></i>Configurações</a>
-        <a class="btn btn-sm btn-light" href="toggletheme.php" title="Alternar tema"><i class="fa-solid fa-moon me-1"></i></a>
+        <!-- Theme toggle removed per request -->
         <?php if (!empty($user['avatar'])): ?>
           <a href="perfil.php" class="d-inline-block"><img src="assets/uploads/<?= h($user['avatar']) ?>" alt="avatar" style="height:30px;width:30px;border-radius:6px;object-fit:cover;margin-right:6px;" /></a>
         <?php else: ?>
