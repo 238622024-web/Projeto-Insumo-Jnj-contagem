@@ -7,6 +7,7 @@ requireLogin();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tema = $_POST['tema'] ?? 'claro';
   $lang = $_POST['lang'] ?? 'pt-br';
+  $primary_color = trim($_POST['primary_color'] ?? '');
     $itens = (int)($_POST['itens_pagina'] ?? 25);
     $val_curta = (int)($_POST['alerta_validade_curta'] ?? 7);
     $val_media = (int)($_POST['alerta_validade_media'] ?? 30);
@@ -14,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     setSetting('tema_padrao', $tema);
     setSetting('lang', in_array($lang, ['pt-br','en']) ? $lang : 'pt-br');
+    if ($primary_color !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $primary_color)) {
+      setSetting('primary_color', strtoupper($primary_color));
+    }
     setSetting('itens_pagina', max(5, min(200, $itens)));
     setSetting('alerta_validade_curta', max(0, $val_curta));
     setSetting('alerta_validade_media', max(0, $val_media));
@@ -51,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 $temaAtual = getSetting('tema_padrao', $_SESSION['tema_jnj'] ?? 'claro');
 $langAtual = getSetting('lang', $_SESSION['lang_jnj'] ?? 'pt-br');
+$primaryColorAtual = getSetting('primary_color', '#b50000');
 $itensAtual = (int)getSetting('itens_pagina', 25);
 $valCurta = (int)getSetting('alerta_validade_curta', 7);
 $valMedia = (int)getSetting('alerta_validade_media', 30);
@@ -74,6 +79,11 @@ include __DIR__ . '/includes/header.php';
       <option value="en" <?= $langAtual==='en'?'selected':'' ?>>English</option>
     </select>
     <div class="form-text">Define o idioma preferido. (Textos principais ainda estão em Português)</div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Cor Primária (hex)</label>
+    <input type="color" name="primary_color" class="form-control" value="<?= h($primaryColorAtual) ?>">
+    <div class="form-text">Escolha a cor principal (usa no cabeçalho, botões, destaques).</div>
   </div>
   <div class="row g-3">
     <div class="col-md-4">

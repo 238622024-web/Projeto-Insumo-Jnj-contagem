@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card shadow-sm" style="max-width:420px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
         <div class="text-center mb-3">
-          <img src="assets/logo.svg" alt="logo" style="height:42px;" />
+          <img src="Manserv.logo.png" alt="logo" style="height:42px;" />
         </div>
         <h3 class="h5 text-center mb-3">Login</h3>
         <p class="text-center text-muted small">Acesse para gerenciar os materiais</p>
