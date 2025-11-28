@@ -6,12 +6,14 @@ requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tema = $_POST['tema'] ?? 'claro';
+  $lang = $_POST['lang'] ?? 'pt-br';
     $itens = (int)($_POST['itens_pagina'] ?? 25);
     $val_curta = (int)($_POST['alerta_validade_curta'] ?? 7);
     $val_media = (int)($_POST['alerta_validade_media'] ?? 30);
     $mostrar_lote = isset($_POST['mostrar_lote']) ? '1' : '0';
 
     setSetting('tema_padrao', $tema);
+    setSetting('lang', in_array($lang, ['pt-br','en']) ? $lang : 'pt-br');
     setSetting('itens_pagina', max(5, min(200, $itens)));
     setSetting('alerta_validade_curta', max(0, $val_curta));
     setSetting('alerta_validade_media', max(0, $val_media));
@@ -38,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // também refletir o tema atual na sessão
     $_SESSION['tema_jnj'] = $tema;
+    $_SESSION['lang_jnj'] = $lang;
     // salvar URL do logo (se informado)
     $logo_url_input = trim($_POST['logo_url'] ?? '');
     if ($logo_url_input !== '') setSetting('logo_url', $logo_url_input);
@@ -47,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 $temaAtual = getSetting('tema_padrao', $_SESSION['tema_jnj'] ?? 'claro');
+$langAtual = getSetting('lang', $_SESSION['lang_jnj'] ?? 'pt-br');
 $itensAtual = (int)getSetting('itens_pagina', 25);
 $valCurta = (int)getSetting('alerta_validade_curta', 7);
 $valMedia = (int)getSetting('alerta_validade_media', 30);
@@ -62,6 +66,14 @@ include __DIR__ . '/includes/header.php';
       <option value="claro" <?= $temaAtual==='claro'?'selected':'' ?>>Claro</option>
       <option value="escuro" <?= $temaAtual==='escuro'?'selected':'' ?>>Escuro</option>
     </select>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Idioma</label>
+    <select name="lang" class="form-select">
+      <option value="pt-br" <?= $langAtual==='pt-br'?'selected':'' ?>>Português (Brasil)</option>
+      <option value="en" <?= $langAtual==='en'?'selected':'' ?>>English</option>
+    </select>
+    <div class="form-text">Define o idioma preferido. (Textos principais ainda estão em Português)</div>
   </div>
   <div class="row g-3">
     <div class="col-md-4">

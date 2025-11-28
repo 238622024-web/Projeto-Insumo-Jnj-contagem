@@ -48,7 +48,8 @@ if (!empty($logoPath)) {
 ?>
 
 <!DOCTYPE html>
-<html lang="pt-br">
+<?php $lang = getSetting('lang', $_SESSION['lang_jnj'] ?? 'pt-br'); ?>
+<html lang="<?= h($lang) ?>">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
