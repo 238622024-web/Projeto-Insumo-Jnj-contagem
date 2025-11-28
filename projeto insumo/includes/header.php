@@ -25,7 +25,25 @@ if (!empty($logoPath)) {
   // aceita URL absoluto (http/https)
   $logoUrl = $logoUrlSetting;
 } else {
-  $logoUrl = $projectBase . '/assets/logo.svg';
+  // Tentativas automáticas: procurar logo enviado/local
+  $candidates = [
+    'assets/uploads/logo_custom.svg',
+    'assets/uploads/logo_custom.png',
+    'assets/uploads/logo_custom.jpg',
+    'assets/uploads/logo_custom.jpeg',
+    // arquivo enviado previamente no projeto (fallback)
+    'LOGO.JNJ.PNJ.png',
+  ];
+  $found = '';
+  foreach ($candidates as $rel) {
+    $abs = realpath(__DIR__ . '/../' . $rel);
+    if ($abs && file_exists($abs)) { $found = $rel; break; }
+  }
+  if ($found !== '') {
+    $logoUrl = $projectBase . '/' . $found;
+  } else {
+    $logoUrl = $projectBase . '/assets/logo.svg';
+  }
 }
 ?>
 
