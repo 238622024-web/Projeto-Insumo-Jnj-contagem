@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($posicao === '') $erros[] = 'Posição é obrigatória.';
     if ($quantidade < 0) $erros[] = 'Quantidade inválida.';
     if ($data_entrada === '') $erros[] = 'Data de entrada obrigatória.';
-    if ($validade === '') $erros[] = 'Validade obrigatória.';
+    // Validade: se não informada, vamos calcular depois (2 anos após data_entrada)
 
     // Validação/normalização de datas: aceita Y-m-d e d/m/Y e converte para Y-m-d
     function parseDateToYmd($input) {
@@ -50,9 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$erros) {
       $formatted_data_contagem = $data_contagem !== '' ? parseDateToYmd($data_contagem) : null;
       $formatted_data_entrada = parseDateToYmd($data_entrada);
-      $formatted_validade = parseDateToYmd($validade);
       if ($formatted_data_entrada === false) $erros[] = 'Data de entrada inválida.';
-      if ($formatted_validade === false) $erros[] = 'Validade inválida.';
+      // Calcular/validar validade: se vazio, define +2 anos da data_entrada
+      if (!$erros) {
+        if (trim($validade) === '') {
+          $d = DateTime::createFromFormat('Y-m-d', $formatted_data_entrada);
+          if ($d) { $d->modify('+2 years'); $formatted_validade = $d->format('Y-m-d'); }
+          else { $erros[] = 'Data de entrada inválida.'; }
+        } else {
+          $formatted_validade = parseDateToYmd($validade);
+          if ($formatted_validade === false) $erros[] = 'Validade inválida.';
+        }
+      }
       if ($data_contagem !== '' && $formatted_data_contagem === false) $erros[] = 'Data de contagem inválida.';
     }
 
@@ -106,7 +115,7 @@ include __DIR__ . '/includes/header.php';
   </div>
   <div class="col-md-3">
     <label class="form-label">Validade *</label>
-    <input type="date" name="validade" class="form-control" required value="<?= h($_POST['validade'] ?? '') ?>">
+    <input type="date" name="validade" class="form-control" required value="<?= h($_POST['validade'] ?? date('Y-m-d', strtotime('+2 years'))) ?>">
   </div>
   <div class="col-12">
     <label class="form-label">Observações</label>
@@ -118,4 +127,26 @@ include __DIR__ . '/includes/header.php';
   </div>
 </form>
 </div>
+<script>
+  (function(){
+    const entrada = document.querySelector('input[name="data_entrada"]');
+    const validade = document.querySelector('input[name="validade"]');
+    if (!entrada || !validade) return;
+    function toYmd(d){
+      const pad = (n)=> String(n).padStart(2,'0');
+      return d.getFullYear()+ '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    }
+    function addTwoYears(iso){
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return null;
+      d.setFullYear(d.getFullYear()+2);
+      return toYmd(d);
+    }
+    entrada.addEventListener('change', function(){
+      if (!this.value) return;
+      const v = addTwoYears(this.value);
+      if (v) validade.value = v;
+    });
+  })();
+  </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
