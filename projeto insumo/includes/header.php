@@ -26,13 +26,13 @@ if (!empty($logoPath)) {
   $logoUrl = $logoUrlSetting;
 } else {
   // Tentativas automáticas: procurar logo enviado/local
+  // Priorizar especificamente LOGO.JNJ.PNJ.png se existir
   $candidates = [
+    'LOGO.JNJ.PNJ.png',
     'assets/uploads/logo_custom.svg',
     'assets/uploads/logo_custom.png',
     'assets/uploads/logo_custom.jpg',
     'assets/uploads/logo_custom.jpeg',
-    // arquivo enviado previamente no projeto (fallback)
-    'LOGO.JNJ.PNJ.png',
   ];
   $found = '';
   foreach ($candidates as $rel) {
