@@ -3,6 +3,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 requireLogin();
 $pdo = getPDO();
+require_once __DIR__ . '/i18n.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
@@ -78,14 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="cadastro-insumo">
-<h2 class="h4 mb-3"><i class="fa fa-plus me-2"></i>Novo Material</h2>
+<h2 class="h4 mb-3"><i class="fa fa-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
 <form method="post" class="row g-3 shadow-sm bg-white p-4 rounded">
   <div class="col-md-3">
-    <label class="form-label">Data de Contagem</label>
+    <label class="form-label"><?= h(t('form.count.date')) ?></label>
     <input type="date" name="data_contagem" class="form-control" value="<?= h($_POST['data_contagem'] ?? '') ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Unidade</label>
+    <label class="form-label"><?= h(t('form.unit')) ?></label>
     <select name="unidade" class="form-control">
       <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): ?>
         <option value="<?= h($op) ?>" <?= (isset($_POST['unidade']) && $_POST['unidade']===$op)?'selected':'' ?>><?= h($op) ?></option>
@@ -94,36 +95,36 @@ include __DIR__ . '/includes/header.php';
     
   </div>
   <div class="col-md-6">
-    <label class="form-label">Nome do material *</label>
+    <label class="form-label"><?= h(t('form.name')) ?> *</label>
     <input type="text" name="nome" class="form-control" required value="<?= h($_POST['nome'] ?? '') ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Posição *</label>
+    <label class="form-label"><?= h(t('form.position')) ?> *</label>
     <input type="text" name="posicao" class="form-control" placeholder="P01" required value="<?= h($_POST['posicao'] ?? '') ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Lote</label>
+    <label class="form-label"><?= h(t('form.lot')) ?></label>
     <input type="text" name="lote" class="form-control" placeholder="L1234" value="<?= h($_POST['lote'] ?? '') ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Quantidade *</label>
+    <label class="form-label"><?= h(t('form.quantity')) ?> *</label>
     <input type="number" name="quantidade" min="0" class="form-control" required value="<?= h($_POST['quantidade'] ?? 0) ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Data de Entrada *</label>
+    <label class="form-label"><?= h(t('form.entry.date')) ?> *</label>
     <input type="date" name="data_entrada" class="form-control" required value="<?= h($_POST['data_entrada'] ?? date('Y-m-d')) ?>">
   </div>
   <div class="col-md-3">
-    <label class="form-label">Validade *</label>
+    <label class="form-label"><?= h(t('form.expiry')) ?> *</label>
     <input type="date" name="validade" class="form-control" required value="<?= h($_POST['validade'] ?? date('Y-m-d', strtotime('+2 years'))) ?>">
   </div>
   <div class="col-12">
-    <label class="form-label">Observações</label>
+    <label class="form-label"><?= h(t('form.notes')) ?></label>
     <textarea name="observacoes" rows="3" class="form-control"><?= h($_POST['observacoes'] ?? '') ?></textarea>
   </div>
   <div class="col-12 d-flex justify-content-between align-items-center">
-    <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i>Voltar</a>
-    <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i>Salvar</button>
+    <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
+    <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i><?= h(t('btn.save')) ?></button>
   </div>
 </form>
 </div>
