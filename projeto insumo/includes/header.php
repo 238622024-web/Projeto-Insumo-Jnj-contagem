@@ -10,17 +10,16 @@ $temaAtual = getSetting('tema_padrao', $_SESSION['tema_jnj'] ?? 'claro');
 $logoPath = getSetting('logo_path', '');
 $logoUrlSetting = getSetting('logo_url', '');
 
-// Construir base do projeto a partir do document root
-$docRoot = rtrim(str_replace('\\','/', realpath($_SERVER['DOCUMENT_ROOT'])), '/');
-$projectDir = str_replace('\\','/', realpath(__DIR__ . '/..'));
-$projectBase = '';
-if (strpos($projectDir, $docRoot) === 0) {
-  $projectBase = substr($projectDir, strlen($docRoot));
-  $projectBase = '/' . trim($projectBase, '/');
-}
+// Construir base do projeto de forma robusta (funciona em Docker/Windows)
+// Usa SCRIPT_NAME para obter a base do subdiretório atual
+$scriptName = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\','/', $_SERVER['SCRIPT_NAME']) : '';
+$scriptDir = '/' . trim(dirname($scriptName), '/');
+// Se scriptDir for apenas '/', não prefixar
+$projectBase = $scriptDir === '/' ? '' : $scriptDir;
 
 $logoUrl = '';
 if (!empty($logoPath)) {
+  // Primeiro tenta caminho relativo simples; se não existir, mantém mesmo assim (para servidores que atendem o arquivo)
   $logoUrl = $projectBase . '/' . ltrim($logoPath, '/');
 } elseif (!empty($logoUrlSetting)) {
   // aceita URL absoluto (http/https)
@@ -56,7 +55,7 @@ if (!empty($logoPath)) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= h(t('app.title')) ?></title>
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="icon" type="image/svg+xml" href="LOGO.JNJ.PNJ.png">
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
