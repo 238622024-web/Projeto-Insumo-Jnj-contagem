@@ -34,11 +34,11 @@ function diasPara($data) {
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4 m-0"><i class="fa fa-table me-2"></i>Insumos</h2>
+  <h2 class="h4 m-0"><i class="fa fa-table me-2"></i><?= h(t('list.title')) ?></h2>
   <div class="btn-group">
-    <a class="btn btn-success btn-rounded" href="cadastrar.php"><i class="fa fa-plus me-1"></i>Adicionar</a>
-    <a class="btn btn-outline-secondary btn-rounded" href="export_excel.php"><i class="fa fa-file-excel me-1"></i>Excel</a>
-    <a class="btn btn-outline-secondary btn-rounded" href="export_pdf.php"><i class="fa fa-file-pdf me-1"></i>PDF</a>
+    <a class="btn btn-success btn-rounded" href="cadastrar.php"><i class="fa fa-plus me-1"></i><?= h(t('list.add')) ?></a>
+    <a class="btn btn-outline-secondary btn-rounded" href="export_excel.php"><i class="fa fa-file-excel me-1"></i><?= h(t('list.export.excel')) ?></a>
+    <a class="btn btn-outline-secondary btn-rounded" href="export_pdf.php"><i class="fa fa-file-pdf me-1"></i><?= h(t('list.export.pdf')) ?></a>
   </div>
 </div>
 <p class="text-muted">Total de materiais: <strong><?= $total ?></strong></p>

@@ -2,6 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require_once __DIR__ . '/../auth.php';
 require_once __DIR__ . '/../settings.php';
+require_once __DIR__ . '/../i18n.php';
 $user = currentUser();
 // Tema do usuário (padrão claro)
 $temaAtual = getSetting('tema_padrao', $_SESSION['tema_jnj'] ?? 'claro');
@@ -53,7 +54,7 @@ if (!empty($logoPath)) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>JNJ</title>
+    <title><?= h(t('app.title')) ?></title>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
     <!-- Google Font -->
@@ -73,20 +74,20 @@ if (!empty($logoPath)) {
 
     <nav class="d-flex gap-2">
       <?php if ($user): ?>
-        <a class="btn btn-sm btn-light" href="index.php"><i class="fa-solid fa-table me-1"></i>Inicio</a>
-        <a class="btn btn-sm btn-light" href="cadastrar.php"><i class="fa-solid fa-plus me-1"></i>Novo</a>
-        <a class="btn btn-sm btn-light" href="perfil.php"><i class="fa-solid fa-user me-1"></i>Perfil</a>
-        <a class="btn btn-sm btn-light" href="configuracoes.php"><i class="fa-solid fa-gear me-1"></i>Configurações</a>
+        <a class="btn btn-sm btn-light" href="index.php"><i class="fa-solid fa-table me-1"></i><?= h(t('nav.home')) ?></a>
+        <a class="btn btn-sm btn-light" href="cadastrar.php"><i class="fa-solid fa-plus me-1"></i><?= h(t('nav.new')) ?></a>
+        <a class="btn btn-sm btn-light" href="perfil.php"><i class="fa-solid fa-user me-1"></i><?= h(t('nav.profile')) ?></a>
+        <a class="btn btn-sm btn-light" href="configuracoes.php"><i class="fa-solid fa-gear me-1"></i><?= h(t('nav.settings')) ?></a>
         <!-- Theme toggle removed per request -->
         <?php if (!empty($user['avatar'])): ?>
           <a href="perfil.php" class="d-inline-block"><img src="assets/uploads/<?= h($user['avatar']) ?>" alt="avatar" style="height:30px;width:30px;border-radius:6px;object-fit:cover;margin-right:6px;" /></a>
         <?php else: ?>
           <a href="perfil.php" class="badge bg-light text-dark align-self-center text-decoration-none"><?= h($user['email']) ?></a>
         <?php endif; ?>
-        <a class="btn btn-sm btn-outline-light" href="logout.php"><i class="fa-solid fa-right-from-bracket me-1"></i>Sair</a>
+          <a class="btn btn-sm btn-outline-light" href="logout.php"><i class="fa-solid fa-right-from-bracket me-1"></i><?= h(t('nav.logout')) ?></a>
       <?php else: ?>
-        <a class="btn btn-sm btn-light" href="login.php"><i class="fa-solid fa-right-to-bracket me-1"></i>Login</a>
-        <a class="btn btn-sm btn-outline-light" href="create-account.php"><i class="fa-solid fa-user-plus me-1"></i>Registrar</a>
+          <a class="btn btn-sm btn-light" href="login.php"><i class="fa-solid fa-right-to-bracket me-1"></i><?= h(t('nav.login')) ?></a>
+          <a class="btn btn-sm btn-outline-light" href="create-account.php"><i class="fa-solid fa-user-plus me-1"></i><?= h(t('nav.register')) ?></a>
       <?php endif; ?>
     </nav>
   </div>
