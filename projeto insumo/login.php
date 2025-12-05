@@ -54,6 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Fallback local: garantir laranja #ff460a no botão Entrar mesmo se CSS externo não carregar/for sobrescrito */
+      .btn.btn-login { background:#ff460a !important; border-color:#ff460a !important; color:#fff !important; }
+      .btn.btn-login:hover { filter: brightness(.95); }
+    </style>
 </head>
 <body>
   <div class="min-vh-100 d-flex align-items-center justify-content-center">
