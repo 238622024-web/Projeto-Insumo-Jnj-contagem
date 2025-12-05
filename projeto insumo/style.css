@@ -1,5 +1,5 @@
 :root{
-	--color-primary: #b50000; /* JNJ red */
+	--color-primary: #ff7a00; /* Manserv orange (default) */
 	--color-primary-contrast: #fff;
 	--color-bg: #f5f7fb;
 	--color-surface: #ffffff;
@@ -26,6 +26,10 @@ table tbody tr:nth-child(odd){ background: #f8fafc; }
 /* Buttons and form controls */
 .btn { border-radius: var(--radius); transition: all .15s ease; }
 .btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
+.btn-success { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
+.btn-success:hover { filter: brightness(.95); }
+.btn-outline-secondary { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-outline-secondary:hover { background: var(--color-primary); color: var(--color-primary-contrast); border-color: var(--color-primary); }
 .btn-primary:hover { filter:brightness(.95); }
 .btn-outline-secondary { border-radius: var(--radius); }
 .form-select, input, textarea { border-radius:6px; }
@@ -48,7 +52,10 @@ table tbody tr:nth-child(odd){ background: #f8fafc; }
 .theme-dark .btn-light { background:#2a2a2a; color:#e6e6e6; border-color: #3a3a3a; }
 .theme-dark .badge.bg-light { background:#2a2a2a; color:#e6e6e6; }
 .theme-dark .form-select, .theme-dark input, .theme-dark textarea { background:#1b1b1b; color:#e6e6e6; border-color:#333; }
-.theme-dark .btn-primary { background:#bb0b0b; border-color:#a00b0b; }
+.theme-dark .btn-primary { background: var(--color-primary); border-color: var(--color-primary); }
+.theme-dark .btn-success { background: var(--color-primary); border-color: var(--color-primary); }
+.theme-dark .btn-outline-secondary { border-color: var(--color-primary); color: var(--color-primary); }
+.theme-dark .btn-outline-secondary:hover { background: var(--color-primary); color: var(--color-primary-contrast); border-color: var(--color-primary); }
 
 /* (removido) estilos btn-nav e avatar-thumb revertidos para layout anterior */
 

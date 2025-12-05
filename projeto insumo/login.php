@@ -1,36 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/settings.php';
 if (currentUser()) { header('Location: index.php'); exit; }
-
-// Detectar logo igual ao header
-$projectBase = (function(){
-  $scriptName = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\','/', $_SERVER['SCRIPT_NAME']) : '';
-  $scriptDir = '/' . trim(dirname($scriptName), '/');
-  return $scriptDir === '/' ? '' : $scriptDir;
-})();
-$logoPathSetting = getSetting('logo_path','');
-$logoUrlSetting = getSetting('logo_url','');
-$loginLogo = '';
-if (!empty($logoPathSetting)) {
-  $loginLogo = $projectBase . '/' . ltrim($logoPathSetting,'/');
-} elseif (!empty($logoUrlSetting)) {
-  $loginLogo = $logoUrlSetting;
-} else {
-  foreach ([
-    'logo_msv_horizontal_trans.png',
-    'logo_msv_horizontal_trans 2.png',
-    'LOGO.JNJ.PNJ.png',
-    'assets/uploads/logo_custom.svg',
-    'assets/uploads/logo_custom.png',
-    'assets/uploads/logo_custom.jpg',
-    'assets/uploads/logo_custom.jpeg'] as $rel) {
-    $abs = realpath(__DIR__ . '/' . $rel);
-    if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
-  }
-  if ($loginLogo === '') $loginLogo = $projectBase . '/assets/logo.svg';
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
@@ -57,10 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <div class="min-vh-100 d-flex align-items-center justify-content-center">
-    <div class="card shadow-sm" style="max-width:360px; width:100%; border-radius:12px;">
+    <div class="card shadow-sm" style="max-width:420px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
-        <div class="d-flex justify-content-center mb-3">
-          <img src="<?= h($loginLogo) ?>" alt="logo" style="height: 72px; width:auto; object-fit:contain;" />
+        <div class="text-center mb-3">
+          <img src="Manserv.logo.png" alt="logo" style="height: 190px;" />
         </div>
         <h3 class="h5 text-center mb-3">Login</h3>
         <p class="text-center text-muted small">Acesse para gerenciar os materiais</p>
