@@ -102,8 +102,10 @@ if (!empty($logoPath)) {
         <?php endif; ?>
           <a class="btn btn-sm btn-outline-light" href="logout.php"><i class="fa-solid fa-right-from-bracket me-1"></i><?= h(t('nav.logout')) ?></a>
       <?php else: ?>
+        <?php if (empty($hideAuthButtons)): ?>
           <a class="btn btn-sm btn-light" href="login.php"><i class="fa-solid fa-right-to-bracket me-1"></i><?= h(t('nav.login')) ?></a>
           <a class="btn btn-sm btn-outline-light" href="create-account.php"><i class="fa-solid fa-user-plus me-1"></i><?= h(t('nav.register')) ?></a>
+        <?php endif; ?>
       <?php endif; ?>
     </nav>
   </div>
