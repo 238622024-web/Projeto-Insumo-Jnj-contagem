@@ -10,28 +10,37 @@ $projectBase = (function(){
   $scriptDir = '/' . trim(dirname($scriptName), '/');
   return $scriptDir === '/' ? '' : $scriptDir;
 })();
-$logoPathSetting = getSetting('logo_path','');
-$logoUrlSetting = getSetting('logo_url','');
+// Priorizar explicitamente logos "logo_msv..." quando disponíveis
 $loginLogo = '';
-if (!empty($logoPathSetting)) {
-  $loginLogo = $projectBase . '/' . ltrim($logoPathSetting,'/');
-} elseif (!empty($logoUrlSetting)) {
-  $loginLogo = $logoUrlSetting;
-} else {
-  foreach ([
-    // Preferir variações novas informadas
-    'logo_msv_horizontal__trans2.png',
-    'logo_msv_horizontal_trans 2.png',
-    'logo_msv_horizontal_trans.png',
-    'LOGO.JNJ.PNJ.png',
-    'assets/uploads/logo_custom.svg',
-    'assets/uploads/logo_custom.png',
-    'assets/uploads/logo_custom.jpg',
-    'assets/uploads/logo_custom.jpeg'] as $rel) {
-    $abs = realpath(__DIR__ . '/' . $rel);
-    if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
+$msvCandidates = [
+  'logo_msv_horizontal__trans2.png',
+  'logo_msv_horizontal_trans 2.png',
+  'logo_msv_horizontal_trans.png',
+];
+foreach ($msvCandidates as $rel) {
+  $abs = realpath(__DIR__ . '/' . $rel);
+  if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
+}
+// Se nenhum logo_msv encontrado, usar configurações e demais fallbacks
+if ($loginLogo === '') {
+  $logoPathSetting = getSetting('logo_path','');
+  $logoUrlSetting = getSetting('logo_url','');
+  if (!empty($logoPathSetting)) {
+    $loginLogo = $projectBase . '/' . ltrim($logoPathSetting,'/');
+  } elseif (!empty($logoUrlSetting)) {
+    $loginLogo = $logoUrlSetting;
+  } else {
+    foreach ([
+      'LOGO.JNJ.PNJ.png',
+      'assets/uploads/logo_custom.svg',
+      'assets/uploads/logo_custom.png',
+      'assets/uploads/logo_custom.jpg',
+      'assets/uploads/logo_custom.jpeg'] as $rel) {
+      $abs = realpath(__DIR__ . '/' . $rel);
+      if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
+    }
+    if ($loginLogo === '') $loginLogo = $projectBase . '/assets/logo.svg';
   }
-  if ($loginLogo === '') $loginLogo = $projectBase . '/assets/logo.svg';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
