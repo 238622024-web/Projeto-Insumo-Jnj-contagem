@@ -18,7 +18,14 @@ if (!empty($logoPathSetting)) {
 } elseif (!empty($logoUrlSetting)) {
   $loginLogo = $logoUrlSetting;
 } else {
-  foreach (['LOGO.JNJ.PNJ.png','assets/uploads/logo_custom.svg','assets/uploads/logo_custom.png','assets/uploads/logo_custom.jpg','assets/uploads/logo_custom.jpeg'] as $rel) {
+  foreach ([
+    'logo_msv_horizontal_trans.png',
+    'logo_msv_horizontal_trans 2.png',
+    'LOGO.JNJ.PNJ.png',
+    'assets/uploads/logo_custom.svg',
+    'assets/uploads/logo_custom.png',
+    'assets/uploads/logo_custom.jpg',
+    'assets/uploads/logo_custom.jpeg'] as $rel) {
     $abs = realpath(__DIR__ . '/' . $rel);
     if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
   }

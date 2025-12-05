@@ -28,6 +28,10 @@ if (!empty($logoPath)) {
   // Tentativas automáticas: procurar logo enviado/local
   // Priorizar especificamente LOGO.JNJ.PNJ.png se existir
   $candidates = [
+    // novas variações priorizadas
+    'logo_msv_horizontal_trans.png',
+    'logo_msv_horizontal_trans 2.png',
+    // anteriores
     'LOGO.JNJ.PNJ.png',
     'assets/uploads/logo_custom.svg',
     'assets/uploads/logo_custom.png',
