@@ -19,8 +19,10 @@ if (!empty($logoPathSetting)) {
   $loginLogo = $logoUrlSetting;
 } else {
   foreach ([
-    'logo_msv_horizontal_trans.png',
+    // Preferir variações novas informadas
+    'logo_msv_horizontal__trans2.png',
     'logo_msv_horizontal_trans 2.png',
+    'logo_msv_horizontal_trans.png',
     'LOGO.JNJ.PNJ.png',
     'assets/uploads/logo_custom.svg',
     'assets/uploads/logo_custom.png',
@@ -65,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card shadow-sm" style="max-width:360px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
         <div class="d-flex justify-content-center mb-3">
-          <img src="logo_msv_horizontal_trans.png" alt="logo" style="height: 72px; width:auto; object-fit:contain;" />
+          <img src="<?= h($loginLogo) ?>" alt="logo" style="height:72px; max-width:90%; width:auto; object-fit:contain; display:block;" />
         </div>
         <h3 class="h5 text-center mb-3">Login</h3>
         <p class="text-center text-muted small">Acesse para gerenciar os materiais</p>
