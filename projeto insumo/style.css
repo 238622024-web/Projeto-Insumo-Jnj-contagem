@@ -26,6 +26,8 @@ table tbody tr:nth-child(odd){ background: #f8fafc; }
 /* Buttons and form controls */
 .btn { border-radius: var(--radius); transition: all .15s ease; }
 .btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
+.btn.btn-login { background: var(--color-primary) !important; border-color: var(--color-primary) !important; color: var(--color-primary-contrast) !important; }
+.btn.btn-login:hover { filter: brightness(.95); }
 .btn-success { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
 .btn-success:hover { filter: brightness(.95); }
 .btn-outline-secondary { border-color: var(--color-primary); color: var(--color-primary); }
