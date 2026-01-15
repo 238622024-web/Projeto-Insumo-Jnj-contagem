@@ -121,5 +121,46 @@ include __DIR__ . '/includes/header.php';
   </div>
   <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i>Salvar</button>
 </form>
+
+<!-- Seção para limpar histórico de contagem -->
+<div class="mt-5 p-4 bg-light border rounded">
+  <h3 class="h5 mb-3"><i class="fa fa-trash me-2 text-danger"></i>Limpeza de Dados</h3>
+  <p class="text-muted mb-3">Use esta opção com cuidado. As ações abaixo não podem ser desfeitas.</p>
+  
+  <div class="alert alert-warning mb-3" role="alert">
+    <strong>⚠️ Aviso:</strong> Limpar o histórico de contagem removerá a data de contagem de todos os insumos no banco de dados.
+  </div>
+
+  <button type="button" class="btn btn-outline-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalLimparHistorico">
+    <i class="fa fa-trash-alt me-1"></i>Limpar Histórico de Contagem
+  </button>
+</div>
+
+<!-- Modal de confirmação -->
+<div class="modal fade" id="modalLimparHistorico" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="modalLabel"><i class="fa fa-exclamation-triangle me-2"></i>Confirmação</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Você tem certeza que deseja apagar todo o histórico de contagem?</strong></p>
+        <p>Esta ação irá remover a data de contagem de <strong>todos os insumos</strong> do banco de dados.</p>
+        <p class="text-muted small">Nota: Os insumos em si não serão deletados, apenas as datas de contagem serão limpas.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form method="post" action="limpar_historico.php" style="display: inline;">
+          <input type="hidden" name="confirmar" value="sim">
+          <button type="submit" class="btn btn-danger">
+            <i class="fa fa-trash me-1"></i>Sim, apagar tudo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="mt-4 small text-muted">Outras configurações poderão ser adicionadas futuramente.</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
