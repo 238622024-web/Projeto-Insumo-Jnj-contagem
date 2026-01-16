@@ -120,28 +120,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="file" name="avatar" accept="image/*" class="form-control" />
           </div>
           <button type="submit" class="btn btn-primary w-100">Criar</button>
-          <script>
-            (function(){
-              function setupToggle(btnId, inputId, openId, closedId){
-                const btn = document.getElementById(btnId);
-                const input = document.getElementById(inputId);
-                const eyeOpen = document.getElementById(openId);
-                const eyeClosed = document.getElementById(closedId);
-                if (!btn || !input) return;
-                btn.addEventListener('click', function(){
-                  const showing = input.type === 'text';
-                  input.type = showing ? 'password' : 'text';
-                  if (eyeOpen && eyeClosed){
-                    eyeOpen.classList.toggle('d-none', !showing);
-                    eyeClosed.classList.toggle('d-none', showing);
-                  }
-                  btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
-                });
-              }
-              setupToggle('togglePasswordCA','password','eyeOpenCA','eyeClosedCA');
-              setupToggle('toggleConfirmCA','confirm_password','eyeOpenConfirmCA','eyeClosedConfirmCA');
-            })();
-          </script>
         </form>
         <div class="text-center mt-3"><a href="login.php">Já tenho conta</a></div>
       </div>
@@ -149,4 +127,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </div>
 
+<script src="assets/js/create-account.js"></script>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

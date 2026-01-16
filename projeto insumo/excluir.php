@@ -52,17 +52,5 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
     </div>
-<script>
-    (function(){
-        const input = document.getElementById('confirm_text');
-        const btn = document.getElementById('btnDelete');
-        if (input && btn){
-            const check = ()=>{
-                btn.disabled = (input.value.trim().toUpperCase() !== 'EXCLUIR');
-            };
-            input.addEventListener('input', check);
-            check();
-        }
-    })();
-</script>
+<script src="assets/js/delete-confirmation.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

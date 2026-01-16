@@ -1,6 +1,6 @@
 services:
   db:
-    image: mirror.gcr.io/library/mysql:5.7
+    image: mirror.gcr.io/library/mysql:8.0
     container_name: jnj-mysql
     environment:
       MYSQL_DATABASE: controle_insumos_jnj
@@ -12,6 +12,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
 
   app:
     build: .

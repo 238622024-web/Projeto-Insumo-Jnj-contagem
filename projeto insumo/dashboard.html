@@ -67,43 +67,6 @@
             </table>
         </div>
     </main>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const logoutBtn = document.getElementById('logout-btn');
-            const totalInsumos = document.getElementById('total-insumos');
-            const insumosTableBody = document.getElementById('insumos-table-body');
-
-            // Recuperar insumos do Local Storage
-            const insumos = JSON.parse(localStorage.getItem('insumos')) || [];
-
-            const renderDashboard = () => {
-                // Atualizar total de insumos
-                totalInsumos.textContent = insumos.length;
-
-                // Atualizar tabela de insumos
-                insumosTableBody.innerHTML = '';
-                insumos.forEach(insumo => {
-                    const row = document.createElement('tr');
-                    row.className = 'bg-white border-b hover:bg-gray-50';
-                    row.innerHTML = `
-                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${insumo.id}</td>
-                        <td class="px-6 py-4">${insumo.name}</td>
-                        <td class="px-6 py-4 text-center">${insumo.quantity}</td>
-                        <td class="px-6 py-4 text-center">${insumo.arrivalDate}</td>
-                    `;
-                    insumosTableBody.appendChild(row);
-                });
-            };
-
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    // Redirect to the login page
-                    window.location.href = 'index.html';
-                });
-            }
-
-            renderDashboard();
-        });
-    </script>
+    <script src="assets/js/dashboard.js"></script>
 </body>
 </html>

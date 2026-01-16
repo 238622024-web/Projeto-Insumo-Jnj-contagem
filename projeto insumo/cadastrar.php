@@ -137,26 +137,5 @@ include __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-<script>
-  (function(){
-    const entrada = document.querySelector('input[name="data_entrada"]');
-    const validade = document.querySelector('input[name="validade"]');
-    if (!entrada || !validade) return;
-    function toYmd(d){
-      const pad = (n)=> String(n).padStart(2,'0');
-      return d.getFullYear()+ '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-    }
-    function addTwoYears(iso){
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return null;
-      d.setFullYear(d.getFullYear()+2);
-      return toYmd(d);
-    }
-    entrada.addEventListener('change', function(){
-      if (!this.value) return;
-      const v = addTwoYears(this.value);
-      if (v) validade.value = v;
-    });
-  })();
-  </script>
+<script src="assets/js/cadastro.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

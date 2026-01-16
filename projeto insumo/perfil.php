@@ -116,24 +116,6 @@ include __DIR__ . '/includes/header.php';
   <button class="btn btn-primary">Salvar</button>
 </form>
 
-<script>
-  (function(){
-    const btn = document.getElementById('toggleNewPwd');
-    const input = document.getElementById('new_password');
-    const eyeOpen = document.getElementById('eyeOpenNP');
-    const eyeClosed = document.getElementById('eyeClosedNP');
-    if (btn && input){
-      btn.addEventListener('click', function(){
-        const showing = input.type === 'text';
-        input.type = showing ? 'password' : 'text';
-        if (eyeOpen && eyeClosed){
-          eyeOpen.classList.toggle('d-none', !showing);
-          eyeClosed.classList.toggle('d-none', showing);
-        }
-        btn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
-      });
-    }
-  })();
-  </script>
+<script src="assets/js/profile.js"></script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

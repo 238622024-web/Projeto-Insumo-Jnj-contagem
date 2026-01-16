@@ -69,22 +69,8 @@ if (!empty($logoPath)) {
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="assets/css/header-footer.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-      /* Fallback mínimo inline para elementos principais (quando CDN indisponível) */
-      .btn{display:inline-block;line-height:1.5;color:#fff;text-align:center;text-decoration:none;cursor:pointer;background-color:#0d6efd;border:1px solid #0d6efd;padding:.375rem .75rem;font-size:1rem;border-radius:.375rem}
-      .btn-light{background:#f8f9fa;color:#000;border-color:#f8f9fa}
-      .btn-outline-light{color:#fff;background-color:transparent;border-color:#f8f9fa}
-      .btn-outline-light:hover{background:#f8f9fa;color:#000}
-      .btn-close{float:right;width:1em;height:1em;background:transparent;border:0}
-      .badge{display:inline-block;padding:.35em .65em;font-size:.75em;border-radius:.25rem}
-      .navbar{display:flex;align-items:center;padding:.5rem 1rem}
-      .container, .container-fluid{width:100%;padding-right:12px;padding-left:12px;margin-right:auto;margin-left:auto}
-      .alert{position:relative;padding:.5rem .75rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.375rem}
-      .alert-success{color:#0f5132;background-color:#d1e7dd;border-color:#badbcc}
-      .alert-danger{color:#842029;background-color:#f8d7da;border-color:#f5c2c7}
-      .site-logo{height:28px;width:auto;vertical-align:middle}
-    </style>
 <?php
   // Aplicar cor primária dinâmica se configurada
   $primaryColor = getSetting('primary_color', '');

@@ -11,11 +11,12 @@ $err = function ($msg) { echo "[ERRO] $msg\n"; };
 try {
     require_once __DIR__ . '/../config.php';
 
-    $host = defined('DB_HOST') ? DB_HOST : 'localhost';
-    $user = defined('DB_USER') ? DB_USER : 'root';
-    $pass = defined('DB_PASS') ? DB_PASS : '';
-    $port = defined('DB_PORT') ? DB_PORT : 3306;
-    $db   = defined('DB_NAME') ? DB_NAME : 'controle_insumos_jnj';
+    // Permitir variáveis de ambiente (Docker) com fallback para config.php
+    $host = getenv('DB_HOST') ?: (defined('DB_HOST') ? DB_HOST : 'localhost');
+    $user = getenv('DB_USER') ?: (defined('DB_USER') ? DB_USER : 'root');
+    $pass = getenv('DB_PASS') ?: (defined('DB_PASS') ? DB_PASS : '');
+    $port = getenv('DB_PORT') ?: (defined('DB_PORT') ? DB_PORT : 3306);
+    $db   = getenv('DB_NAME') ?: (defined('DB_NAME') ? DB_NAME : 'controle_insumos_jnj');
 
     $dsnServer = "mysql:host=$host;port=$port;charset=utf8mb4";
     $options = [
