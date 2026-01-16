@@ -59,7 +59,7 @@ if (!empty($logoPath)) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= h(t('app.title')) ?></title>
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="LOGO.JNJ.PNJ.png">
+    <link rel="icon" type="image/png" href="/assets/uploads/logo_favicon.png">
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap via CDN (primário) -->

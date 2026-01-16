@@ -11,7 +11,7 @@ function t(string $key): string {
     $lang = getLang();
     $dict = [
       'pt-br' => [
-        'app.title' => 'JNJ',
+        'app.title' => 'Manserv',
         'nav.home' => 'Inicio',
         'nav.new' => 'Novo',
         'nav.profile' => 'Perfil',
@@ -39,7 +39,7 @@ function t(string $key): string {
         'btn.save.changes' => 'Salvar alterações',
       ],
       'en' => [
-        'app.title' => 'JNJ',
+        'app.title' => 'Manserv',
         'nav.home' => 'Home',
         'nav.new' => 'New',
         'nav.profile' => 'Profile',
