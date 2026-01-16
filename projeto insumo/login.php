@@ -62,13 +62,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Controle de Insumos</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CDN Bootstrap (primário) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Fallback local (se CDN falhar, mantém layout básico) -->
+    <link href="assets/fallbacks/bootstrap-lite.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css" />
     <style>
       /* Fallback local: garantir laranja #ff460a no botão Entrar mesmo se CSS externo não carregar/for sobrescrito */
       .btn.btn-login { background:#ff460a !important; border-color:#ff460a !important; color:#fff !important; }
       .btn.btn-login:hover { filter: brightness(.95); }
+      /* Fallback essencial quando Bootstrap não carrega: utilitário .d-none */
+      .d-none { display: none !important; }
+      /* Inline fallback mínimo para quando Bootstrap CDN não carrega */
+      .card{background:#fff;border:1px solid rgba(0,0,0,.125);border-radius:.5rem}
+      .card-body{padding:1rem}
+      .shadow-sm{box-shadow:0 .125rem .25rem rgba(0,0,0,.075)}
+      .form-label{display:block;margin-bottom:.5rem}
+      .form-control{display:block;width:100%;padding:.375rem .75rem;font-size:1rem;line-height:1.5;color:#212529;background-color:#fff;border:1px solid #ced4da;border-radius:.375rem}
+      .input-group{display:flex;width:100%}
+      .input-group-text{display:flex;align-items:center;padding:.375rem .75rem;font-size:1rem;background-color:#e9ecef;border:1px solid #ced4da;border-radius:.375rem 0 0 .375rem}
+      .input-group .form-control{border-left:0;border-radius:0 .375rem .375rem 0;flex:1 1 auto}
+      /* Evitar dupla borda quando houver botão à direita (campo de senha) */
+      .input-group .form-control:not(:last-child){border-right:0;border-radius:0}
+      /* Garantir MESMA ALTURA entre e-mail e senha, inclusive botão de mostrar senha */
+      .input-group-text, .input-group .form-control, .input-group .btn { height:42px }
+      .input-group .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:0 .375rem .375rem 0;border-left:0}
+      .btn{display:inline-block;line-height:1.5;color:#fff;text-align:center;text-decoration:none;cursor:pointer;background-color:#0d6efd;border:1px solid #0d6efd;padding:.375rem .75rem;font-size:1rem;border-radius:.375rem}
+      .btn-primary{background-color:#0d6efd;border-color:#0d6efd}
+      .btn-outline-secondary{color:#0d6efd;background-color:transparent;border-color:#0d6efd}
+      .btn-outline-secondary:hover{color:#fff;background-color:#0d6efd;border-color:#0d6efd}
+      .alert{position:relative;padding:.5rem .75rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.375rem}
+      .alert-danger{color:#842029;background-color:#f8d7da;border-color:#f5c2c7}
+      .alert-success{color:#0f5132;background-color:#d1e7dd;border-color:#badbcc}
     </style>
 </head>
 <body>
@@ -112,13 +138,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </svg>
               </span>
               <input id="password" name="password" type="password" required class="form-control" placeholder="Sua senha" />
-              <button type="button" class="btn btn-outline-secondary" id="togglePassword" tabindex="-1" aria-label="Mostrar senha" title="Mostrar/ocultar senha">
+              <button type="button" class="btn btn-outline-secondary" id="togglePassword" tabindex="-1" aria-label="Mostrar senha" title="Mostrar senha">
                 <!-- Ícones inline (sem depender de CDN) -->
-                <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg id="eyeOpen" class="d-none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
-                <svg id="eyeClosed" class="d-none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"/>
                   <path d="M1 1l22 22"/>
                 </svg>
@@ -148,13 +174,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       const eyeClosed = document.getElementById('eyeClosed');
       if (toggleBtn && pwd){
         toggleBtn.addEventListener('click', function(){
-          const showing = pwd.type === 'text';
-          pwd.type = showing ? 'password' : 'text';
+          const newType = pwd.type === 'password' ? 'text' : 'password';
+          pwd.type = newType;
+          const isVisible = newType === 'text';
           if (eyeOpen && eyeClosed){
-            eyeOpen.classList.toggle('d-none', !showing);
-            eyeClosed.classList.toggle('d-none', showing);
+            eyeOpen.classList.toggle('d-none', !isVisible);
+            eyeClosed.classList.toggle('d-none', isVisible);
           }
-          toggleBtn.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+          const label = isVisible ? 'Ocultar senha' : 'Mostrar senha';
+          toggleBtn.setAttribute('aria-label', label);
+          toggleBtn.setAttribute('title', label);
+          toggleBtn.setAttribute('aria-pressed', String(isVisible));
         });
       }
     })();

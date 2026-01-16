@@ -134,6 +134,20 @@ include __DIR__ . '/includes/header.php';
   <button type="button" class="btn btn-outline-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalLimparHistorico">
     <i class="fa fa-trash-alt me-1"></i>Limpar Histórico de Contagem
   </button>
+
+  <div class="alert alert-danger mt-4 mb-3" role="alert">
+    <strong>⚠️ Ação Irreversível:</strong> Apagar todos os materiais removerá <u>todos os registros</u> da tabela e reiniciará a numeração.
+  </div>
+  <button type="button" class="btn btn-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
+    <i class="fa fa-ban me-1"></i>Apagar Todos os Materiais
+  </button>
+
+  <div class="alert alert-danger mt-4 mb-3" role="alert">
+    <strong>⚠️ PERIGO: Apagar Banco Completo</strong> irá remover <u>todos os dados</u> (Materiais, Configurações e Usuários). Você terá que criar usuários novamente.
+  </div>
+  <button type="button" class="btn btn-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalApagarBanco">
+    <i class="fa fa-skull-crossbones me-1"></i>Apagar Banco Completo
+  </button>
 </div>
 
 <!-- Modal de confirmação -->
@@ -164,3 +178,57 @@ include __DIR__ . '/includes/header.php';
 
 <div class="mt-4 small text-muted">Outras configurações poderão ser adicionadas futuramente.</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
+
+  <!-- Modal de confirmação: Apagar Todos -->
+  <div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="modalApagarTodosLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Todos os Materiais</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Tem certeza que deseja apagar TODOS os materiais?</strong></p>
+          <p>Esta ação irá remover permanentemente todos os registros da tabela <code>insumos_jnj</code>.</p>
+          <p class="text-muted small">Dica: Faça um backup antes se precisar manter histórico. Veja a pasta <code>db_backups</code>.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="post" action="limpar_historico.php" style="display: inline;">
+            <input type="hidden" name="confirmar" value="sim">
+            <input type="hidden" name="tipo" value="todos">
+            <button type="submit" class="btn btn-danger">
+              <i class="fa fa-ban me-1"></i>Sim, apagar tudo
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+      <!-- Modal de confirmação: Apagar Banco Completo -->
+      <div class="modal fade" id="modalApagarBanco" tabindex="-1" aria-labelledby="modalApagarBancoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title" id="modalApagarBancoLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Banco Completo</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>Tem certeza que deseja apagar TODO o banco de dados do sistema?</strong></p>
+              <p>Serão removidos permanentemente todos os materiais, configurações e usuários. IDs serão reiniciados.</p>
+              <p class="text-muted small">Dica: Faça backup antes (veja a pasta <code>db_backups</code>).</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <form method="post" action="limpar_historico.php" style="display: inline;">
+                <input type="hidden" name="confirmar" value="sim">
+                <input type="hidden" name="tipo" value="banco">
+                <button type="submit" class="btn btn-danger">
+                  <i class="fa fa-skull-crossbones me-1"></i>Sim, apagar banco completo
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        </div>
+    </div>

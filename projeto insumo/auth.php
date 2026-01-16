@@ -3,14 +3,18 @@ require_once __DIR__ . '/db.php';
 
 function login(string $email, string $senha): bool {
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE email = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash FROM usuarios WHERE email = ? LIMIT 1');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
-    if ($user && password_verify($senha, $user['senha_hash'])) {
-        $_SESSION['usuario_id'] = $user['id'];
-        $_SESSION['usuario_email'] = $user['email'];
-        $_SESSION['usuario_nome'] = $user['nome'];
-        return true;
+    if ($user) {
+        $hash = (string)($user['senha_hash'] ?? '');
+        if ($hash !== '' && password_verify($senha, $hash)) {
+            if (session_status() === PHP_SESSION_ACTIVE) { session_regenerate_id(true); }
+            $_SESSION['usuario_id'] = $user['id'];
+            $_SESSION['usuario_email'] = $user['email'];
+            $_SESSION['usuario_nome'] = $user['nome'];
+            return true;
+        }
     }
 
     return false;

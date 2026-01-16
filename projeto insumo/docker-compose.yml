@@ -1,5 +1,18 @@
-version: "3.9"
 services:
+  db:
+    image: mirror.gcr.io/library/mysql:5.7
+    container_name: jnj-mysql
+    environment:
+      MYSQL_DATABASE: controle_insumos_jnj
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: jnj
+      MYSQL_PASSWORD: jnj123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
   app:
     build: .
     container_name: jnj-app
@@ -7,41 +20,26 @@ services:
       - "8080:80"
     environment:
       DB_HOST: db
+      DB_USER: jnj
+      DB_PASS: jnj123
       DB_NAME: controle_insumos_jnj
-      DB_USER: root
-      DB_PASS: rootpass
-      DB_PORT: 3306
     volumes:
-      - .:/var/www/html
-      - ./php.ini:/usr/local/etc/php/php.ini:ro
+      - uploads_data:/var/www/html/assets/uploads
     depends_on:
       - db
+    restart: unless-stopped
 
-  db:
-    image: mysql:8.0
-    container_name: jnj-mysql
+  adminer:
+    image: mirror.gcr.io/library/adminer:latest
+    container_name: jnj-adminer
     environment:
-      MYSQL_DATABASE: controle_insumos_jnj
-      MYSQL_USER: jnj
-      MYSQL_PASSWORD: jnj123
-      MYSQL_ROOT_PASSWORD: rootpass
-    command: ["--default-authentication-plugin=mysql_native_password"]
+      ADMINER_DEFAULT_SERVER: db
     ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: jnj-phpmyadmin
-    environment:
-      PMA_HOST: db
-      PMA_USER: jnj
-      PMA_PASSWORD: jnj123
-    ports:
-      - "8081:80"
+      - "8081:8080"
     depends_on:
       - db
+    restart: unless-stopped
 
 volumes:
   mysql_data:
+  uploads_data:

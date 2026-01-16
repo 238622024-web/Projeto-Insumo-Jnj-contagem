@@ -39,6 +39,9 @@ include __DIR__ . '/includes/header.php';
     <a class="btn btn-success btn-rounded" href="cadastrar.php"><i class="fa fa-plus me-1"></i><?= h(t('list.add')) ?></a>
     <a class="btn btn-outline-secondary btn-rounded" href="export_excel.php"><i class="fa fa-file-excel me-1"></i><?= h(t('list.export.excel')) ?></a>
     <a class="btn btn-outline-secondary btn-rounded" href="export_pdf.php"><i class="fa fa-file-pdf me-1"></i><?= h(t('list.export.pdf')) ?></a>
+    <button type="button" class="btn btn-outline-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
+      <i class="fa fa-ban me-1"></i>Apagar Todos
+    </button>
   </div>
 </div>
 <p class="text-muted">Total de materiais: <strong><?= $total ?></strong></p>
@@ -114,4 +117,29 @@ include __DIR__ . '/includes/header.php';
     </tbody>
   </table>
 </div>
+<!-- Modal de confirmação: Apagar Todos na listagem -->
+<div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="modalApagarTodosLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Todos os Materiais</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Tem certeza que deseja apagar TODOS os materiais desta lista?</strong></p>
+        <p>Esta ação irá remover permanentemente todos os registros da tabela <code>insumos_jnj</code> e reiniciar a numeração.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form method="post" action="limpar_historico.php" style="display: inline;">
+          <input type="hidden" name="confirmar" value="sim">
+          <input type="hidden" name="tipo" value="todos">
+          <button type="submit" class="btn btn-danger">
+            <i class="fa fa-ban me-1"></i>Sim, apagar tudo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

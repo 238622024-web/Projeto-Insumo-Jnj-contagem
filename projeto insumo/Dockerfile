@@ -1,5 +1,5 @@
 # Dockerfile para app PHP + Apache com extensões necessárias
-FROM php:8.2-apache
+FROM mirror.gcr.io/library/php:8.2-apache
 
 # Dependências do sistema e extensões PHP (pdo_mysql, zip)
 RUN apt-get update \
@@ -10,7 +10,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar composer do container oficial
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=mirror.gcr.io/library/composer:2 /usr/bin/composer /usr/bin/composer
 
 # Definir diretório de trabalho
 WORKDIR /var/www/html
