@@ -1,89 +1,293 @@
-:root{
-	--color-primary: #ff460a; /* Manserv orange (updated) */
+:/* ========================================
+   VARIÁVEIS DE CORES E TEMA
+   ======================================== */
+:root {
+	--color-primary: #ff460a;          /* Manserv orange */
 	--color-primary-contrast: #fff;
-	--color-bg: #f5f7fb;
-	--color-surface: #ffffff;
-	--color-text: #1f2937;
-	--color-muted: #6b7280;
-	--radius: 8px;
+	--color-bg: #f5f7fb;               /* Fundo claro */
+	--color-surface: #ffffff;           /* Superfícies brancas */
+	--color-text: #1f2937;             /* Texto escuro */
+	--color-muted: #6b7280;            /* Texto muted */
+	--radius: 8px;                     /* Border radius padrão */
+	--transition-speed: 0.15s;         /* Velocidade de transição */
 }
 
-html,body{height:100%;}
-body { background: var(--color-bg) url('assets/bg-pattern.svg') repeat; background-size:200px 200px; color:var(--color-text); font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-/* Utility */
-.btn-rounded { border-radius:var(--radius); }
-/* Logo no header */
-.site-logo { height:28px; width:auto; vertical-align:middle; }
-table thead th { background:var(--color-primary); color:var(--color-primary-contrast); }
-table tbody tr:nth-child(even){ background:var(--color-surface); }
-table tbody tr:nth-child(odd){ background: #f8fafc; }
-.badge-validade-curta { background:#ff460a; }
-.badge-validade-media { background:#ffc107; color:#000; }
-.row-expirada { outline:2px solid #ff460a; animation:pulse 1.5s infinite; }
-@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,70,10,.7);} 70%{box-shadow:0 0 0 10px rgba(255,70,10,0);} 100%{box-shadow:0 0 0 0 rgba(255,70,10,0);} }
-.status-validade { font-size:.75rem; }
+/* ========================================
+   ESTILOS BASE
+   ======================================== */
+html,
+body {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
 
-/* Buttons and form controls */
-.btn { border-radius: var(--radius); transition: all .15s ease; }
-.btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
-.btn.btn-login { background: var(--color-primary) !important; border-color: var(--color-primary) !important; color: var(--color-primary-contrast) !important; }
-.btn.btn-login:hover { filter: brightness(.95); }
-.btn-success { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast); }
-.btn-success:hover { filter: brightness(.95); }
-.btn-outline-secondary { border-color: var(--color-primary); color: var(--color-primary); }
-.btn-outline-secondary:hover { background: var(--color-primary); color: var(--color-primary-contrast); border-color: var(--color-primary); }
-.btn-primary:hover { filter:brightness(.95); }
-.btn-outline-secondary { border-radius: var(--radius); }
-.form-select, input, textarea { border-radius:6px; }
+body {
+	background: var(--color-bg) url('assets/bg-pattern.svg') repeat;
+	background-size: 200px 200px;
+	color: var(--color-text);
+	font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
 
-/* Table hover */
-.table-hover tbody tr:hover { background: #eef2f7; }
+/* ========================================
+   LAYOUT FLEX PARA FOOTER NO FINAL
+   ======================================== */
+main {
+	flex: 1;
+}
 
-/* Logo */
-.site-logo { height:28px; width:auto; vertical-align:middle; }
+/* ========================================
+   TABELAS
+   ======================================== */
+table thead th {
+	background: var(--color-primary);
+	color: var(--color-primary-contrast);
+}
 
-/* Tema escuro */
-.theme-dark { background: #121212; color: #e6e6e6; }
-.theme-dark .container { color: #e6e6e6; }
-.theme-dark .bg-white { background: #1e1e1e !important; color: #e6e6e6; }
-.theme-dark .navbar { background: #0b0b0b !important; }
-.theme-dark table thead th { background:#212529; color:#fff; }
-.theme-dark table tbody tr:nth-child(even){ background:#1a1a1a; }
-.theme-dark table tbody tr:nth-child(odd){ background:#141414; }
-.theme-dark .alert { background:#242424; color:#f1f1f1; border-color: #333; }
-.theme-dark .btn-light { background:#2a2a2a; color:#e6e6e6; border-color: #3a3a3a; }
-.theme-dark .badge.bg-light { background:#2a2a2a; color:#e6e6e6; }
-.theme-dark .form-select, .theme-dark input, .theme-dark textarea { background:#1b1b1b; color:#e6e6e6; border-color:#333; }
-.theme-dark .btn-primary { background: var(--color-primary); border-color: var(--color-primary); }
-.theme-dark .btn-success { background: var(--color-primary); border-color: var(--color-primary); }
-.theme-dark .btn-outline-secondary { border-color: var(--color-primary); color: var(--color-primary); }
-.theme-dark .btn-outline-secondary:hover { background: var(--color-primary); color: var(--color-primary-contrast); border-color: var(--color-primary); }
+table tbody tr:nth-child(even) {
+	background: var(--color-surface);
+}
 
-/* (removido) estilos btn-nav e avatar-thumb revertidos para layout anterior */
+table tbody tr:nth-child(odd) {
+	background: #f8fafc;
+}
 
-/* Login input animations */
-.mb-3 { position: relative; }
-.mb-3 .form-label { transition: transform .18s ease, color .18s ease, font-size .18s ease; transform-origin: left top; }
-.mb-3:focus-within .form-label { transform: translateY(-8px) scale(.95); color: var(--color-primary); }
-.mb-3.filled .form-label { transform: translateY(-8px) scale(.95); color: var(--color-primary); }
+table.table-hover tbody tr:hover {
+	background: #eef2f7;
+}
 
+/* ========================================
+   BADGES E STATUS
+   ======================================== */
+.badge-validade-curta {
+	background: #ff460a;
+}
+
+.badge-validade-media {
+	background: #ffc107;
+	color: #000;
+}
+
+.status-validade {
+	font-size: 0.75rem;
+}
+
+/* ========================================
+   LINHA EXPIRADA (COM ANIMAÇÃO)
+   ======================================== */
+.row-expirada {
+	outline: 2px solid #ff460a;
+	animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(255, 70, 10, 0.7);
+	}
+	70% {
+		box-shadow: 0 0 0 10px rgba(255, 70, 10, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(255, 70, 10, 0);
+	}
+}
+
+/* ========================================
+   BOTÕES
+   ======================================== */
+.btn {
+	border-radius: var(--radius);
+	transition: all var(--transition-speed) ease;
+}
+
+.btn-primary,
+.btn-success {
+	background: var(--color-primary);
+	border-color: var(--color-primary);
+	color: var(--color-primary-contrast);
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+	filter: brightness(0.95);
+}
+
+.btn-login {
+	background: var(--color-primary) !important;
+	border-color: var(--color-primary) !important;
+	color: var(--color-primary-contrast) !important;
+}
+
+.btn-login:hover {
+	filter: brightness(0.95);
+}
+
+.btn-outline-secondary {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+	border-radius: var(--radius);
+}
+
+.btn-outline-secondary:hover {
+	background: var(--color-primary);
+	color: var(--color-primary-contrast);
+	border-color: var(--color-primary);
+}
+
+.btn-rounded {
+	border-radius: var(--radius);
+}
+
+/* ========================================
+   FORMULÁRIOS
+   ======================================== */
+.form-select,
+input,
+textarea {
+	border-radius: 6px;
+}
+
+.mb-3 {
+	position: relative;
+}
+
+.mb-3 .form-label {
+	transition: transform 0.18s ease, color 0.18s ease, font-size 0.18s ease;
+	transform-origin: left top;
+}
+
+.mb-3:focus-within .form-label,
+.mb-3.filled .form-label {
+	transform: translateY(-8px) scale(0.95);
+	color: var(--color-primary);
+}
+
+/* ========================================
+   INPUT GROUP COM ANIMAÇÕES
+   ======================================== */
 .input-group .form-control {
-	transition: box-shadow .18s ease, border-color .18s ease, transform .12s ease;
-	border: 1px solid rgba(0,0,0,0.12);
+	transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+	border: 1px solid rgba(0, 0, 0, 0.12);
 }
+
 .input-group:focus-within .form-control {
 	border-color: var(--color-primary);
-	box-shadow: 0 6px 18px rgba(255,70,10,0.08), 0 0 0 4px rgba(255,70,10,0.06);
+	box-shadow: 0 6px 18px rgba(255, 70, 10, 0.08), 0 0 0 4px rgba(255, 70, 10, 0.06);
 	transform: translateY(-1px);
 }
-.input-group-text { transition: background .12s ease, color .12s ease, transform .12s ease; }
-.input-group:focus-within .input-group-text { background: rgba(181,0,0,0.06); color: var(--color-primary); transform: translateY(-1px); }
 
-/* subtle floating placeholder support: hide placeholder when focused to emphasize label */
-.input-group .form-control::placeholder { color: rgba(0,0,0,0.35); transition: opacity .12s ease; }
-.input-group:focus-within .form-control::placeholder { opacity: 0.3; }
+.input-group-text {
+	transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
 
-/* small responsive tweak for stacked forms */
+.input-group:focus-within .input-group-text {
+	background: rgba(181, 0, 0, 0.06);
+	color: var(--color-primary);
+	transform: translateY(-1px);
+}
+
+.input-group .form-control::placeholder {
+	color: rgba(0, 0, 0, 0.35);
+	transition: opacity 0.12s ease;
+}
+
+.input-group:focus-within .form-control::placeholder {
+	opacity: 0.3;
+}
+
+/* ========================================
+   LOGO
+   ======================================== */
+.site-logo {
+	height: 28px;
+	width: auto;
+	vertical-align: middle;
+}
+
+/* ========================================
+   TEMA ESCURO
+   ======================================== */
+.theme-dark {
+	background: #121212;
+	color: #e6e6e6;
+}
+
+.theme-dark .container {
+	color: #e6e6e6;
+}
+
+.theme-dark .bg-white {
+	background: #1e1e1e !important;
+	color: #e6e6e6;
+}
+
+.theme-dark .navbar {
+	background: #0b0b0b !important;
+}
+
+.theme-dark table thead th {
+	background: #212529;
+	color: #fff;
+}
+
+.theme-dark table tbody tr:nth-child(even) {
+	background: #1a1a1a;
+}
+
+.theme-dark table tbody tr:nth-child(odd) {
+	background: #141414;
+}
+
+.theme-dark .alert {
+	background: #242424;
+	color: #f1f1f1;
+	border-color: #333;
+}
+
+.theme-dark .btn-light {
+	background: #2a2a2a;
+	color: #e6e6e6;
+	border-color: #3a3a3a;
+}
+
+.theme-dark .badge.bg-light {
+	background: #2a2a2a;
+	color: #e6e6e6;
+}
+
+.theme-dark .form-select,
+.theme-dark input,
+.theme-dark textarea {
+	background: #1b1b1b;
+	color: #e6e6e6;
+	border-color: #333;
+}
+
+.theme-dark .btn-primary,
+.theme-dark .btn-success {
+	background: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+.theme-dark .btn-outline-secondary {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+
+.theme-dark .btn-outline-secondary:hover {
+	background: var(--color-primary);
+	color: var(--color-primary-contrast);
+	border-color: var(--color-primary);
+}
+
+/* ========================================
+   RESPEITAR PREFERÊNCIAS DE MOVIMENTO
+   ======================================== */
 @media (prefers-reduced-motion: reduce) {
-	.mb-3 .form-label, .input-group .form-control, .input-group-text { transition: none !important; }
+	.mb-3 .form-label,
+	.input-group .form-control,
+	.input-group-text {
+		transition: none !important;
+	}
+}
 }

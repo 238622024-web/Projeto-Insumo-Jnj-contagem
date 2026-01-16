@@ -74,14 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="min-vh-100 d-flex align-items-center justify-content-center">
     <div class="card shadow-sm" style="max-width:360px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
-        <div class="d-flex justify-content-center mb-3">
+        <div class="login-logo-wrapper d-flex justify-content-center mb-3">
           <img src="<?= h($loginLogo) ?>" alt="logo" style="height:72px; max-width:90%; width:auto; object-fit:contain; display:block; margin:0 auto;" />
         </div>
-        <div class="text-center mb-2">
-          <strong style="display:block; font-size:.95rem;">Bem-vindo</strong>
-        </div>
-        <h3 class="h5 text-center mb-3">Login</h3>
-        <p class="text-center text-muted small">Acesse para gerenciar os materiais</p>
+        <p class="text-center text-muted small mb-3">Acesse para gerenciar os materiais</p>
         <?php if ($m = flash('error')): ?>
           <div class="alert alert-danger py-2"><?= h($m) ?></div>
         <?php endif; ?>

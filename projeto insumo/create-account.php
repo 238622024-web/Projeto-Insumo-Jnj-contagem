@@ -54,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   if ($erros) { flash('error', implode(' ', $erros)); }
 }
+// Esconder botões de login/registrar do header nesta página
+$hideAuthButtons = true;
 ?>
 <?php require_once __DIR__ . '/includes/header.php'; ?>
 

@@ -58,7 +58,7 @@ include __DIR__ . '/includes/header.php';
   </div>
   <div class="col-auto">
     <button class="btn btn-primary" type="submit">Filtrar</button>
-    <a class="btn btn-link text-decoration-none" href="index.php">Limpar</a>
+    <a class="btn btn-outline-secondary" href="index.php">Limpar</a>
   </div>
 </form>
 

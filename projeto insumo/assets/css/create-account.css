@@ -1,0 +1,114 @@
+/* ===========================
+   CREATE ACCOUNT PAGE - ESTILOS
+   =========================== */
+
+/* Background wallpaper para página de criar conta */
+body {
+  background: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.3) 100%),
+    url('../wallpaper.jpg') center/cover no-repeat fixed;
+  min-height: 100vh;
+}
+
+/* Fallback local: garantir laranja #ff460a nos botões */
+.btn-primary {
+  background: #ff460a !important;
+  border-color: #ff460a !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+/* Fallback essencial quando Bootstrap não carrega */
+.d-none {
+  display: none !important;
+}
+
+/* Card styling */
+.card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.5rem;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+.shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Form controls */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+}
+
+.input-group {
+  display: flex;
+  width: 100%;
+}
+
+.input-group-text {
+  display: flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem 0 0 0.375rem;
+}
+
+.input-group .form-control {
+  border-left: 0;
+  border-radius: 0 0.375rem 0.375rem 0;
+  flex: 1 1 auto;
+}
+
+.btn-outline-secondary {
+  border: 1px solid #ff460a;
+  color: #ff460a;
+  background: transparent;
+  border-radius: 0.375rem;
+}
+
+.btn-outline-secondary:hover {
+  background: #ff460a;
+  color: #fff;
+  border-color: #ff460a;
+}
+
+/* Alerts */
+.alert {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
