@@ -79,59 +79,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="cadastro-insumo">
-  <div class="card shadow-sm">
-    <div class="card-header d-flex align-items-center" style="background:#fff;">
-      <h2 class="h5 mb-0"><i class="fa fa-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
+  <div class="card shadow-lg border-0">
+    <div class="card-header d-flex align-items-center" style="background: #ffffff; color: #000000; padding: 1.5rem; border-bottom: 2px solid #e9ecef;">
+      <h2 class="h5 mb-0" style="color: #000000;"><i class="fa fa-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
     </div>
-    <div class="card-body">
-      <form method="post" class="row g-3">
+    <div class="card-body p-4">
+      <form method="post" class="row g-4">
+        <!-- Nome do Material -->
         <div class="col-12">
-          <label class="form-label"><?= h(t('form.name')) ?> *</label>
-          <input type="text" name="nome" class="form-control" required value="<?= h($_POST['nome'] ?? '') ?>" placeholder="Ex.: Álcool 70%">
+          <label class="form-label fw-600"><i class="fa fa-box text-primary me-2"></i><?= h(t('form.name')) ?> <span class="text-danger">*</span></label>
+          <input type="text" name="nome" class="form-control form-control-lg" required value="<?= h($_POST['nome'] ?? '') ?>">
         </div>
 
+        <!-- Linha 1: Unidade, Quantidade, Posição -->
         <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.unit')) ?></label>
-          <select name="unidade" class="form-select">
+          <label class="form-label fw-600"><i class="fa fa-ruler text-primary me-2"></i><?= h(t('form.unit')) ?></label>
+          <select name="unidade" class="form-select form-select-lg">
             <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): ?>
               <option value="<?= h($op) ?>" <?= (isset($_POST['unidade']) && $_POST['unidade']===$op)?'selected':'' ?>><?= h($op) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.quantity')) ?> *</label>
-          <input type="number" name="quantidade" min="0" class="form-control" required value="<?= h($_POST['quantidade'] ?? 0) ?>" placeholder="0">
+          <label class="form-label fw-600"><i class="fa fa-calculator text-primary me-2"></i><?= h(t('form.quantity')) ?> <span class="text-danger">*</span></label>
+          <input type="number" name="quantidade" min="0" class="form-control form-control-lg" required value="<?= h($_POST['quantidade'] ?? '') ?>">
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.position')) ?> *</label>
-          <input type="text" name="posicao" class="form-control" placeholder="P01" required value="<?= h($_POST['posicao'] ?? '') ?>">
+          <label class="form-label fw-600"><i class="fa fa-map-marker text-primary me-2"></i><?= h(t('form.position')) ?> <span class="text-danger">*</span></label>
+          <input type="text" name="posicao" class="form-control form-control-lg" required value="<?= h($_POST['posicao'] ?? '') ?>">
         </div>
 
-        <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.lot')) ?></label>
-          <input type="text" name="lote" class="form-control" placeholder="L1234" value="<?= h($_POST['lote'] ?? '') ?>">
+        <!-- Linha 2: Lote, Data Contagem, Data Entrada, Validade -->
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-600"><i class="fa fa-barcode text-primary me-2"></i><?= h(t('form.lot')) ?></label>
+          <input type="text" name="lote" class="form-control form-control-lg" value="<?= h($_POST['lote'] ?? '') ?>">
         </div>
-        <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.count.date')) ?></label>
-          <input type="date" name="data_contagem" class="form-control" value="<?= h($_POST['data_contagem'] ?? '') ?>">
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-600"><i class="fa fa-calendar text-primary me-2"></i><?= h(t('form.count.date')) ?></label>
+          <input type="date" name="data_contagem" class="form-control form-control-lg" value="<?= h($_POST['data_contagem'] ?? '') ?>">
         </div>
-        <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.entry.date')) ?> *</label>
-          <input type="date" name="data_entrada" class="form-control" required value="<?= h($_POST['data_entrada'] ?? date('Y-m-d')) ?>">
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-600"><i class="fa fa-sign-in text-primary me-2"></i><?= h(t('form.entry.date')) ?> <span class="text-danger">*</span></label>
+          <input type="date" name="data_entrada" class="form-control form-control-lg" required value="<?= h($_POST['data_entrada'] ?? date('Y-m-d')) ?>">
         </div>
-        <div class="col-12 col-md-4">
-          <label class="form-label"><?= h(t('form.expiry')) ?> *</label>
-          <input type="date" name="validade" class="form-control" required value="<?= h($_POST['validade'] ?? date('Y-m-d', strtotime('+2 years'))) ?>">
-          <div class="form-text">Se vazio, calcula +2 anos após a entrada.</div>
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-600"><i class="fa fa-hourglass-end text-primary me-2"></i><?= h(t('form.expiry')) ?> <span class="text-danger">*</span></label>
+          <input type="date" name="validade" class="form-control form-control-lg" value="<?= h($_POST['validade'] ?? '') ?>">
         </div>
 
+        <!-- Observações -->
         <div class="col-12">
-          <label class="form-label"><?= h(t('form.notes')) ?></label>
-          <textarea name="observacoes" rows="3" class="form-control" placeholder="Observações, marca, especificações, etc."><?= h($_POST['observacoes'] ?? '') ?></textarea>
+          <label class="form-label fw-600"><i class="fa fa-sticky-note text-primary me-2"></i><?= h(t('form.notes')) ?></label>
+          <textarea name="observacoes" rows="4" class="form-control form-control-lg" style="resize: vertical;"><?= h($_POST['observacoes'] ?? '') ?></textarea>
         </div>
-        <div class="col-12 d-flex justify-content-between align-items-center mt-2">
-          <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
-          <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i><?= h(t('btn.save')) ?></button>
+
+        <!-- Botões de Ação -->
+        <div class="col-12 d-flex justify-content-between gap-2 mt-4">
+          <a href="index.php" class="btn btn-outline-secondary btn-lg" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+            <i class="fa fa-arrow-left me-2"></i><?= h(t('btn.back')) ?>
+          </a>
+          <button class="btn btn-primary btn-lg" type="submit" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(102,126,234,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+            <i class="fa fa-save me-2"></i><?= h(t('btn.save')) ?>
+          </button>
         </div>
       </form>
     </div>
