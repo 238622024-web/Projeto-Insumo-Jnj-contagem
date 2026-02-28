@@ -41,10 +41,116 @@
     });
   }
 
+  function initBarcodeScanner() {
+    const form = document.getElementById('form-cadastro-insumo');
+    const barcodeInput = document.getElementById('codigo_barra');
+    const startBtn = document.getElementById('btn-start-scan');
+    const stopBtn = document.getElementById('btn-stop-scan');
+    const readerEl = document.getElementById('reader');
+    const nameInput = document.querySelector('input[name="nome"]');
+
+    if (!form || !barcodeInput) return;
+
+    barcodeInput.addEventListener('keydown', function(event) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+
+      if (form.checkValidity()) {
+        form.submit();
+        return;
+      }
+
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.focus();
+      }
+    });
+
+    if (!startBtn || !stopBtn || !readerEl) return;
+
+    let html5QrCode = null;
+    let scanRunning = false;
+
+    function onScanSuccess(decodedText) {
+      if (!decodedText) return;
+
+      barcodeInput.value = decodedText.trim();
+      barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+      stopScan();
+
+      if (form.checkValidity()) {
+        form.submit();
+      } else if (nameInput && !nameInput.value.trim()) {
+        nameInput.focus();
+      }
+    }
+
+    async function startScan() {
+      if (scanRunning) return;
+
+      if (typeof window.Html5Qrcode === 'undefined') {
+        alert('Leitor de câmera indisponível no momento.');
+        return;
+      }
+
+      try {
+        readerEl.style.display = 'block';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+
+        html5QrCode = new window.Html5Qrcode('reader');
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 120 } },
+          onScanSuccess,
+          () => {}
+        );
+        scanRunning = true;
+      } catch (error) {
+        console.error('Erro ao iniciar scanner:', error);
+        alert('Não foi possível iniciar a câmera para escaneamento.');
+        stopScan();
+      }
+    }
+
+    async function stopScan() {
+      if (!scanRunning || !html5QrCode) {
+        readerEl.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+        return;
+      }
+
+      try {
+        await html5QrCode.stop();
+        await html5QrCode.clear();
+      } catch (error) {
+        console.warn('Falha ao parar scanner:', error);
+      }
+
+      scanRunning = false;
+      html5QrCode = null;
+      readerEl.style.display = 'none';
+      startBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+    }
+
+    startBtn.addEventListener('click', startScan);
+    stopBtn.addEventListener('click', stopScan);
+
+    window.addEventListener('beforeunload', () => {
+      stopScan();
+    });
+  }
+
   // Inicializar quando o documento está pronto
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDateValidityCalculator);
+    document.addEventListener('DOMContentLoaded', function() {
+      initDateValidityCalculator();
+      initBarcodeScanner();
+    });
   } else {
     initDateValidityCalculator();
+    initBarcodeScanner();
   }
 })();

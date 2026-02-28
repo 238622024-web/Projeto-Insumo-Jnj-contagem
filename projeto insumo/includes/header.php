@@ -17,10 +17,16 @@ $scriptDir = '/' . trim(dirname($scriptName), '/');
 // Se scriptDir for apenas '/', não prefixar
 $projectBase = $scriptDir === '/' ? '' : $scriptDir;
 
+function buildAssetUrl(string $base, string $rel): string {
+  $rel = ltrim($rel, '/');
+  $parts = array_map('rawurlencode', explode('/', $rel));
+  return $base . '/' . implode('/', $parts);
+}
+
 $logoUrl = '';
 if (!empty($logoPath)) {
   // Primeiro tenta caminho relativo simples; se não existir, mantém mesmo assim (para servidores que atendem o arquivo)
-  $logoUrl = $projectBase . '/' . ltrim($logoPath, '/');
+  $logoUrl = buildAssetUrl($projectBase, $logoPath);
 } elseif (!empty($logoUrlSetting)) {
   // aceita URL absoluto (http/https)
   $logoUrl = $logoUrlSetting;
@@ -29,8 +35,9 @@ if (!empty($logoPath)) {
   // Priorizar especificamente LOGO.JNJ.PNJ.png se existir
   $candidates = [
     // novas variações priorizadas
-    'logo_msv_horizontal_trans.png',
     'logo_msv_horizontal_trans 2.png',
+    'logo_msv_horizontal_trans.png',
+    'logo_manserv.png',
     // anteriores
     'LOGO.JNJ.PNJ.png',
     'assets/uploads/logo_custom.svg',
@@ -44,7 +51,7 @@ if (!empty($logoPath)) {
     if ($abs && file_exists($abs)) { $found = $rel; break; }
   }
   if ($found !== '') {
-    $logoUrl = $projectBase . '/' . $found;
+    $logoUrl = buildAssetUrl($projectBase, $found);
   } else {
     $logoUrl = $projectBase . '/assets/logo.svg';
   }
@@ -92,7 +99,7 @@ if (!empty($logoPath)) {
 <header class="navbar navbar-dark fixed-top shadow" style="background: var(--color-primary) !important;">
   <div class="container-fluid">
     <span class="navbar-brand mb-0 h1 d-flex align-items-center">
-      <img src="<?= h($logoUrl) ?>" alt="JNJ" class="site-logo" />
+      <img src="<?= h($logoUrl) ?>" alt="Manserv" class="site-logo" />
     </span>
 
     <nav class="d-flex gap-2">

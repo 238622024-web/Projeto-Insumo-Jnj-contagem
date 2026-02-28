@@ -1,135 +1,97 @@
 // ...existing code...
 # Projeto-Insumo-Jnj-contagem
 
-Status: Concluído (ambiente de desenvolvimento)
+## Modo padrão (recomendado agora)
 
-Resumo
-- Aplicação para controle de insumos (CRUD, autenticação, upload de arquivos, relatórios).
-- Ambiente preparado com Docker Compose (app, MySQL e phpMyAdmin).
+Este projeto deve abrir em **PHP**, como estava originalmente.
 
-O que foi feito
-- Containerização:
-  - docker-compose com serviços: app, db (MySQL), phpmyadmin.
-  - volume nomeado para persistência do MySQL (dados mantidos entre reinícios).
-  - recomendação: usar `restart: unless-stopped` para auto-restart.
-- Banco de dados:
-  - importados `database/schema.sql` e `database/seed.sql`.
-  - criado usuário de teste: `teste.auto+01@example.com` / `Senha123!`.
-- PHP / Uploads:
-  - adicionado `php.ini` custom (upload_max_filesize = 50M, post_max_size = 50M, memory_limit = 256M).
-  - montado no container app para evitar erro: "POST Content-Length exceeds the limit".
-- Correções feitas:
-  - Inicialização do DataTables aprimorada para evitar o aviso "Incorrect column count" (ajuste automático de colspan ou pulo de inicialização quando incompatível).
-  - Tratamento de erros de sessão/headers causado por saída anterior (limites PHP ajustados).
-- Utilitários:
-  - comandos para backup/restore via `mysqldump` incluídos.
-
-Como rodar (desenvolvimento)
-1. Abrir a pasta do projeto:
-   - PowerShell:
-     Set-Location 'C:\Users\Manserv\insumos.jnj\Projeto-Insumo-Jnj-contagem\projeto insumo'
-2. Subir containers:
-   docker compose up -d --build
-3. Verificar:
-   docker ps
-
-Links locais
-- Site: http://localhost:8080/
-- phpMyAdmin: http://localhost:8081/
-
-Credenciais úteis
-- App (login de teste): teste.auto+01@example.com / Senha123!
-- MySQL:
-  - database: controle_insumos_jnj
-  - user: jnj / jnj123
-  - root: root / rootpass
-  - host (do host): localhost:3306  (no compose usar `db`)
-
-Backup / Restore
-- Backup:
-  docker exec jnj-mysql sh -c "exec mysqldump -uroot -prootpass controle_insumos_jnj" > backup.sql
-- Restore:
-  docker exec -i jnj-mysql sh -c "mysql -uroot -prootpass controle_insumos_jnj" < backup.sql
-
-Observações importantes
-- Não use `docker compose down -v` se quiser manter os dados do banco (apaga volumes).
-- Se o Docker Desktop pedir reboot para habilitar WSL/VirtualMachinePlatform, reinicie o Windows.
-- Para testar sem Docker: instalar PHP e rodar `php -S localhost:8000` na pasta `projeto insumo` (aviso: sem MySQL, funcionalidades que dependem do banco não funcionarão).
-
-Arquivos de interesse
-- docker-compose.yml
-- php.ini
-- database/schema.sql, database/seed.sql
-- includes/footer.php (DataTables init)
-- perfil.php, auth.php, db.php (login e perfil)
-
-Contato
-- Para ajustes, correções adicionais ou deploy, abra uma issue ou solicite a modificação desejada.
-```// filepath: c:\Users\Manserv\insumos.jnj\Projeto-Insumo-Jnj-contagem\README.md
-// ...existing code...
+### Abrir localmente (PHP)
 # Projeto-Insumo-Jnj-contagem
 
-Status: Concluído (ambiente de desenvolvimento)
+Sistema de controle de insumos com **backend em Node.js** e **frontend em Angular**.
 
-Resumo
-- Aplicação para controle de insumos (CRUD, autenticação, upload de arquivos, relatórios).
-- Ambiente preparado com Docker Compose (app, MySQL e phpMyAdmin).
+## Arquitetura (atual)
 
-O que foi feito
-- Containerização:
-  - docker-compose com serviços: app, db (MySQL), phpmyadmin.
-  - volume nomeado para persistência do MySQL (dados mantidos entre reinícios).
-  - recomendação: usar `restart: unless-stopped` para auto-restart.
-- Banco de dados:
-  - importados `database/schema.sql` e `database/seed.sql`.
-  - criado usuário de teste: `teste.auto+01@example.com` / `Senha123!`.
-- PHP / Uploads:
-  - adicionado `php.ini` custom (upload_max_filesize = 50M, post_max_size = 50M, memory_limit = 256M).
-  - montado no container app para evitar erro: "POST Content-Length exceeds the limit".
-- Correções feitas:
-  - Inicialização do DataTables aprimorada para evitar o aviso "Incorrect column count" (ajuste automático de colspan ou pulo de inicialização quando incompatível).
-  - Tratamento de erros de sessão/headers causado por saída anterior (limites PHP ajustados).
-- Utilitários:
-  - comandos para backup/restore via `mysqldump` incluídos.
+- Backend API: `backend/` (Node.js + Express + MySQL)
+- Frontend: `frontend/` (Angular)
+- Banco: MySQL (`controle_insumos_jnj`)
+- Projeto PHP em `projeto insumo/`: legado/apoio (não é o fluxo principal)
 
-Como rodar (desenvolvimento)
-1. Abrir a pasta do projeto:
-   - PowerShell:
-     Set-Location 'C:\Users\Manserv\insumos.jnj\Projeto-Insumo-Jnj-contagem\projeto insumo'
-2. Subir containers:
-   docker compose up -d --build
-3. Verificar:
-   docker ps
+## Requisitos
 
-Links locais
-- Site: http://localhost:8080/
-- phpMyAdmin: http://localhost:8081/
+- Node.js 20+
+- MySQL ativo na porta `3306`
 
-Credenciais úteis
-- App (login de teste): teste.auto+01@example.com / Senha123!
-- MySQL:
-  - database: controle_insumos_jnj
-  - user: jnj / jnj123
-  - root: root / rootpass
-  - host (do host): localhost:3306  (no compose usar `db`)
+## Configuração rápida
 
-Backup / Restore
-- Backup:
-  docker exec jnj-mysql sh -c "exec mysqldump -uroot -prootpass controle_insumos_jnj" > backup.sql
-- Restore:
-  docker exec -i jnj-mysql sh -c "mysql -uroot -prootpass controle_insumos_jnj" < backup.sql
+### 1) Banco de dados
 
-Observações importantes
-- Não use `docker compose down -v` se quiser manter os dados do banco (apaga volumes).
-- Se o Docker Desktop pedir reboot para habilitar WSL/VirtualMachinePlatform, reinicie o Windows.
-- Para testar sem Docker: instalar PHP e rodar `php -S localhost:8000` na pasta `projeto insumo` (aviso: sem MySQL, funcionalidades que dependem do banco não funcionarão).
+Crie o banco e aplique o schema/migrations da pasta `projeto insumo/database`.
 
-Arquivos de interesse
-- docker-compose.yml
-- php.ini
-- database/schema.sql, database/seed.sql
-- includes/footer.php (DataTables init)
-- perfil.php, auth.php, db.php (login e perfil)
+### 2) Backend
 
-Contato
-- Para ajustes, correções adicionais ou deploy, abra uma issue ou solicite a modificação desejada.
+```powershell
+Set-Location "c:\Users\weder\Downloads\ProjetoInsumos\Projeto-Insumo-Jnj-contagem\backend"
+npm install
+Copy-Item .env.example .env
+```
+
+Edite o `.env` com suas credenciais de MySQL:
+
+```env
+PORT=3000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=controle_insumos_jnj
+```
+
+Suba o backend:
+
+```powershell
+npm run dev
+```
+
+Teste:
+
+```text
+http://localhost:3000/health
+```
+
+### 3) Frontend
+
+```powershell
+Set-Location "c:\Users\weder\Downloads\ProjetoInsumos\Projeto-Insumo-Jnj-contagem\frontend"
+npm install
+npm start
+```
+
+Abra:
+
+```text
+http://localhost:4200
+```
+
+> O frontend usa proxy para `/api` apontando para `http://localhost:3000`.
+
+## Endpoints principais (backend)
+
+- `GET /health`
+- `GET /api/insumos`
+- `GET /api/insumos/:id`
+- `POST /api/insumos`
+- `PUT /api/insumos/:id`
+- `DELETE /api/insumos/:id`
+
+## Troubleshooting
+
+- `SQLSTATE[HY000] [2002]` ou `ECONNREFUSED` no backend:
+  - MySQL não está ativo, ou credenciais/porta do `.env` estão incorretas.
+- `npm run dev` falha:
+  - rode dentro da pasta `backend` ou use `npm --prefix "...\backend" run dev`.
+
+## Referências
+
+- Backend: `backend/README.md`
+- Frontend: `frontend/README.md`

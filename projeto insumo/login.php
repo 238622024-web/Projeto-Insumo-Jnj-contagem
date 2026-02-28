@@ -10,23 +10,30 @@ $projectBase = (function(){
   $scriptDir = '/' . trim(dirname($scriptName), '/');
   return $scriptDir === '/' ? '' : $scriptDir;
 })();
+
+$buildAssetUrl = function(string $base, string $rel): string {
+  $rel = ltrim($rel, '/');
+  $parts = array_map('rawurlencode', explode('/', $rel));
+  return $base . '/' . implode('/', $parts);
+};
 // Priorizar explicitamente logos "logo_msv..." quando disponíveis
 $loginLogo = '';
 $msvCandidates = [
-  'logo_msv_horizontal__trans2.png',
   'logo_msv_horizontal_trans 2.png',
+  'logo_msv_horizontal__trans2.png',
   'logo_msv_horizontal_trans.png',
+  'logo_manserv.png',
 ];
 foreach ($msvCandidates as $rel) {
   $abs = realpath(__DIR__ . '/' . $rel);
-  if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
+  if ($abs && file_exists($abs)) { $loginLogo = $buildAssetUrl($projectBase, $rel); break; }
 }
 // Se nenhum logo_msv encontrado, usar configurações e demais fallbacks
 if ($loginLogo === '') {
   $logoPathSetting = getSetting('logo_path','');
   $logoUrlSetting = getSetting('logo_url','');
   if (!empty($logoPathSetting)) {
-    $loginLogo = $projectBase . '/' . ltrim($logoPathSetting,'/');
+    $loginLogo = $buildAssetUrl($projectBase, $logoPathSetting);
   } elseif (!empty($logoUrlSetting)) {
     $loginLogo = $logoUrlSetting;
   } else {
@@ -37,7 +44,7 @@ if ($loginLogo === '') {
       'assets/uploads/logo_custom.jpg',
       'assets/uploads/logo_custom.jpeg'] as $rel) {
       $abs = realpath(__DIR__ . '/' . $rel);
-      if ($abs && file_exists($abs)) { $loginLogo = $projectBase . '/' . $rel; break; }
+      if ($abs && file_exists($abs)) { $loginLogo = $buildAssetUrl($projectBase, $rel); break; }
     }
     if ($loginLogo === '') $loginLogo = $projectBase . '/assets/logo.svg';
   }

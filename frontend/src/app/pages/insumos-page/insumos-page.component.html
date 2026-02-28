@@ -1,0 +1,155 @@
+<main class="page">
+  <header class="page-header">
+    <h1>Controle de Insumos</h1>
+    <p>Migração para Angular + Node.js</p>
+  </header>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total</span>
+      <strong>{{ items.length }}</strong>
+    </article>
+    <article class="stat-card">
+      <span>Expirados</span>
+      <strong>{{ stats.expirados }}</strong>
+    </article>
+    <article class="stat-card">
+      <span>Vencendo em 7 dias</span>
+      <strong>{{ stats.vencendo7dias }}</strong>
+    </article>
+    <article class="stat-card">
+      <span>Vencendo em 30 dias</span>
+      <strong>{{ stats.vencendo30dias }}</strong>
+    </article>
+  </section>
+
+  <section class="card filters">
+    <h2>Filtros</h2>
+    <div class="row">
+      <label>
+        Início
+        <input type="date" [(ngModel)]="startDate" name="startDate" />
+      </label>
+      <label>
+        Fim
+        <input type="date" [(ngModel)]="endDate" name="endDate" />
+      </label>
+      <div class="actions">
+        <button type="button" (click)="applyFilters()">Filtrar</button>
+        <button type="button" class="secondary" (click)="clearFilters()">Limpar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card form-card">
+    <h2>{{ editingId ? 'Editar insumo' : 'Novo insumo' }}</h2>
+
+    @if (errorMessage) {
+      <p class="feedback error">{{ errorMessage }}</p>
+    }
+
+    @if (successMessage) {
+      <p class="feedback success">{{ successMessage }}</p>
+    }
+
+    <form (ngSubmit)="save()" #insumoForm="ngForm">
+      <div class="form-grid">
+        <label>
+          Nome*
+          <input type="text" [(ngModel)]="form.nome" name="nome" required />
+        </label>
+
+        <label>
+          Posição*
+          <input type="text" [(ngModel)]="form.posicao" name="posicao" required />
+        </label>
+
+        <label>
+          Unidade
+          <input type="text" [(ngModel)]="form.unidade" name="unidade" />
+        </label>
+
+        <label>
+          Lote
+          <input type="text" [(ngModel)]="form.lote" name="lote" />
+        </label>
+
+        <label>
+          Quantidade*
+          <input type="number" min="0" [(ngModel)]="form.quantidade" name="quantidade" required />
+        </label>
+
+        <label>
+          Data entrada*
+          <input type="date" [(ngModel)]="form.data_entrada" name="data_entrada" required />
+        </label>
+
+        <label>
+          Validade*
+          <input type="date" [(ngModel)]="form.validade" name="validade" required />
+        </label>
+
+        <label>
+          Data contagem
+          <input type="date" [(ngModel)]="form.data_contagem" name="data_contagem" />
+        </label>
+      </div>
+
+      <label class="full">
+        Observações
+        <textarea rows="3" [(ngModel)]="form.observacoes" name="observacoes"></textarea>
+      </label>
+
+      <div class="actions">
+        <button type="submit" [disabled]="saving || insumoForm.invalid">
+          {{ saving ? 'Salvando...' : editingId ? 'Atualizar' : 'Cadastrar' }}
+        </button>
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card table-card">
+    <h2>Insumos</h2>
+
+    @if (isLoading) {
+      <p>Carregando...</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Posição</th>
+              <th>Qtd</th>
+              <th>Entrada</th>
+              <th>Validade</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items; track item.id) {
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.nome }}</td>
+                <td>{{ item.posicao }}</td>
+                <td>{{ item.quantidade }}</td>
+                <td>{{ item.data_entrada }}</td>
+                <td>{{ item.validade }}</td>
+                <td class="actions">
+                  <button type="button" (click)="edit(item)">Editar</button>
+                  <button type="button" class="danger" (click)="remove(item)">Excluir</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">Nenhum insumo encontrado.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

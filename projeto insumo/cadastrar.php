@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $posicao = trim($_POST['posicao'] ?? '');
   $lote = trim($_POST['lote'] ?? '');
+    $codigo_barra = trim($_POST['codigo_barra'] ?? '');
     $quantidade = (int)($_POST['quantidade'] ?? 0);
     $data_contagem = $_POST['data_contagem'] ?? '';
     // unidade: select with options; allow optional custom override
@@ -67,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$erros) {
-      $stmt = $pdo->prepare("INSERT INTO insumos_jnj (nome,posicao,lote,quantidade,data_contagem,data_entrada,validade,observacoes,unidade) VALUES (?,?,?,?,?,?,?,?,?)");
-      $stmt->execute([$nome, $posicao, $lote, $quantidade, $formatted_data_contagem, $formatted_data_entrada, $formatted_validade, $observacoes, $unidade]);
+      $stmt = $pdo->prepare("INSERT INTO insumos_jnj (nome,posicao,lote,codigo_barra,quantidade,data_contagem,data_entrada,validade,observacoes,unidade) VALUES (?,?,?,?,?,?,?,?,?,?)");
+      $stmt->execute([$nome, $posicao, $lote, $codigo_barra, $quantidade, $formatted_data_contagem, $formatted_data_entrada, $formatted_validade, $observacoes, $unidade]);
       flash('success', 'Material cadastrado com sucesso!');
       header('Location: index.php');
       exit;
@@ -84,7 +85,7 @@ include __DIR__ . '/includes/header.php';
       <h2 class="h5 mb-0" style="color: #000000;"><i class="fa fa-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
     </div>
     <div class="card-body p-4">
-      <form method="post" class="row g-4">
+      <form id="form-cadastro-insumo" method="post" class="row g-4 form-responsive">
         <!-- Nome do Material -->
         <div class="col-12">
           <label class="form-label fw-600"><i class="fa fa-box text-primary me-2"></i><?= h(t('form.name')) ?> <span class="text-danger">*</span></label>
@@ -115,6 +116,15 @@ include __DIR__ . '/includes/header.php';
           <input type="text" name="lote" class="form-control form-control-lg" value="<?= h($_POST['lote'] ?? '') ?>">
         </div>
         <div class="col-12 col-md-3">
+          <label class="form-label fw-600"><i class="fa fa-qrcode text-primary me-2"></i>Código de barras</label>
+          <input id="codigo_barra" type="text" name="codigo_barra" class="form-control form-control-lg" value="<?= h($_POST['codigo_barra'] ?? '') ?>" placeholder="Escaneie ou digite">
+          <div class="d-flex gap-2 mt-2 flex-wrap">
+            <button type="button" id="btn-start-scan" class="btn btn-outline-primary btn-sm"><i class="fa fa-camera me-1"></i>Escanear câmera</button>
+            <button type="button" id="btn-stop-scan" class="btn btn-outline-secondary btn-sm" style="display:none;"><i class="fa fa-stop me-1"></i>Parar</button>
+          </div>
+          <small class="text-muted d-block mt-1">Leitor físico também funciona: escaneie com foco neste campo.</small>
+        </div>
+        <div class="col-12 col-md-3">
           <label class="form-label fw-600"><i class="fa fa-calendar text-primary me-2"></i><?= h(t('form.count.date')) ?></label>
           <input type="date" name="data_contagem" class="form-control form-control-lg" value="<?= h($_POST['data_contagem'] ?? '') ?>">
         </div>
@@ -127,6 +137,10 @@ include __DIR__ . '/includes/header.php';
           <input type="date" name="validade" class="form-control form-control-lg" value="<?= h($_POST['validade'] ?? '') ?>">
         </div>
 
+        <div class="col-12">
+          <div id="reader" class="border rounded p-2" style="display:none; max-width:420px;"></div>
+        </div>
+
         <!-- Observações -->
         <div class="col-12">
           <label class="form-label fw-600"><i class="fa fa-sticky-note text-primary me-2"></i><?= h(t('form.notes')) ?></label>
@@ -134,11 +148,11 @@ include __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Botões de Ação -->
-        <div class="col-12 d-flex justify-content-between gap-2 mt-4">
-          <a href="index.php" class="btn btn-outline-secondary btn-lg" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+        <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 mt-4 form-actions-responsive">
+          <a href="index.php" class="btn btn-outline-secondary btn-lg w-100 w-md-auto" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
             <i class="fa fa-arrow-left me-2"></i><?= h(t('btn.back')) ?>
           </a>
-          <button class="btn btn-primary btn-lg" type="submit" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(102,126,234,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+          <button class="btn btn-primary btn-lg w-100 w-md-auto" type="submit" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(102,126,234,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
             <i class="fa fa-save me-2"></i><?= h(t('btn.save')) ?>
           </button>
         </div>
@@ -146,5 +160,6 @@ include __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+<script src="https://unpkg.com/html5-qrcode" defer></script>
 <script src="assets/js/cadastro.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

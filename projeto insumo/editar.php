@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $posicao = trim($_POST['posicao'] ?? '');
   $lote = trim($_POST['lote'] ?? '');
+    $codigo_barra = trim($_POST['codigo_barra'] ?? '');
     $quantidade = (int)($_POST['quantidade'] ?? 0);
     $data_contagem = $_POST['data_contagem'] ?? '';
     $unidade_selected = trim($_POST['unidade'] ?? '');
@@ -38,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$erros) {
-      $up = $pdo->prepare('UPDATE insumos_jnj SET nome=?, posicao=?, lote=?, quantidade=?, data_contagem=?, data_entrada=?, validade=?, observacoes=?, unidade=? WHERE id=?');
-      $up->execute([$nome,$posicao,$lote,$quantidade,$formatted_data_contagem,$data_entrada,$validade,$observacoes,$unidade,$id]);
+      $up = $pdo->prepare('UPDATE insumos_jnj SET nome=?, posicao=?, lote=?, codigo_barra=?, quantidade=?, data_contagem=?, data_entrada=?, validade=?, observacoes=?, unidade=? WHERE id=?');
+      $up->execute([$nome,$posicao,$lote,$codigo_barra,$quantidade,$formatted_data_contagem,$data_entrada,$validade,$observacoes,$unidade,$id]);
         flash('success','Material atualizado com sucesso!');
         header('Location: index.php');
         exit;
@@ -51,14 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 <h2 class="h4 mb-3"><i class="fa fa-pen me-2"></i><?= h(t('form.edit.title')) ?> #<?= h($item['id']) ?></h2>
-<form method="post" class="row g-3 shadow-sm bg-white p-4 rounded">
+<form method="post" class="row g-3 shadow-sm bg-white p-4 rounded form-responsive">
   <div class="col-md-3">
     <label class="form-label"><?= h(t('form.count.date')) ?></label>
     <input type="date" name="data_contagem" class="form-control" value="<?= h($item['data_contagem'] ?? ($_POST['data_contagem'] ?? '')) ?>">
   </div>
   <div class="col-md-3">
     <label class="form-label"><?= h(t('form.unit')) ?></label>
-    <select name="unidade" class="form-control">
+    <select name="unidade" class="form-select">
       <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): $sel = '';
         if (isset($_POST['unidade'])) { $sel = $_POST['unidade']===$op ? 'selected' : ''; }
         else { $sel = (isset($item['unidade']) && $item['unidade']===$op) ? 'selected' : ''; }
@@ -81,6 +82,10 @@ include __DIR__ . '/includes/header.php';
     <input type="text" name="lote" class="form-control" value="<?= h($item['lote'] ?? '') ?>">
   </div>
   <div class="col-md-3">
+    <label class="form-label">Código de barras</label>
+    <input type="text" name="codigo_barra" class="form-control" value="<?= h($item['codigo_barra'] ?? '') ?>" placeholder="Escaneie ou digite">
+  </div>
+  <div class="col-md-3">
     <label class="form-label"><?= h(t('form.quantity')) ?> *</label>
     <input type="number" name="quantidade" min="0" class="form-control" required value="<?= h($item['quantidade']) ?>">
   </div>
@@ -96,9 +101,9 @@ include __DIR__ . '/includes/header.php';
     <label class="form-label"><?= h(t('form.notes')) ?></label>
     <textarea name="observacoes" rows="3" class="form-control"><?= h($item['observacoes']) ?></textarea>
   </div>
-  <div class="col-12 d-flex justify-content-between align-items-center">
-    <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
-    <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i><?= h(t('btn.save.changes')) ?></button>
+  <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 form-actions-responsive">
+    <a href="index.php" class="btn btn-outline-secondary btn-rounded w-100 w-md-auto"><i class="fa fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
+    <button class="btn btn-primary btn-rounded w-100 w-md-auto" type="submit"><i class="fa fa-save me-1"></i><?= h(t('btn.save.changes')) ?></button>
   </div>
 </form>
 <?php include __DIR__ . '/includes/footer.php'; ?>

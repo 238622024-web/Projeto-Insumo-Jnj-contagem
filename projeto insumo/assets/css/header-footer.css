@@ -203,3 +203,50 @@ footer .copyright {
   color: #d1d5db;
   margin: 0 0.25rem;
 }
+
+/* ===========================
+   NAVBAR RESPONSIVA (NOTEBOOK)
+   =========================== */
+@media (max-width: 1366px) {
+  header.navbar .container-fluid {
+    row-gap: 0.5rem;
+  }
+
+  header.navbar nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: 100%;
+    padding-bottom: 2px;
+  }
+
+  header.navbar nav .btn,
+  header.navbar nav .badge {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  header.navbar nav .btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 768px) {
+  header.navbar .container-fluid {
+    align-items: flex-start;
+  }
+
+  header.navbar nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  header.navbar nav .btn {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.55rem;
+  }
+}

@@ -34,6 +34,7 @@ CREATE TABLE `insumos_jnj` (
   `nome` VARCHAR(150) NOT NULL,
   `posicao` VARCHAR(20) NOT NULL,
   `lote` VARCHAR(100) NULL,
+  `codigo_barra` VARCHAR(100) NULL,
   `quantidade` INT NOT NULL DEFAULT 0,
   `data_entrada` DATE NOT NULL,
   `validade` DATE NOT NULL,

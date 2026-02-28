@@ -1,4 +1,4 @@
-:/* ========================================
+/* ========================================
    VARIÁVEIS DE CORES E TEMA
    ======================================== */
 :root {
@@ -290,4 +290,103 @@ textarea {
 		transition: none !important;
 	}
 }
+
+/* ========================================
+   RESPONSIVIDADE (NOTEBOOK/CELULAR)
+   ======================================== */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+	max-width: 100%;
+	height: auto;
+}
+
+.table-responsive {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+	min-width: 860px;
+}
+
+.card,
+.card-body,
+.container,
+.container-fluid {
+	min-width: 0;
+}
+
+input,
+select,
+textarea,
+button {
+	max-width: 100%;
+}
+
+@media (max-width: 992px) {
+	.container,
+	.container-fluid {
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+
+	.navbar .container-fluid {
+		gap: 8px;
+	}
+
+	.navbar nav {
+		width: 100%;
+		justify-content: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.btn {
+		white-space: normal;
+	}
+}
+
+@media (max-width: 768px) {
+	main.container {
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+
+	table th,
+	table td {
+		white-space: nowrap;
+	}
+}
+
+/* ========================================
+   FORMULÁRIOS RESPONSIVOS
+   ======================================== */
+.form-responsive {
+	min-width: 0;
+}
+
+.form-actions-responsive .btn {
+	min-height: 44px;
+}
+
+@media (max-width: 768px) {
+	.cadastro-insumo .card-header,
+	.form-responsive {
+		padding: 1rem !important;
+	}
+
+	.form-responsive .form-control,
+	.form-responsive .form-select,
+	.form-responsive textarea,
+	.form-responsive .btn {
+		font-size: 1rem;
+	}
 }
