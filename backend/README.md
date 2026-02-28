@@ -14,11 +14,17 @@ Este backend foi criado para iniciar a migração do sistema para JavaScript sem
 
 1. Copie `.env.example` para `.env`
 2. Ajuste credenciais do banco
-3. Instale dependências:
+3. Use um usuário dedicado de aplicação (não use `root` em produção)
+4. Instale dependências:
 
 ```bash
 npm install
 ```
+
+## Segurança
+
+- Consulte `SECURITY_ROTATION.md` para rotação de credenciais e boas práticas.
+- Nunca versione o arquivo `.env`.
 
 ## Executar
 
