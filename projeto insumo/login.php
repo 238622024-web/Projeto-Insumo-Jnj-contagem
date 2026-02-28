@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR"></html>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card shadow-sm" style="max-width:360px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
         <div class="login-logo-wrapper d-flex justify-content-center mb-3">
-          <img src="<?= h($loginLogo) ?>" alt="logo" style="height:72px; max-width:90%; width:auto; object-fit:contain; display:block; margin:0 auto;" />
+          <img src="logo_manserv.png" alt="logo" style="height:72px; max-width:90%; width:auto; object-fit:contain; display:block; margin:0 auto;" />
         </div>
         <p class="text-center text-muted small mb-3">Acesse para gerenciar os materiais</p>
         <?php if ($m = flash('error')): ?>
