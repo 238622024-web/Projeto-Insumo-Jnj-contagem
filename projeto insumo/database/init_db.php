@@ -1,6 +1,7 @@
 <?php
-// Inicializa o banco de dados local (XAMPP)
+// Inicializa o banco de dados local (Laragon/XAMPP)
 // Uso: http://localhost/projeto-insumo/database/init_db.php
+// ou   http://localhost/projeto%20insumo/database/init_db.php
 // Após concluir, APAGUE este arquivo por segurança.
 
 header('Content-Type: text/plain; charset=utf-8');

@@ -13,15 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $val_media = (int)($_POST['alerta_validade_media'] ?? 30);
     $mostrar_lote = isset($_POST['mostrar_lote']) ? '1' : '0';
 
-    setSetting('tema_padrao', $tema);
-    setSetting('lang', in_array($lang, ['pt-br','en']) ? $lang : 'pt-br');
+    $saveErrors = [];
+
+    if (!setSetting('tema_padrao', $tema)) { $saveErrors[] = 'tema_padrao'; }
+    if (!setSetting('lang', in_array($lang, ['pt-br','en']) ? $lang : 'pt-br')) { $saveErrors[] = 'lang'; }
     if ($primary_color !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $primary_color)) {
-      setSetting('primary_color', strtoupper($primary_color));
+      if (!setSetting('primary_color', strtoupper($primary_color))) { $saveErrors[] = 'primary_color'; }
     }
-    setSetting('itens_pagina', max(5, min(200, $itens)));
-    setSetting('alerta_validade_curta', max(0, $val_curta));
-    setSetting('alerta_validade_media', max(0, $val_media));
-    setSetting('mostrar_lote', $mostrar_lote);
+    if (!setSetting('itens_pagina', max(5, min(200, $itens)))) { $saveErrors[] = 'itens_pagina'; }
+    if (!setSetting('alerta_validade_curta', max(0, $val_curta))) { $saveErrors[] = 'alerta_validade_curta'; }
+    if (!setSetting('alerta_validade_media', max(0, $val_media))) { $saveErrors[] = 'alerta_validade_media'; }
+    if (!setSetting('mostrar_lote', $mostrar_lote)) { $saveErrors[] = 'mostrar_lote'; }
 
     // Upload de logo opcional
     if (!empty($_FILES['logo']['name']) && is_uploaded_file($_FILES['logo']['tmp_name'])) {
@@ -33,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $destRel = 'assets/uploads/logo_custom.' . $ext;
             $destAbs = __DIR__ . '/' . $destRel;
             if (move_uploaded_file($_FILES['logo']['tmp_name'], $destAbs)) {
-                setSetting('logo_path', $destRel);
+              if (!setSetting('logo_path', $destRel)) { $saveErrors[] = 'logo_path'; }
             } else {
                 flash('error', 'Falha ao enviar o logo.');
             }
@@ -47,9 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['lang_jnj'] = $lang;
     // salvar URL do logo (se informado)
     $logo_url_input = trim($_POST['logo_url'] ?? '');
-    if ($logo_url_input !== '') setSetting('logo_url', $logo_url_input);
-    else setSetting('logo_url', '');
-    flash('success','Configurações salvas.');
+    if ($logo_url_input !== '') {
+      if (!setSetting('logo_url', $logo_url_input)) { $saveErrors[] = 'logo_url'; }
+    } else {
+      if (!setSetting('logo_url', '')) { $saveErrors[] = 'logo_url'; }
+    }
+
+    if (empty($saveErrors)) {
+      flash('success','Configurações salvas.');
+    } else {
+      flash('error','Não foi possível salvar algumas configurações. Verifique conexão/permissões do banco de dados.');
+    }
     header('Location: configuracoes.php');
     exit;
 }
@@ -121,114 +131,4 @@ include __DIR__ . '/includes/header.php';
   </div>
   <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i>Salvar</button>
 </form>
-
-<!-- Seção para limpar histórico de contagem -->
-<div class="mt-5 p-4 bg-light border rounded">
-  <h3 class="h5 mb-3"><i class="fa fa-trash me-2 text-danger"></i>Limpeza de Dados</h3>
-  <p class="text-muted mb-3">Use esta opção com cuidado. As ações abaixo não podem ser desfeitas.</p>
-  
-  <div class="alert alert-warning mb-3" role="alert">
-    <strong>⚠️ Aviso:</strong> Limpar o histórico de contagem removerá a data de contagem de todos os insumos no banco de dados.
-  </div>
-
-  <button type="button" class="btn btn-outline-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalLimparHistorico">
-    <i class="fa fa-trash-alt me-1"></i>Limpar Histórico de Contagem
-  </button>
-
-  <div class="alert alert-danger mt-4 mb-3" role="alert">
-    <strong>⚠️ Ação Irreversível:</strong> Apagar todos os materiais removerá <u>todos os registros</u> da tabela e reiniciará a numeração.
-  </div>
-  <button type="button" class="btn btn-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
-    <i class="fa fa-ban me-1"></i>Apagar Todos os Materiais
-  </button>
-
-  <div class="alert alert-danger mt-4 mb-3" role="alert">
-    <strong>⚠️ PERIGO: Apagar Banco Completo</strong> irá remover <u>todos os dados</u> (Materiais, Configurações e Usuários). Você terá que criar usuários novamente.
-  </div>
-  <button type="button" class="btn btn-danger btn-rounded" data-bs-toggle="modal" data-bs-target="#modalApagarBanco">
-    <i class="fa fa-skull-crossbones me-1"></i>Apagar Banco Completo
-  </button>
-</div>
-
-<!-- Modal de confirmação -->
-<div class="modal fade" id="modalLimparHistorico" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="modalLabel"><i class="fa fa-exclamation-triangle me-2"></i>Confirmação</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Você tem certeza que deseja apagar todo o histórico de contagem?</strong></p>
-        <p>Esta ação irá remover a data de contagem de <strong>todos os insumos</strong> do banco de dados.</p>
-        <p class="text-muted small">Nota: Os insumos em si não serão deletados, apenas as datas de contagem serão limpas.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <form method="post" action="limpar_historico.php" style="display: inline;">
-          <input type="hidden" name="confirmar" value="sim">
-          <button type="submit" class="btn btn-danger">
-            <i class="fa fa-trash me-1"></i>Sim, apagar tudo
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="mt-4 small text-muted">Outras configurações poderão ser adicionadas futuramente.</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
-
-  <!-- Modal de confirmação: Apagar Todos -->
-  <div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="modalApagarTodosLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Todos os Materiais</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p><strong>Tem certeza que deseja apagar TODOS os materiais?</strong></p>
-          <p>Esta ação irá remover permanentemente todos os registros da tabela <code>insumos_jnj</code>.</p>
-          <p class="text-muted small">Dica: Faça um backup antes se precisar manter histórico. Veja a pasta <code>db_backups</code>.</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <form method="post" action="limpar_historico.php" style="display: inline;">
-            <input type="hidden" name="confirmar" value="sim">
-            <input type="hidden" name="tipo" value="todos">
-            <button type="submit" class="btn btn-danger">
-              <i class="fa fa-ban me-1"></i>Sim, apagar tudo
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-      <!-- Modal de confirmação: Apagar Banco Completo -->
-      <div class="modal fade" id="modalApagarBanco" tabindex="-1" aria-labelledby="modalApagarBancoLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title" id="modalApagarBancoLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Banco Completo</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <p><strong>Tem certeza que deseja apagar TODO o banco de dados do sistema?</strong></p>
-              <p>Serão removidos permanentemente todos os materiais, configurações e usuários. IDs serão reiniciados.</p>
-              <p class="text-muted small">Dica: Faça backup antes (veja a pasta <code>db_backups</code>).</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <form method="post" action="limpar_historico.php" style="display: inline;">
-                <input type="hidden" name="confirmar" value="sim">
-                <input type="hidden" name="tipo" value="banco">
-                <button type="submit" class="btn btn-danger">
-                  <i class="fa fa-skull-crossbones me-1"></i>Sim, apagar banco completo
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-        </div>
-    </div>

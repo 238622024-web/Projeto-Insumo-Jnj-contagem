@@ -1,43 +1,43 @@
 ========================================
-  SOLUÇÃO PARA: Run Services não funciona
+  SETUP RÁPIDO NO LARAGON (RECOMENDADO)
 ========================================
 
-PROBLEMA:
-- Docker não consegue baixar imagens
-- Erro: EOF/TLS timeout
-- PHP/Node/Python não instalados localmente
+PASSO 1: Iniciar serviços
+- Abra o Laragon
+- Clique em "Start All" (Apache + MySQL)
 
-SOLUÇÃO: INSTALAR XAMPP (5 MINUTOS)
+PASSO 2: Colocar o projeto no www
+- Caminho padrão do Laragon: C:\laragon\www\
+- Copie esta pasta para dentro de www
+- Sugestão de nome de pasta: projeto-insumo (sem espaço)
 
-PASSO 1: Download
-- Acesse: https://www.apachefriends.org/pt_BR/index.html
-- Baixe "XAMPP" com PHP 8.1+
+PASSO 3: Configuração de banco
+- Arquivo: config.php
+- Padrão Laragon local:
+  - DB_HOST=localhost
+  - DB_NAME=controle_insumos_jnj
+  - DB_USER=root
+  - DB_PASS= (vazio)
+  - DB_PORT=3306
 
-PASSO 2: Instalar
-- Execute o instalador
-- Instale em: C:\xampp\
-- Marque: Apache, MySQL, PHP
+PASSO 4: Inicializar banco (1 clique)
+- Abra no navegador (ajuste conforme nome da pasta):
+  - http://localhost/projeto-insumo/database/init_db.php
+  - ou http://localhost/projeto%20insumo/database/init_db.php
 
-PASSO 3: Copiar Projeto
-- Copie esta pasta para: C:\xampp\htdocs\projeto-insumo\
+PASSO 5: Abrir sistema
+- http://localhost/projeto-insumo/
+- ou http://localhost/projeto%20insumo/
 
-PASSO 4: Iniciar
-- Abra: C:\xampp\xampp-control.exe
-- Clique "Start" em Apache
-- Clique "Start" em MySQL
-- Aguarde ficar verde
+LOGIN DE TESTE (após seed):
+- Email: usuario@jnj.com
+- Senha: senha123
 
-PASSO 5: Acessar
-- Navegador: http://localhost/projeto-insumo/
-- phpMyAdmin: http://localhost/phpmyadmin
-
-PASSO 6: Banco de Dados
-- Entre em phpMyAdmin
-- Create Database: controle_insumos_jnj
-- Import: projeto insumo > database > schema.sql
-
-PRONTO! 🚀
+SE DER ERRO DE CONEXÃO:
+- Confirme se MySQL do Laragon está iniciado
+- Confirme usuário/senha no config.php
+- Teste health: /health.php
 
 ========================================
-Dúvidas? Veja SOLUCAO.md
+Dica: use o arquivo LARAGON-START.bat
 ========================================

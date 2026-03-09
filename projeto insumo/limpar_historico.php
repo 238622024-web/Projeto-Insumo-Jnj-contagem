@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
             $deleted = $pdo->exec('DELETE FROM insumos_jnj');
-            $pdo->exec('ALTER TABLE insumos_jnj AUTO_INCREMENT = 1');
             $pdo->commit();
+            $pdo->exec('ALTER TABLE insumos_jnj AUTO_INCREMENT = 1');
             flash('success', 'Todos os materiais foram apagados (' . (int)$deleted . ' registros).');
             header('Location: configuracoes.php');
             exit;
@@ -40,10 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $c1 = $pdo->exec('DELETE FROM insumos_jnj');
             $c2 = $pdo->exec('DELETE FROM configuracoes');
             $c3 = $pdo->exec('DELETE FROM usuarios');
-            // Reiniciar auto_increment
+            $pdo->commit();
+            // Reiniciar auto_increment (DDL fora de transação para evitar commit implícito)
             $pdo->exec('ALTER TABLE insumos_jnj AUTO_INCREMENT = 1');
             $pdo->exec('ALTER TABLE usuarios AUTO_INCREMENT = 1');
-            $pdo->commit();
             $total = (int)$c1 + (int)$c2 + (int)$c3;
             flash('success', 'Banco limpo com sucesso. Registros removidos: Materiais='.(int)$c1.', Configurações='.(int)$c2.', Usuários='.(int)$c3.'. Total='.$total.'.');
             header('Location: configuracoes.php');
@@ -58,12 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
             $upd1 = $pdo->exec("UPDATE insumos_jnj SET data_contagem = NULL WHERE data_contagem IS NOT NULL");
-            $upd2 = $pdo->exec("UPDATE insumos_jnj SET data_contagem = NULL WHERE data_contagem = '0000-00-00' OR data_contagem = ''");
             $rem = 0;
-            $check = $pdo->query("SELECT COUNT(*) AS c FROM insumos_jnj WHERE data_contagem IS NOT NULL AND data_contagem <> '' AND data_contagem <> '0000-00-00'");
+            $check = $pdo->query("SELECT COUNT(*) AS c FROM insumos_jnj WHERE data_contagem IS NOT NULL");
             if ($check) { $row = $check->fetch(); $rem = isset($row['c']) ? (int)$row['c'] : 0; }
             $pdo->commit();
-            $totalAtualizados = (int)$upd1 + (int)$upd2;
+            $totalAtualizados = (int)$upd1;
             $msg = "Histórico de contagem apagado com sucesso! (" . $totalAtualizados . " registros atualizados)";
             if ($rem > 0) { $msg .= " — Atenção: " . $rem . " registros ainda possuem data de contagem."; }
             flash('success', $msg);
