@@ -1,30 +1,49 @@
-# Backend Node.js (migração do PHP)
+# Backend Node.js (Migracao)
 
-> **Observação:** este backend é opcional e usado apenas para migração.
-> O fluxo principal do projeto continua sendo o PHP em `projeto insumo/index.php`.
+Backend REST para o modulo de insumos durante a migracao do sistema PHP para JavaScript.
 
-Este backend foi criado para iniciar a migração do sistema para JavaScript sem interromper o projeto PHP.
+## Contexto
+
+1. Este backend e opcional no estado atual do projeto.
+2. O fluxo principal em producao continua em `projeto insumo/` (PHP).
+3. O frontend Angular (`../frontend`) consome esta API.
+
+## Stack
+
+1. Node.js 20+
+2. Express
+3. MySQL
 
 ## Requisitos
 
-- Node.js 20+
-- Banco MySQL com a tabela `insumos_jnj`
+1. Node.js 20+ instalado.
+2. MySQL ativo com banco `controle_insumos_jnj`.
+3. Tabela `insumos_jnj` criada via scripts de `../projeto insumo/database`.
 
-## Configuração
+## Configuracao
 
-1. Copie `.env.example` para `.env`
-2. Ajuste credenciais do banco
-3. Use um usuário dedicado de aplicação (não use `root` em produção)
-4. Instale dependências:
+1. Instalar dependencias:
 
 ```bash
 npm install
 ```
 
-## Segurança
+2. Criar `.env` a partir do exemplo:
 
-- Consulte `SECURITY_ROTATION.md` para rotação de credenciais e boas práticas.
-- Nunca versione o arquivo `.env`.
+```bash
+copy .env.example .env
+```
+
+3. Ajustar variaveis:
+
+```env
+PORT=3000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=controle_insumos_jnj
+```
 
 ## Executar
 
@@ -32,31 +51,37 @@ npm install
 npm run dev
 ```
 
+Health check:
+
+`http://localhost:3000/health`
+
 ## Endpoints
 
-- `GET /health`
-- `GET /api/insumos`
-  - Query params opcionais:
-    - `start_date=YYYY-MM-DD`
-    - `end_date=YYYY-MM-DD`
-- `GET /api/insumos/:id`
-- `POST /api/insumos`
-- `PUT /api/insumos/:id`
-- `DELETE /api/insumos/:id`
+1. `GET /health`
+2. `GET /api/insumos`
+3. `GET /api/insumos/:id`
+4. `POST /api/insumos`
+5. `PUT /api/insumos/:id`
+6. `DELETE /api/insumos/:id`
 
-### Exemplo
+Filtros suportados em `GET /api/insumos`:
+
+1. `start_date=YYYY-MM-DD`
+2. `end_date=YYYY-MM-DD`
+
+## Exemplo de consulta
 
 ```bash
 curl "http://localhost:3000/api/insumos?start_date=2026-01-01&end_date=2026-12-31"
 ```
 
-### Exemplo de payload (POST/PUT)
+## Exemplo de payload (POST/PUT)
 
 ```json
 {
   "data_contagem": "2026-02-27",
   "unidade": "UN",
-  "nome": "Álcool 70%",
+  "nome": "Alcool 70%",
   "posicao": "A1",
   "lote": "L123",
   "quantidade": 10,
@@ -66,7 +91,21 @@ curl "http://localhost:3000/api/insumos?start_date=2026-01-01&end_date=2026-12-3
 }
 ```
 
-## Próximos passos sugeridos
+## Seguranca
 
-- Migrar login/auth para JWT
-- Integrar frontend Angular consumindo `/api/insumos`
+1. Nunca versione `.env`.
+2. Evite usuario `root` em producao.
+3. Consulte `SECURITY_ROTATION.md` para rotacao de credenciais.
+
+## Troubleshooting
+
+1. `ECONNREFUSED` ou erro de banco:
+verifique MySQL ativo e credenciais no `.env`.
+
+2. `npm run dev` falha:
+garanta que o comando esta sendo executado dentro de `backend/`.
+
+## Referencia cruzada
+
+1. README principal: `../README.md`
+2. Frontend Angular: `../frontend/README.md`
