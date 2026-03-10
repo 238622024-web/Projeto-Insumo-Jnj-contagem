@@ -11,6 +11,11 @@
    * Este valor precisa ser inserido dinamicamente pelo PHP
    */
   let pageLength = 25; // valor padrão
+  if (window.innerWidth <= 768) {
+    pageLength = 10;
+  } else if (window.innerWidth <= 1366) {
+    pageLength = 15;
+  }
 
   /**
    * Inicializar DataTables para todas as tabelas
@@ -73,8 +78,10 @@
           lengthMenu: [10, 25, 50, 100],
           columns: columnsDef,
           columnDefs: [{ orderable: false, targets: -1 }],
+          autoWidth: false,
+          scrollX: true,
           language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json',
+            url: 'assets/vendor/datatables/i18n/pt-BR.json',
             searchPlaceholder: 'Pesquisar...'
           }
         });

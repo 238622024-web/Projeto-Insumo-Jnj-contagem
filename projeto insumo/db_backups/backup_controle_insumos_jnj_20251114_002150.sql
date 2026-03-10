@@ -10,8 +10,8 @@ SET FOREIGN_KEY_CHECKS=0;
 -- CREATE TABLE usuarios (id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(150) NOT NULL, email VARCHAR(150) NOT NULL UNIQUE, senha_hash VARCHAR(255) NOT NULL, criado_em DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
 
 -- Dados da tabela `usuarios`
-INSERT INTO `usuarios` (`id`,`nome`,`email`,`senha_hash`,`criado_em`) VALUES ('1','WEDER MESSIAS DA SILVA PEREIRA','weder.messias_@hotmail.com','$2y$10$NBq.VEvbIrGHZdTE8A0jGuEPfzvwwWK.2EPNbI.w6EuD9jK.JhHXW','2025-11-13 20:07:06');
-INSERT INTO `usuarios` (`id`,`nome`,`email`,`senha_hash`,`criado_em`) VALUES ('2','WEDER MESSIAS DA SILVA PEREIRA','weder.messias@hotmail.com','$2y$10$ZolGki12GGQ/KJhGfnqhrefyhf2YXAdykF/J/iNhGMYMjRCBeDzoO','2025-11-13 20:07:48');
+INSERT INTO `usuarios` (`id`,`nome`,`email`,`senha_hash`,`criado_em`) VALUES ('1','Usuário Exemplo 1','usuario1@example.com','$2y$10$NBq.VEvbIrGHZdTE8A0jGuEPfzvwwWK.2EPNbI.w6EuD9jK.JhHXW','2025-11-13 20:07:06');
+INSERT INTO `usuarios` (`id`,`nome`,`email`,`senha_hash`,`criado_em`) VALUES ('2','Usuário Exemplo 2','usuario2@example.com','$2y$10$ZolGki12GGQ/KJhGfnqhrefyhf2YXAdykF/J/iNhGMYMjRCBeDzoO','2025-11-13 20:07:48');
 
 -- Dados da tabela `insumos_jnj`
 INSERT INTO `insumos_jnj` (`id`,`nome`,`posicao`,`quantidade`,`data_entrada`,`validade`,`observacoes`) VALUES ('1','Fita gomada','25-45-88','299','2025-11-14','2025-11-15','');

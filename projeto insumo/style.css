@@ -352,6 +352,10 @@ button {
 	.btn {
 		white-space: normal;
 	}
+
+	.table-responsive table {
+		min-width: 760px;
+	}
 }
 
 @media (max-width: 768px) {
@@ -363,6 +367,33 @@ button {
 	table th,
 	table td {
 		white-space: nowrap;
+	}
+
+	.table-responsive table {
+		min-width: 680px;
+	}
+}
+
+@media (max-width: 1366px) {
+	main.container {
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+
+	.table thead th,
+	.table tbody td {
+		padding: 0.6rem 0.55rem !important;
+		font-size: 0.9rem;
+		line-height: 1.25;
+	}
+
+	.table .btn-group .btn {
+		padding: 0.3rem 0.45rem;
+		font-size: 0.78rem;
+	}
+
+	.row-expirada {
+		animation-duration: 2.2s;
 	}
 }
 

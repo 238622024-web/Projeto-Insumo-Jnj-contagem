@@ -160,6 +160,6 @@ include __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-<script src="https://unpkg.com/html5-qrcode" defer></script>
+<script src="assets/vendor/html5-qrcode/html5-qrcode.min.js" defer></script>
 <script src="assets/js/cadastro.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

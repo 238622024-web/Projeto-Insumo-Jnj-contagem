@@ -33,6 +33,13 @@ php hash.php
 ```
 Copie o hash retornado e substitua na tabela `usuarios`.
 
+## Resetar senha com script (somente CLI)
+Use o utilitario `database/reset_password.php` apenas via terminal:
+```bash
+php database/reset_password.php --email=usuario@jnj.com --senha="NovaSenhaForte"
+```
+O script bloqueia acesso via navegador por seguranca.
+
 ## Observações sobre o schema
 - O `schema.sql` já inclui a coluna `avatar` em `usuarios`, a coluna `lote` em `insumos_jnj` e a tabela `configuracoes`.
 - Se você já tinha um banco antigo sem essas colunas/tabela, use `database/apply_migrations.php` para aplicar migrações incrementais.

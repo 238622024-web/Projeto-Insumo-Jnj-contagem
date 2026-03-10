@@ -16,6 +16,7 @@ $scriptName = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\','/', $_SERVER['S
 $scriptDir = '/' . trim(dirname($scriptName), '/');
 // Se scriptDir for apenas '/', não prefixar
 $projectBase = $scriptDir === '/' ? '' : $scriptDir;
+$currentPage = basename($scriptName ?: ($_SERVER['PHP_SELF'] ?? ''));
 
 function buildAssetUrl(string $base, string $rel): string {
   $rel = ltrim($rel, '/');
@@ -66,20 +67,22 @@ if (!empty($logoPath)) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= h(t('app.title')) ?></title>
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/assets/uploads/logo_favicon.png">
+    <link rel="icon" type="image/png" href="<?= h(buildAssetUrl($projectBase, 'assets/uploads/logo_favicon.png')) ?>">
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap via CDN (primário) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Fallback local básico se o CDN falhar -->
-    <link rel="stylesheet" href="assets/fallbacks/bootstrap-lite.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/vendor/datatables/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="assets/css/header-footer.css" />
-    <link rel="stylesheet" href="assets/css/login.css" />
-    <link rel="stylesheet" href="assets/css/create-account.css" />
-    <link rel="stylesheet" href="assets/css/forgot-password.css" />
+    <?php if ($currentPage === 'login.php'): ?>
+      <link rel="stylesheet" href="assets/css/login.css" />
+    <?php endif; ?>
+    <?php if ($currentPage === 'create-account.php'): ?>
+      <link rel="stylesheet" href="assets/css/create-account.css" />
+    <?php endif; ?>
+    <?php if ($currentPage === 'forgot-password.php'): ?>
+      <link rel="stylesheet" href="assets/css/forgot-password.css" />
+    <?php endif; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <?php
   // Aplicar cor primária dinâmica se configurada

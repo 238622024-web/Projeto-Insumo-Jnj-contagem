@@ -77,6 +77,14 @@ include __DIR__ . '/includes/header.php';
       <div class="col-12 col-md-8">
         <label class="form-label fw-600">Código de barras ou nome</label>
         <input id="scan-input" type="text" name="termo" class="form-control form-control-lg" placeholder="Escaneie aqui..." autocomplete="off" required>
+        <div id="scan-feedback" class="alert alert-success py-2 mt-2 mb-0" style="display:none;">
+          <i class="fa fa-check-circle me-1"></i><span id="scan-feedback-text"></span>
+        </div>
+        <div class="d-flex gap-2 mt-2 flex-wrap">
+          <button type="button" id="btn-start-scan-contagem" class="btn btn-outline-primary btn-sm"><i class="fa fa-camera me-1"></i>Escanear câmera</button>
+          <button type="button" id="btn-stop-scan-contagem" class="btn btn-outline-secondary btn-sm" style="display:none;"><i class="fa fa-stop me-1"></i>Parar</button>
+        </div>
+        <small class="text-muted d-block mt-1">Leitor físico também funciona: escaneie com foco neste campo.</small>
       </div>
       <div class="col-12 col-md-2">
         <label class="form-label fw-600">Somar</label>
@@ -84,6 +92,9 @@ include __DIR__ . '/includes/header.php';
       </div>
       <div class="col-12 col-md-2 d-grid">
         <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check me-1"></i>Registrar</button>
+      </div>
+      <div class="col-12">
+        <div id="reader-contagem" class="border rounded p-2" style="display:none; max-width:420px;"></div>
       </div>
     </form>
   </div>
@@ -126,18 +137,7 @@ include __DIR__ . '/includes/header.php';
   </div>
 </div>
 
-<script>
-  (function(){
-    const input = document.getElementById('scan-input');
-    if (input) {
-      input.focus();
-      setInterval(() => {
-        if (document.activeElement !== input) {
-          input.focus();
-        }
-      }, 1500);
-    }
-  })();
-</script>
+<script src="assets/vendor/html5-qrcode/html5-qrcode.min.js" defer></script>
+<script src="assets/js/contagem.js"></script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

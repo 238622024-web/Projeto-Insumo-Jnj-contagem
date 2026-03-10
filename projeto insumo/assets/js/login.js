@@ -65,14 +65,41 @@
     });
   }
 
+  /**
+   * Limpa campos preenchidos automaticamente pelo navegador em cada carregamento
+   */
+  function clearAutofilledCredentials() {
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const remember = document.getElementById('remember-me');
+
+    if (email) {
+      email.value = '';
+      email.setAttribute('autocomplete', 'off');
+    }
+
+    if (password) {
+      password.value = '';
+      password.setAttribute('autocomplete', 'off');
+    }
+
+    if (remember) {
+      remember.checked = false;
+    }
+  }
+
   // Inicializar quando o documento está pronto
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
+      clearAutofilledCredentials();
       initPasswordToggle();
       initFilledState();
     });
   } else {
+    clearAutofilledCredentials();
     initPasswordToggle();
     initFilledState();
   }
+
+  window.addEventListener('pageshow', clearAutofilledCredentials);
 })();

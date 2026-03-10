@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="pt-BR"></html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -71,10 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/uploads/logo_favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- CDN Bootstrap (primário) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Fallback local (se CDN falhar, mantém layout básico) -->
-    <link href="assets/fallbacks/bootstrap-lite.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="assets/css/login.css" />
@@ -93,7 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($m = flash('success')): ?>
           <div class="alert alert-success py-2"><?= h($m) ?></div>
         <?php endif; ?>
-        <form method="post" novalidate>
+        <form method="post" novalidate autocomplete="off">
+          <input type="text" name="fake_user" class="d-none" tabindex="-1" autocomplete="username" aria-hidden="true">
+          <input type="password" name="fake_pass" class="d-none" tabindex="-1" autocomplete="new-password" aria-hidden="true">
           <div class="mb-3">
             <label for="email" class="form-label small">E-mail</label>
             <div class="input-group">
@@ -103,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
               </span>
-              <input id="email" name="email" type="email" required class="form-control" placeholder="Seu e-mail" autofocus />
+              <input id="email" name="email" type="email" required class="form-control" placeholder="Seu e-mail" autocomplete="off" autocapitalize="none" spellcheck="false" autofocus />
             </div>
           </div>
           <div class="mb-3">
@@ -115,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </span>
-              <input id="password" name="password" type="password" required class="form-control" placeholder="Sua senha" />
+              <input id="password" name="password" type="password" required class="form-control" placeholder="Sua senha" autocomplete="off" />
               <button type="button" class="btn btn-outline-secondary" id="togglePassword" tabindex="-1" aria-label="Mostrar senha" title="Mostrar senha">
                 <!-- Ícones inline (sem depender de CDN) -->
                 <svg id="eyeOpen" class="d-none" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -142,8 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/jquery/jquery-3.7.0.min.js"></script>
   <script src="assets/js/login.js"></script>
 </body>
 </html>
