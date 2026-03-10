@@ -47,7 +47,7 @@
     const startBtn = document.getElementById('btn-start-scan');
     const stopBtn = document.getElementById('btn-stop-scan');
     const readerEl = document.getElementById('reader');
-    const nameInput = document.querySelector('input[name="nome"]');
+    const nameInput = document.querySelector('[name="nome"]');
 
     if (!form || !barcodeInput) return;
 

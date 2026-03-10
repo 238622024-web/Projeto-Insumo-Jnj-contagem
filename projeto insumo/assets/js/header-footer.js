@@ -10,11 +10,9 @@
    * Obter o valor padrão de itens por página do PHP
    * Este valor precisa ser inserido dinamicamente pelo PHP
    */
-  let pageLength = 25; // valor padrão
+  let pageLength = 6; // valor padrão compacto
   if (window.innerWidth <= 768) {
-    pageLength = 10;
-  } else if (window.innerWidth <= 1366) {
-    pageLength = 15;
+    pageLength = 5;
   }
 
   /**
@@ -75,7 +73,7 @@
 
         $table.DataTable({
           pageLength: pageLength,
-          lengthMenu: [10, 25, 50, 100],
+          lengthMenu: [5, 6, 10, 15, 25],
           columns: columnsDef,
           columnDefs: [{ orderable: false, targets: -1 }],
           autoWidth: false,

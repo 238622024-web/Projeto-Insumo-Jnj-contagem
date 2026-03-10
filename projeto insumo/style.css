@@ -300,6 +300,13 @@ textarea {
 	box-sizing: border-box;
 }
 
+
+.table thead th,
+.table tbody td {
+	padding-top: 0.55rem !important;
+	padding-bottom: 0.55rem !important;
+	font-size: 0.88rem;
+}
 img,
 svg,
 video,
