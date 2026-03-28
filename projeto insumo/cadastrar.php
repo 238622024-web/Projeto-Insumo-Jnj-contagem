@@ -141,7 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posicao = trim($_POST['posicao'] ?? '');
   $lote = trim($_POST['lote'] ?? '');
     $codigo_barra = trim($_POST['codigo_barra'] ?? '');
-    $quantidade = (int)($_POST['quantidade'] ?? 0);
+    $quantidadeRaw = trim((string)($_POST['quantidade'] ?? ''));
+    $quantidadeDigits = preg_replace('/\D+/', '', $quantidadeRaw);
+    $quantidade = ($quantidadeDigits === '') ? -1 : (int)$quantidadeDigits;
     $data_contagem = $_POST['data_contagem'] ?? '';
     // unidade: select with options; allow optional custom override
     $unidade_selected = trim($_POST['unidade'] ?? '');
@@ -152,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $erros = [];
     if ($nome === '') $erros[] = 'Nome é obrigatório.';
     if ($posicao === '') $erros[] = 'Posição é obrigatória.';
-    if ($quantidade < 0) $erros[] = 'Quantidade inválida.';
+    if ($quantidade < 0) $erros[] = 'Quantidade inválida. Use apenas números (ex.: 1.000).';
     if ($data_entrada === '') $erros[] = 'Data de entrada obrigatória.';
     // Validade: se não informada, vamos calcular depois (2 anos após data_entrada)
 
@@ -239,7 +241,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label fw-600"><i class="fa fa-calculator text-primary me-2"></i><?= h(t('form.quantity')) ?> <span class="text-danger">*</span></label>
-          <input type="number" name="quantidade" min="0" class="form-control form-control-lg" required value="<?= h($_POST['quantidade'] ?? '') ?>">
+          <input type="text" name="quantidade" inputmode="numeric" pattern="[0-9. ]+" class="form-control form-control-lg" required value="<?= h($_POST['quantidade'] ?? '') ?>" placeholder="Ex.: 1.000">
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label fw-600"><i class="fa fa-map-marker text-primary me-2"></i><?= h(t('form.position')) ?> <span class="text-danger">*</span></label>

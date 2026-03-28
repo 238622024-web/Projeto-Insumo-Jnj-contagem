@@ -26,19 +26,28 @@ function buildAssetUrl(string $base, string $rel): string {
 
 $logoUrl = '';
 if (!empty($logoPath)) {
-  // Primeiro tenta caminho relativo simples; se não existir, mantém mesmo assim (para servidores que atendem o arquivo)
-  $logoUrl = buildAssetUrl($projectBase, $logoPath);
-} elseif (!empty($logoUrlSetting)) {
-  // aceita URL absoluto (http/https)
-  $logoUrl = $logoUrlSetting;
-} else {
+  // Só usa logo_path se o arquivo realmente existir localmente.
+  $logoAbs = realpath(__DIR__ . '/../' . ltrim($logoPath, '/'));
+  if ($logoAbs && file_exists($logoAbs)) {
+    $logoUrl = buildAssetUrl($projectBase, $logoPath);
+  }
+}
+
+if ($logoUrl === '' && !empty($logoUrlSetting)) {
+  // Aceita apenas URL absoluta válida.
+  if (preg_match('/^https?:\/\//i', $logoUrlSetting)) {
+    $logoUrl = $logoUrlSetting;
+  }
+}
+
+if ($logoUrl === '') {
   // Tentativas automáticas: procurar logo enviado/local
   // Priorizar especificamente LOGO.JNJ.PNJ.png se existir
   $candidates = [
     // novas variações priorizadas
+    'logo_manserv.png',
     'logo_msv_horizontal_trans 2.png',
     'logo_msv_horizontal_trans.png',
-    'logo_manserv.png',
     // anteriores
     'LOGO.JNJ.PNJ.png',
     'assets/uploads/logo_custom.svg',
@@ -83,7 +92,6 @@ if (!empty($logoPath)) {
     <?php if ($currentPage === 'forgot-password.php'): ?>
       <link rel="stylesheet" href="assets/css/forgot-password.css" />
     <?php endif; ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-RXf+QSDCUQs6Q0GqQmCtT9e7N1KleChX2NDVYqoQZnQEqplLWYw0EN0pZK0s8AjtKqJrY6QXTsE6YdZP+eT1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <?php
   // Aplicar cor primária dinâmica se configurada
   $primaryColor = getSetting('primary_color', '');
@@ -107,21 +115,23 @@ if (!empty($logoPath)) {
 
     <nav class="d-flex gap-2">
       <?php if ($user): ?>
-        <a class="btn btn-sm btn-light" href="index.php"><i class="fa-solid fa-table me-1"></i><?= h(t('nav.home')) ?></a>
-        <a class="btn btn-sm btn-light" href="cadastrar.php"><i class="fa-solid fa-plus me-1"></i><?= h(t('nav.new')) ?></a>
-        <a class="btn btn-sm btn-light" href="perfil.php"><i class="fa-solid fa-user me-1"></i><?= h(t('nav.profile')) ?></a>
-        <a class="btn btn-sm btn-light" href="configuracoes.php"><i class="fa-solid fa-gear me-1"></i><?= h(t('nav.settings')) ?></a>
+        <a class="btn btn-sm btn-light" href="index.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><?= h(t('nav.home')) ?></a>
+        <a class="btn btn-sm btn-light" href="perfil.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><?= h(t('nav.profile')) ?></a>
+        <?php if (isAdmin()): ?>
+          <a class="btn btn-sm btn-light" href="solicitacoes.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Solicitações</a>
+        <?php endif; ?>
+        <a class="btn btn-sm btn-light" href="configuracoes.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.96 2.96l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m2.96-2.96l4.24-4.24"></path></svg><?= h(t('nav.settings')) ?></a>
         <!-- Theme toggle removed per request -->
         <?php if (!empty($user['avatar'])): ?>
           <a href="perfil.php" class="d-inline-block"><img src="assets/uploads/<?= h($user['avatar']) ?>" alt="avatar" style="height:30px;width:30px;border-radius:6px;object-fit:cover;margin-right:6px;" /></a>
         <?php else: ?>
           <a href="perfil.php" class="badge bg-light text-dark align-self-center text-decoration-none"><?= h($user['email']) ?></a>
         <?php endif; ?>
-          <a class="btn btn-sm btn-outline-light" href="logout.php"><i class="fa-solid fa-right-from-bracket me-1"></i><?= h(t('nav.logout')) ?></a>
+          <a class="btn btn-sm btn-outline-light" href="logout.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg><?= h(t('nav.logout')) ?></a>
       <?php else: ?>
         <?php if (empty($hideAuthButtons)): ?>
-          <a class="btn btn-sm btn-light" href="login.php"><i class="fa-solid fa-right-to-bracket me-1"></i><?= h(t('nav.login')) ?></a>
-          <a class="btn btn-sm btn-outline-light" href="create-account.php"><i class="fa-solid fa-user-plus me-1"></i><?= h(t('nav.register')) ?></a>
+          <a class="btn btn-sm btn-light" href="login.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg><?= h(t('nav.login')) ?></a>
+          <a class="btn btn-sm btn-outline-light" href="create-account.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="16" y1="11" x2="16" y2="17"></line><line x1="19" y1="14" x2="13" y2="14"></line></svg><?= h(t('nav.register')) ?></a>
         <?php endif; ?>
       <?php endif; ?>
     </nav>

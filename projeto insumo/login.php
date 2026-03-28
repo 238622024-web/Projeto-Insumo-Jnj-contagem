@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php');
         exit;
     } else {
-        flash('error', 'E-mail ou senha inválidos.');
+    flash('error', getLastAuthError() ?? 'E-mail ou senha inválidos.');
     }
 }
 ?>
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <button type="submit" class="btn btn-primary btn-login w-100">Entrar</button>
         </form>
-        <div class="text-center mt-3 small text-muted">Não tem uma conta? <a href="create-account.php">Criar agora</a></div>
+        <div class="text-center mt-3 small text-muted">Não tem uma conta? <a href="create-account.php">Enviar solicitação</a></div>
       </div>
     </div>
   </div>

@@ -21,9 +21,14 @@ CREATE TABLE `usuarios` (
   `nome` VARCHAR(150) NOT NULL,
   `email` VARCHAR(150) NOT NULL UNIQUE,
   `senha_hash` VARCHAR(255) NOT NULL,
+  `role` VARCHAR(20) NOT NULL DEFAULT 'user',
+  `aprovado` TINYINT(1) NOT NULL DEFAULT 0,
+  `aprovado_em` DATETIME NULL,
+  `aprovado_por` INT NULL,
   `avatar` VARCHAR(255) NULL,
   `criado_em` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_email` (`email`)
+  INDEX `idx_email` (`email`),
+  INDEX `idx_usuarios_aprovado` (`aprovado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Tabela de insumos

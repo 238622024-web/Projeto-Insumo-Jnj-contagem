@@ -6,6 +6,10 @@ if (currentUser()) { header('Location: index.php'); exit; }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $nome = trim($_POST['nome'] ?? '');
   $email = trim($_POST['email'] ?? '');
+  $tipoConta = trim($_POST['tipo_conta'] ?? 'user');
+  if (!in_array($tipoConta, ['user', 'admin'], true)) {
+    $tipoConta = 'user';
+  }
   $senha = $_POST['password'] ?? '';
   $confirm = $_POST['confirm_password'] ?? '';
   $erros = [];
@@ -16,38 +20,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($senha !== $confirm) $erros[] = 'As senhas não conferem.';
   if (!$erros) {
      $pdo = getPDO();
+      ensureUserAuthSchema();
      $check = $pdo->prepare('SELECT id FROM usuarios WHERE email = ?');
      $check->execute([$email]);
      if ($check->fetch()) {
         $erros[] = 'E-mail já registrado.';
      } else {
       $hash = password_hash($senha, PASSWORD_DEFAULT);
-      // Handle optional avatar upload if the column exists
-      $avatarFilename = null;
-      if (!empty($_FILES['avatar']['name'])) {
-        $f = $_FILES['avatar'];
-        if ($f['error'] === UPLOAD_ERR_OK) {
-          $allowed = ['png','jpg','jpeg','svg'];
-          $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-          if (in_array($ext, $allowed) && $f['size'] <= 2 * 1024 * 1024) {
-            $uploadsDir = __DIR__ . '/assets/uploads';
-            if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0755, true);
-            $avatarFilename = time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
-            move_uploaded_file($f['tmp_name'], $uploadsDir . '/' . $avatarFilename);
+      $hasApprovedAdmin = (int)($pdo->query("SELECT COUNT(*) AS c FROM usuarios WHERE role = 'admin' AND aprovado = 1")->fetch()['c'] ?? 0) > 0;
+      $newRole = $hasApprovedAdmin ? $tipoConta : 'admin';
+      $isApproved = $hasApprovedAdmin ? 0 : 1;
+        $ins = $pdo->prepare('INSERT INTO usuarios (nome,email,senha_hash,role,aprovado,aprovado_em) VALUES (?,?,?,?,?,?)');
+        $ins->execute([$nome,$email,$hash,$newRole,$isApproved,$isApproved ? date('Y-m-d H:i:s') : null]);
+        if ($hasApprovedAdmin) {
+          if ($newRole === 'admin') {
+            flash('success','Solicitação de administrador enviada. Aguarde aprovação do administrador principal.');
+          } else {
+            flash('success','Solicitação enviada com sucesso. Aguarde a aprovação do administrador para acessar.');
           }
+        } else {
+          flash('success','Conta de administrador criada com sucesso. Faça login.');
         }
-      }
-
-      // Check if avatar column exists
-      $col = $pdo->query("SHOW COLUMNS FROM usuarios LIKE 'avatar'")->fetch();
-      if ($col) {
-        $ins = $pdo->prepare('INSERT INTO usuarios (nome,email,senha_hash,avatar) VALUES (?,?,?,?)');
-        $ins->execute([$nome,$email,$hash,$avatarFilename]);
-      } else {
-        $ins = $pdo->prepare('INSERT INTO usuarios (nome,email,senha_hash) VALUES (?,?,?)');
-        $ins->execute([$nome,$email,$hash]);
-      }
-        flash('success','Conta criada. Faça login.');
         header('Location: login.php');
         exit;
      }
@@ -63,8 +56,8 @@ $hideAuthButtons = true;
   <div class="w-100" style="max-width:420px;">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h2 class="h4 text-center mb-3">Criar Conta</h2>
-        <form method="post" enctype="multipart/form-data">
+        <h2 class="h4 text-center mb-3">Solicitar Acesso</h2>
+        <form method="post">
           <div class="mb-3">
             <label class="form-label">Nome</label>
             <input type="text" name="nome" required value="<?= h($_POST['nome'] ?? '') ?>" class="form-control" />
@@ -72,6 +65,14 @@ $hideAuthButtons = true;
           <div class="mb-3">
             <label class="form-label">E-mail</label>
             <input type="email" name="email" required value="<?= h($_POST['email'] ?? '') ?>" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tipo de conta</label>
+            <select name="tipo_conta" class="form-select" required>
+              <option value="user" <?= (($_POST['tipo_conta'] ?? 'user') === 'user') ? 'selected' : '' ?>>Conta normal</option>
+              <option value="admin" <?= (($_POST['tipo_conta'] ?? '') === 'admin') ? 'selected' : '' ?>>Administrador</option>
+            </select>
+            <small class="text-muted">Solicitações de administrador precisam de aprovação do administrador principal.</small>
           </div>
           <div class="mb-3">
             <label class="form-label">Senha</label>
@@ -117,11 +118,7 @@ $hideAuthButtons = true;
               </button>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Avatar (opcional)</label>
-            <input type="file" name="avatar" accept="image/*" class="form-control" />
-          </div>
-          <button type="submit" class="btn btn-primary w-100">Criar</button>
+          <button type="submit" class="btn btn-primary w-100">Enviar solicitação</button>
         </form>
         <div class="text-center mt-3"><a href="login.php">Já tenho conta</a></div>
       </div>

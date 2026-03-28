@@ -38,7 +38,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="col-12"><strong>Nome:</strong> <?= h($item['nome']) ?></div>
                     <div class="col-md-6"><strong>Posição:</strong> <?= h($item['posicao']) ?></div>
                     <div class="col-md-6"><strong>Lote:</strong> <?= h($item['lote'] ?? '') ?></div>
-                    <div class="col-md-6"><strong>Qtd:</strong> <?= h($item['quantidade']) ?></div>
+                    <div class="col-md-6"><strong>Qtd:</strong> <?= h(number_format((int)$item['quantidade'], 0, ',', '.')) ?></div>
                     <div class="col-md-6"><strong>Validade:</strong> <?= isset($item['validade']) ? h(date('d/m/Y', strtotime($item['validade']))) : '' ?></div>
                 </div>
             </div>

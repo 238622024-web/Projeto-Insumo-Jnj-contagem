@@ -6,7 +6,9 @@ $pdo = getPDO();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $termo = trim($_POST['termo'] ?? '');
-    $incremento = (int)($_POST['incremento'] ?? 1);
+  $incrementoRaw = trim((string)($_POST['incremento'] ?? '1'));
+  $incrementoDigits = preg_replace('/\D+/', '', $incrementoRaw);
+  $incremento = ($incrementoDigits === '') ? 1 : (int)$incrementoDigits;
 
     if ($incremento <= 0) {
         $incremento = 1;
@@ -57,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $refresh->execute([(int)$item['id']]);
     $updatedItem = $refresh->fetch();
 
-    flash('success', 'Contagem registrada: ' . $updatedItem['nome'] . ' (+'.$incremento.'). Quantidade atual: ' . $updatedItem['quantidade']);
+    flash('success', 'Contagem registrada: ' . $updatedItem['nome'] . ' (+' . number_format($incremento, 0, ',', '.') . '). Quantidade atual: ' . number_format((int)$updatedItem['quantidade'], 0, ',', '.'));
     header('Location: contagem.php');
     exit;
 }
@@ -88,7 +90,7 @@ include __DIR__ . '/includes/header.php';
       </div>
       <div class="col-12 col-md-2">
         <label class="form-label fw-600">Somar</label>
-        <input type="number" name="incremento" class="form-control form-control-lg" min="1" value="1" required>
+        <input type="text" name="incremento" class="form-control form-control-lg" inputmode="numeric" pattern="[0-9. ]+" value="1" placeholder="Ex.: 1.200" required>
       </div>
       <div class="col-12 col-md-2 d-grid">
         <button type="submit" class="btn btn-primary btn-lg"><i class="fa fa-check me-1"></i>Registrar</button>
@@ -122,7 +124,7 @@ include __DIR__ . '/includes/header.php';
               <td><?= h((string)$row['id']) ?></td>
               <td><strong><?= h($row['nome']) ?></strong></td>
               <td><?= h($row['codigo_barra'] ?? '') ?></td>
-              <td><?= h((string)$row['quantidade']) ?></td>
+              <td><?= h(number_format((int)$row['quantidade'], 0, ',', '.')) ?></td>
               <td><?= !empty($row['data_contagem']) ? h(date('d/m/Y', strtotime($row['data_contagem']))) : '<span class="text-muted">-</span>' ?></td>
             </tr>
           <?php endforeach; ?>

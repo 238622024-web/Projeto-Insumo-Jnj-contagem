@@ -6,6 +6,103 @@
 (function() {
   'use strict';
 
+  function normalizeText(value) {
+    return (value || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function levenshteinDistance(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+
+    const prev = [];
+    const curr = [];
+
+    for (let j = 0; j <= b.length; j++) {
+      prev[j] = j;
+    }
+
+    for (let i = 1; i <= a.length; i++) {
+      curr[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        curr[j] = Math.min(
+          curr[j - 1] + 1,
+          prev[j] + 1,
+          prev[j - 1] + cost
+        );
+      }
+
+      for (let j = 0; j <= b.length; j++) {
+        prev[j] = curr[j];
+      }
+    }
+
+    return prev[b.length];
+  }
+
+  function tokenMatches(token, rowText, rowWords) {
+    if (!token) return true;
+    if (rowText.indexOf(token) !== -1) return true;
+
+    if (token.length <= 2) {
+      return false;
+    }
+
+    const maxDistance = token.length >= 6 ? 2 : 1;
+
+    for (let i = 0; i < rowWords.length; i++) {
+      const word = rowWords[i];
+      if (!word) continue;
+      if (Math.abs(word.length - token.length) > maxDistance) continue;
+      if (word[0] !== token[0]) continue;
+
+      if (levenshteinDistance(token, word) <= maxDistance) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function installAdvancedSearch($) {
+    if (window.__insumoAdvancedSearchInstalled) return;
+
+    $.fn.dataTable.ext.search.push(function(settings, searchData) {
+      if (!settings || !settings.nTable || !settings.nTable.classList || !settings.nTable.classList.contains('js-materials-search')) {
+        return true;
+      }
+
+      const rawSearch = (settings && settings.oPreviousSearch && settings.oPreviousSearch.sSearch) || '';
+      const query = normalizeText(rawSearch);
+      if (!query) return true;
+
+      const rowText = normalizeText((searchData || []).join(' '));
+      if (!rowText) return false;
+
+      const tokens = query.split(' ').filter(Boolean);
+      if (!tokens.length) return true;
+
+      const rowWords = rowText.split(' ').filter(Boolean);
+      for (let i = 0; i < tokens.length; i++) {
+        if (!tokenMatches(tokens[i], rowText, rowWords)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    window.__insumoAdvancedSearchInstalled = true;
+  }
+
   /**
    * Obter o valor padrão de itens por página do PHP
    * Este valor precisa ser inserido dinamicamente pelo PHP
@@ -25,6 +122,8 @@
     }
 
     jQuery(document).ready(function($) {
+      installAdvancedSearch($);
+
       $('table.table').each(function() {
         const $table = $(this);
         const headerCount = $table.find('thead th').length;
@@ -74,6 +173,11 @@
         $table.DataTable({
           pageLength: pageLength,
           lengthMenu: [5, 6, 10, 15, 25],
+          search: {
+            smart: false,
+            regex: false,
+            caseInsensitive: true
+          },
           columns: columnsDef,
           columnDefs: [{ orderable: false, targets: -1 }],
           autoWidth: false,

@@ -5,9 +5,9 @@ USE `controle_insumos_jnj`;
 
 -- Usuário de teste
 -- Senha recomendada: senha123 (gere um hash com PHP se este não funcionar)
-INSERT INTO `usuarios` (`nome`,`email`,`senha_hash`,`avatar`)
+INSERT INTO `usuarios` (`nome`,`email`,`senha_hash`,`role`,`aprovado`,`aprovado_em`,`avatar`)
 VALUES
-  ('Usuário JNJ','usuario@jnj.com','$2y$10$wN4p7p1z0G5M0A2n3s4TuO2hQb3g9pJXl9tLrS8o3Tknm2m8o1C2m',NULL);
+  ('Administrador JNJ','admin@jnj.com','$2y$10$wN4p7p1z0G5M0A2n3s4TuO2hQb3g9pJXl9tLrS8o3Tknm2m8o1C2m','admin',1,NOW(),NULL);
 
 -- Insumos de exemplo
 INSERT INTO `insumos_jnj` (`nome`,`posicao`,`lote`,`quantidade`,`data_entrada`,`validade`,`observacoes`) VALUES

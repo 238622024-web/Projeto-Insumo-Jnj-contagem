@@ -10,6 +10,7 @@ $start_date = trim($_GET['start_date'] ?? '');
 $end_date = trim($_GET['end_date'] ?? '');
 $where = [];
 $params = [];
+
 if ($start_date !== '') {
   $where[] = 'data_entrada >= ?';
   $params[] = $start_date;
@@ -142,7 +143,7 @@ include __DIR__ . '/includes/header.php';
 
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0 js-materials-search">
       <thead style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
         <tr>
           <th class="fw-600" style="padding: 1rem;">ID</th>
@@ -180,7 +181,7 @@ include __DIR__ . '/includes/header.php';
           <?php if ($mostrarLote): ?>
           <td style="padding: 1rem;"><?= h($row['lote'] ?? '') ?></td>
           <?php endif; ?>
-          <td style="padding: 1rem;"><strong><?= h($row['quantidade']) ?></strong></td>
+          <td style="padding: 1rem;"><strong><?= h(number_format((int)$row['quantidade'], 0, ',', '.')) ?></strong></td>
           <td style="padding: 1rem;"><?= h(date('d/m/Y', strtotime($row['data_entrada']))) ?></td>
           <td style="padding: 1rem;"><?= h(date('d/m/Y', strtotime($row['validade']))) ?><br><?= $badge ?></td>
           <td class="small" style="padding: 1rem; max-width: 200px;"><?= nl2br(h($row['observacoes'] ?? '')) ?></td>

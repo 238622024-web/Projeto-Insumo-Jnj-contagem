@@ -70,6 +70,7 @@ $itensAtual = (int)getSetting('itens_pagina', 25);
 $valCurta = (int)getSetting('alerta_validade_curta', 7);
 $valMedia = (int)getSetting('alerta_validade_media', 30);
 $mostrarLote = getSetting('mostrar_lote', '1') === '1';
+$zipDisponivel = class_exists('ZipArchive');
 // agora inclui o header (após o processamento POST e possíveis redirecionamentos)
 include __DIR__ . '/includes/header.php';
 ?>
@@ -131,4 +132,31 @@ include __DIR__ . '/includes/header.php';
   </div>
   <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i>Salvar</button>
 </form>
+
+<div class="shadow-sm bg-white p-4 rounded mt-3">
+  <h3 class="h5 mb-3"><i class="fa fa-desktop me-2"></i>Instalar no PC</h3>
+  <p class="mb-3">
+    Para usar como software no Windows, baixe o instalador e execute no computador.
+  </p>
+  <?php if (!$zipDisponivel): ?>
+    <div class="alert alert-warning py-2" role="alert">
+      Extensao ZIP desativada no PHP. O botao principal vai baixar o instalador .bat direto.
+    </div>
+  <?php endif; ?>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-success" href="download-instalador.php">
+      <i class="fa fa-download me-1"></i><?= $zipDisponivel ? 'Baixar instalador (.zip)' : 'Baixar instalador (.bat)' ?>
+    </a>
+    <a class="btn btn-outline-secondary" href="INSTALAR-ATALHO-APP.bat" download>
+      <i class="fa fa-download me-1"></i>Baixar .bat direto (unico arquivo)
+    </a>
+  </div>
+  <div class="form-text mt-2">
+    <?php if ($zipDisponivel): ?>
+      Depois de baixar o .zip, extraia os arquivos e clique duas vezes em INSTALAR-ATALHO-APP.bat para criar o atalho na Area de Trabalho.
+    <?php else: ?>
+      Depois de baixar, clique duas vezes em INSTALAR-ATALHO-APP.bat para criar o atalho na Area de Trabalho (sem depender de outros arquivos).
+    <?php endif; ?>
+  </div>
+</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
