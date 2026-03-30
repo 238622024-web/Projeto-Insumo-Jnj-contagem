@@ -74,7 +74,7 @@ $zipDisponivel = class_exists('ZipArchive');
 // agora inclui o header (após o processamento POST e possíveis redirecionamentos)
 include __DIR__ . '/includes/header.php';
 ?>
-<h2 class="h4 mb-3"><i class="fa fa-gear me-2"></i>Configurações</h2>
+<h2 class="h4 mb-3"><i class="fa-solid fa-gear me-2"></i>Configurações</h2>
 <form method="post" enctype="multipart/form-data" class="shadow-sm bg-white p-4 rounded">
   <div class="mb-3">
     <label class="form-label">Tema</label>
@@ -130,11 +130,11 @@ include __DIR__ . '/includes/header.php';
     <input type="url" name="logo_url" class="form-control" placeholder="https://example.com/logo.png" value="<?= h(getSetting('logo_url','')) ?>">
     <div class="form-text">Se preencher uma URL, a imagem será usada diretamente (prioridade menor que upload).</div>
   </div>
-  <button class="btn btn-primary btn-rounded" type="submit"><i class="fa fa-save me-1"></i>Salvar</button>
+  <button class="btn btn-primary btn-rounded" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i>Salvar</button>
 </form>
 
 <div class="shadow-sm bg-white p-4 rounded mt-3">
-  <h3 class="h5 mb-3"><i class="fa fa-desktop me-2"></i>Instalar no PC</h3>
+  <h3 class="h5 mb-3"><i class="fa-solid fa-desktop me-2"></i>Instalar no PC</h3>
   <p class="mb-3">
     Para usar como software no Windows, baixe o instalador e execute no computador.
   </p>
@@ -145,10 +145,10 @@ include __DIR__ . '/includes/header.php';
   <?php endif; ?>
   <div class="d-flex flex-wrap gap-2">
     <a class="btn btn-success" href="download-instalador.php">
-      <i class="fa fa-download me-1"></i><?= $zipDisponivel ? 'Baixar instalador (.zip)' : 'Baixar instalador (.bat)' ?>
+      <i class="fa-solid fa-download me-1"></i><?= $zipDisponivel ? 'Baixar instalador (.zip)' : 'Baixar instalador (.bat)' ?>
     </a>
     <a class="btn btn-outline-secondary" href="INSTALAR-ATALHO-APP.bat" download>
-      <i class="fa fa-download me-1"></i>Baixar .bat direto (unico arquivo)
+      <i class="fa-solid fa-download me-1"></i>Baixar .bat direto (unico arquivo)
     </a>
   </div>
   <div class="form-text mt-2">

@@ -35,6 +35,9 @@ CREATE TABLE `usuarios` (
 CREATE TABLE `insumos_jnj` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `data_contagem` DATE NULL,
+  `contagem_por_id` INT NULL,
+  `contagem_por_nome` VARCHAR(150) NULL,
+  `contagem_em` DATETIME NULL,
   `unidade` VARCHAR(30) DEFAULT 'UN',
   `nome` VARCHAR(150) NOT NULL,
   `posicao` VARCHAR(20) NOT NULL,

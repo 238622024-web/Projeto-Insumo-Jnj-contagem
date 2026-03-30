@@ -110,11 +110,11 @@ include __DIR__ . '/includes/header.php';
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
       <h2 class="h4 m-0"><i class="fa fa-table me-2 text-primary"></i><?= h(t('list.title')) ?></h2>
       <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-success" href="cadastrar.php"><i class="fa fa-plus me-2"></i><?= h(t('list.add')) ?></a>
-        <a class="btn btn-outline-success" href="export_excel.php"><i class="fa fa-file-excel me-2"></i><?= h(t('list.export.excel')) ?></a>
-        <a class="btn btn-outline-danger" href="export_pdf.php"><i class="fa fa-file-pdf me-2"></i><?= h(t('list.export.pdf')) ?></a>
+        <a class="btn btn-success" href="cadastrar.php"><i class="fa-solid fa-circle-plus me-2"></i><?= h(t('list.add')) ?></a>
+        <a class="btn btn-outline-success" href="export_excel.php"><i class="fa-solid fa-file-excel me-2"></i><?= h(t('list.export.excel')) ?></a>
+        <a class="btn btn-outline-danger" href="export_pdf.php"><i class="fa-solid fa-file-pdf me-2"></i><?= h(t('list.export.pdf')) ?></a>
         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
-          <i class="fa fa-ban me-2"></i>Apagar Todos
+          <i class="fa-solid fa-trash-can me-2"></i>Apagar Todos
         </button>
       </div>
     </div>
@@ -226,11 +226,11 @@ include __DIR__ . '/includes/header.php';
           <input type="hidden" name="confirmar" value="sim">
           <input type="hidden" name="tipo" value="todos">
           <button type="submit" class="btn btn-danger">
-            <i class="fa fa-ban me-1"></i>Sim, apagar tudo
+            <i class="fa-solid fa-trash-can me-1"></i>Sim, apagar tudo
           </button>
         </form>
       </div>
     </div>
   </div>
-  </div>
+</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

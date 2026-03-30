@@ -72,11 +72,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pendingStmt = $pdo->query("SELECT id, nome, email, role, criado_em FROM usuarios WHERE aprovado = 0 ORDER BY criado_em ASC, id ASC");
 $pendingUsers = $pendingStmt->fetchAll();
 
+$contagemCols = $pdo->query('SHOW COLUMNS FROM insumos_jnj')->fetchAll();
+$hasContagemTracking = false;
+foreach ($contagemCols as $col) {
+    if (($col['Field'] ?? '') === 'contagem_por_nome') {
+        $hasContagemTracking = true;
+        break;
+    }
+}
+
+$quemConta = [];
+if ($hasContagemTracking) {
+    $sqlQuemConta = "
+      SELECT
+        COALESCE(NULLIF(contagem_por_nome, ''), 'Usuario') AS contador,
+        MAX(contagem_em) AS ultima_contagem,
+        SUM(CASE WHEN DATE(contagem_em) = CURDATE() THEN 1 ELSE 0 END) AS contagens_hoje,
+        COUNT(*) AS total_registros
+      FROM insumos_jnj
+      WHERE contagem_em IS NOT NULL
+      GROUP BY contagem_por_id, contagem_por_nome
+      ORDER BY ultima_contagem DESC
+      LIMIT 20
+    ";
+    $quemConta = $pdo->query($sqlQuemConta)->fetchAll();
+}
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Solicitações de cadastro</h1>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-0 pt-3 pb-0">
+    <h2 class="h5 mb-3"><i class="fa fa-users me-2 text-primary"></i>Quem está na contagem</h2>
+  </div>
+  <div class="card-body">
+    <?php if (!$hasContagemTracking): ?>
+      <div class="alert alert-info mb-0">A área de rastreio de contagem será exibida após a primeira contagem no novo formato.</div>
+    <?php elseif (empty($quemConta)): ?>
+      <div class="text-muted">Nenhuma contagem registrada com usuário ainda.</div>
+    <?php else: ?>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Colaborador</th>
+              <th>Última contagem</th>
+              <th>Contagens hoje</th>
+              <th>Total de registros</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach ($quemConta as $q): ?>
+            <tr>
+              <td><strong><?= h((string)$q['contador']) ?></strong></td>
+              <td><?= !empty($q['ultima_contagem']) ? h(date('d/m/Y H:i', strtotime((string)$q['ultima_contagem']))) : '-' ?></td>
+              <td><?= h(number_format((int)$q['contagens_hoje'], 0, ',', '.')) ?></td>
+              <td><?= h(number_format((int)$q['total_registros'], 0, ',', '.')) ?></td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
 
 <?php if (empty($pendingUsers)): ?>

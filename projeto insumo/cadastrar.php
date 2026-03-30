@@ -215,13 +215,13 @@ include __DIR__ . '/includes/header.php';
 <div class="cadastro-insumo">
   <div class="card shadow-lg border-0">
     <div class="card-header d-flex align-items-center" style="background: #ffffff; color: #000000; padding: 1.5rem; border-bottom: 2px solid #e9ecef;">
-      <h2 class="h5 mb-0" style="color: #000000;"><i class="fa fa-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
+      <h2 class="h5 mb-0" style="color: #000000;"><i class="fa-solid fa-circle-plus me-2"></i><?= h(t('form.new.title')) ?></h2>
     </div>
     <div class="card-body p-4">
       <form id="form-cadastro-insumo" method="post" class="row g-4 form-responsive">
         <!-- Nome do Material -->
         <div class="col-12">
-          <label class="form-label fw-600"><i class="fa fa-box text-primary me-2"></i><?= h(t('form.name')) ?> <span class="text-danger">*</span></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-box text-primary me-2"></i><?= h(t('form.name')) ?> <span class="text-danger">*</span></label>
           <select name="nome" class="form-select form-select-lg" required>
             <option value="">Selecione o material</option>
             <?php foreach ($nomesInsumos as $nomeItem): ?>
@@ -232,7 +232,7 @@ include __DIR__ . '/includes/header.php';
 
         <!-- Linha 1: Unidade, Quantidade, Posição -->
         <div class="col-12 col-md-4">
-          <label class="form-label fw-600"><i class="fa fa-ruler text-primary me-2"></i><?= h(t('form.unit')) ?></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-ruler-combined text-primary me-2"></i><?= h(t('form.unit')) ?></label>
           <select name="unidade" class="form-select form-select-lg">
             <?php $opts = ['UN','BX','CENT','KG','MILH','PAC','ROLO']; foreach ($opts as $op): ?>
               <option value="<?= h($op) ?>" <?= (isset($_POST['unidade']) && $_POST['unidade']===$op)?'selected':'' ?>><?= h($op) ?></option>
@@ -240,38 +240,38 @@ include __DIR__ . '/includes/header.php';
           </select>
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label fw-600"><i class="fa fa-calculator text-primary me-2"></i><?= h(t('form.quantity')) ?> <span class="text-danger">*</span></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-calculator text-primary me-2"></i><?= h(t('form.quantity')) ?> <span class="text-danger">*</span></label>
           <input type="text" name="quantidade" inputmode="numeric" pattern="[0-9. ]+" class="form-control form-control-lg" required value="<?= h($_POST['quantidade'] ?? '') ?>" placeholder="Ex.: 1.000">
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label fw-600"><i class="fa fa-map-marker text-primary me-2"></i><?= h(t('form.position')) ?> <span class="text-danger">*</span></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-location-dot text-primary me-2"></i><?= h(t('form.position')) ?> <span class="text-danger">*</span></label>
           <input type="text" name="posicao" class="form-control form-control-lg" required value="<?= h($_POST['posicao'] ?? '') ?>">
         </div>
 
         <!-- Linha 2: Lote, Data Contagem, Data Entrada, Validade -->
         <div class="col-12 col-md-3">
-          <label class="form-label fw-600"><i class="fa fa-barcode text-primary me-2"></i><?= h(t('form.lot')) ?></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i><?= h(t('form.lot')) ?></label>
           <input type="text" name="lote" class="form-control form-control-lg" value="<?= h($_POST['lote'] ?? '') ?>">
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label fw-600"><i class="fa fa-qrcode text-primary me-2"></i>Código de barras</label>
+          <label class="form-label fw-600"><i class="fa-solid fa-qrcode text-primary me-2"></i>Código de barras</label>
           <input id="codigo_barra" type="text" name="codigo_barra" class="form-control form-control-lg" value="<?= h($_POST['codigo_barra'] ?? '') ?>" placeholder="Escaneie ou digite">
           <div class="d-flex gap-2 mt-2 flex-wrap">
-            <button type="button" id="btn-start-scan" class="btn btn-outline-primary btn-sm"><i class="fa fa-camera me-1"></i>Escanear câmera</button>
-            <button type="button" id="btn-stop-scan" class="btn btn-outline-secondary btn-sm" style="display:none;"><i class="fa fa-stop me-1"></i>Parar</button>
+            <button type="button" id="btn-start-scan" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-camera me-1"></i>Escanear câmera</button>
+            <button type="button" id="btn-stop-scan" class="btn btn-outline-secondary btn-sm" style="display:none;"><i class="fa-solid fa-stop me-1"></i>Parar</button>
           </div>
           <small class="text-muted d-block mt-1">Leitor físico também funciona: escaneie com foco neste campo.</small>
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label fw-600"><i class="fa fa-calendar text-primary me-2"></i><?= h(t('form.count.date')) ?></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-calendar-days text-primary me-2"></i><?= h(t('form.count.date')) ?></label>
           <input type="date" name="data_contagem" class="form-control form-control-lg" value="<?= h($_POST['data_contagem'] ?? '') ?>">
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label fw-600"><i class="fa fa-sign-in text-primary me-2"></i><?= h(t('form.entry.date')) ?> <span class="text-danger">*</span></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-right-to-bracket text-primary me-2"></i><?= h(t('form.entry.date')) ?> <span class="text-danger">*</span></label>
           <input type="date" name="data_entrada" class="form-control form-control-lg" required value="<?= h($_POST['data_entrada'] ?? date('Y-m-d')) ?>">
         </div>
         <div class="col-12 col-md-3">
-          <label class="form-label fw-600"><i class="fa fa-hourglass-end text-primary me-2"></i><?= h(t('form.expiry')) ?> <span class="text-danger">*</span></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-hourglass-end text-primary me-2"></i><?= h(t('form.expiry')) ?> <span class="text-danger">*</span></label>
           <input type="date" name="validade" class="form-control form-control-lg" value="<?= h($_POST['validade'] ?? '') ?>">
         </div>
 
@@ -281,17 +281,17 @@ include __DIR__ . '/includes/header.php';
 
         <!-- Observações -->
         <div class="col-12">
-          <label class="form-label fw-600"><i class="fa fa-sticky-note text-primary me-2"></i><?= h(t('form.notes')) ?></label>
+          <label class="form-label fw-600"><i class="fa-solid fa-note-sticky text-primary me-2"></i><?= h(t('form.notes')) ?></label>
           <textarea name="observacoes" rows="4" class="form-control form-control-lg" style="resize: vertical;"><?= h($_POST['observacoes'] ?? '') ?></textarea>
         </div>
 
         <!-- Botões de Ação -->
         <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 mt-4 form-actions-responsive">
           <a href="index.php" class="btn btn-outline-secondary btn-lg w-100 w-md-auto" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-            <i class="fa fa-arrow-left me-2"></i><?= h(t('btn.back')) ?>
+            <i class="fa-solid fa-arrow-left me-2"></i><?= h(t('btn.back')) ?>
           </a>
           <button class="btn btn-primary btn-lg w-100 w-md-auto" type="submit" style="transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(102,126,234,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-            <i class="fa fa-save me-2"></i><?= h(t('btn.save')) ?>
+            <i class="fa-solid fa-floppy-disk me-2"></i><?= h(t('btn.save')) ?>
           </button>
         </div>
       </form>

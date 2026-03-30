@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 include __DIR__ . '/includes/header.php';
 ?>
-<h2 class="h4 mb-3"><i class="fa fa-pen me-2"></i><?= h(t('form.edit.title')) ?> #<?= h($item['id']) ?></h2>
+<h2 class="h4 mb-3"><i class="fa-solid fa-pen-to-square me-2"></i><?= h(t('form.edit.title')) ?> #<?= h($item['id']) ?></h2>
 <form method="post" class="row g-3 shadow-sm bg-white p-4 rounded form-responsive">
   <div class="col-md-3">
     <label class="form-label"><?= h(t('form.count.date')) ?></label>
@@ -105,8 +105,8 @@ include __DIR__ . '/includes/header.php';
     <textarea name="observacoes" rows="3" class="form-control"><?= h($item['observacoes']) ?></textarea>
   </div>
   <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2 form-actions-responsive">
-    <a href="index.php" class="btn btn-outline-secondary btn-rounded w-100 w-md-auto"><i class="fa fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
-    <button class="btn btn-primary btn-rounded w-100 w-md-auto" type="submit"><i class="fa fa-save me-1"></i><?= h(t('btn.save.changes')) ?></button>
+    <a href="index.php" class="btn btn-outline-secondary btn-rounded w-100 w-md-auto"><i class="fa-solid fa-arrow-left me-1"></i><?= h(t('btn.back')) ?></a>
+    <button class="btn btn-primary btn-rounded w-100 w-md-auto" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i><?= h(t('btn.save.changes')) ?></button>
   </div>
 </form>
 <?php include __DIR__ . '/includes/footer.php'; ?>

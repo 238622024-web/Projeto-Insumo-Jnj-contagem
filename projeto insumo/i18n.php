@@ -13,6 +13,7 @@ function t(string $key): string {
       'pt-br' => [
         'app.title' => 'Manserv',
         'nav.home' => 'Inicio',
+        'nav.dashboard' => 'Dashboard',
         'nav.new' => 'Novo',
         'nav.count' => 'Contagem',
         'nav.profile' => 'Perfil',
@@ -42,6 +43,7 @@ function t(string $key): string {
       'en' => [
         'app.title' => 'Manserv',
         'nav.home' => 'Home',
+        'nav.dashboard' => 'Dashboard',
         'nav.new' => 'New',
         'nav.count' => 'Count',
         'nav.profile' => 'Profile',
