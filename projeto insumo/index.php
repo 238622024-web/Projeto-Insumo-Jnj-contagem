@@ -8,16 +8,61 @@ $pdo = getPDO();
 // Filtragem por data de entrada via GET
 $start_date = trim($_GET['start_date'] ?? '');
 $end_date = trim($_GET['end_date'] ?? '');
+$count_start_date = trim($_GET['count_start_date'] ?? '');
+$count_end_date = trim($_GET['count_end_date'] ?? '');
+$status_validade = trim($_GET['status_validade'] ?? '');
+$unidade_filter = trim($_GET['unidade_filter'] ?? '');
+$sem_contagem = trim($_GET['sem_contagem'] ?? '');
 $where = [];
 $params = [];
+
+$exportParams = [];
 
 if ($start_date !== '') {
   $where[] = 'data_entrada >= ?';
   $params[] = $start_date;
+  $exportParams['start_date'] = $start_date;
 }
 if ($end_date !== '') {
   $where[] = 'data_entrada <= ?';
   $params[] = $end_date;
+  $exportParams['end_date'] = $end_date;
+}
+if ($count_start_date !== '') {
+  $where[] = 'data_contagem >= ?';
+  $params[] = $count_start_date;
+  $exportParams['count_start_date'] = $count_start_date;
+}
+if ($count_end_date !== '') {
+  $where[] = 'data_contagem <= ?';
+  $params[] = $count_end_date;
+  $exportParams['count_end_date'] = $count_end_date;
+}
+if ($status_validade === 'expirado') {
+  $where[] = 'validade < CURDATE()';
+  $exportParams['status_validade'] = $status_validade;
+} elseif ($status_validade === 'v7') {
+  $where[] = 'validade >= CURDATE() AND validade <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)';
+  $exportParams['status_validade'] = $status_validade;
+} elseif ($status_validade === 'v30') {
+  $where[] = 'validade > DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND validade <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)';
+  $exportParams['status_validade'] = $status_validade;
+} elseif ($status_validade === 'ok') {
+  $where[] = 'validade > DATE_ADD(CURDATE(), INTERVAL 30 DAY)';
+  $exportParams['status_validade'] = $status_validade;
+}
+if ($unidade_filter !== '') {
+  if ($unidade_filter === 'Sem unidade') {
+    $where[] = "(unidade IS NULL OR unidade = '')";
+  } else {
+    $where[] = 'unidade = ?';
+    $params[] = $unidade_filter;
+  }
+  $exportParams['unidade_filter'] = $unidade_filter;
+}
+if ($sem_contagem === '1') {
+  $where[] = 'data_contagem IS NULL';
+  $exportParams['sem_contagem'] = '1';
 }
 $sql = 'SELECT * FROM insumos_jnj';
 if (!empty($where)) $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -26,6 +71,9 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $insumos = $stmt->fetchAll();
 $total = count($insumos);
+$exportQuery = http_build_query($exportParams);
+$exportPdfHref = 'export_pdf.php' . ($exportQuery !== '' ? '?' . $exportQuery : '');
+$exportExcelHref = 'export_excel.php' . ($exportQuery !== '' ? '?' . $exportQuery : '');
 function diasPara($data) {
   $hoje = new DateTime();
   $d = DateTime::createFromFormat('Y-m-d', $data);
@@ -48,6 +96,25 @@ foreach ($insumos as $item) {
 
 include __DIR__ . '/includes/header.php';
 ?>
+<?php if ($count_start_date !== '' || $count_end_date !== '' || $status_validade !== '' || $unidade_filter !== '' || $sem_contagem === '1'): ?>
+<div class="alert alert-info border-0 shadow-sm d-flex flex-wrap align-items-center gap-2">
+  <strong class="me-1"><i class="fa-solid fa-filter me-1"></i>Filtros do dashboard:</strong>
+  <?php if ($count_start_date !== '' || $count_end_date !== ''): ?>
+    <span class="badge text-bg-light border">Contagem: <?= h($count_start_date !== '' ? $count_start_date : '...') ?> ate <?= h($count_end_date !== '' ? $count_end_date : '...') ?></span>
+  <?php endif; ?>
+  <?php if ($status_validade !== ''): ?>
+    <span class="badge text-bg-light border">Status: <?= h($status_validade) ?></span>
+  <?php endif; ?>
+  <?php if ($unidade_filter !== ''): ?>
+    <span class="badge text-bg-light border">Unidade: <?= h($unidade_filter) ?></span>
+  <?php endif; ?>
+  <?php if ($sem_contagem === '1'): ?>
+    <span class="badge text-bg-light border">Sem contagem</span>
+  <?php endif; ?>
+  <a class="btn btn-sm btn-outline-secondary ms-auto" href="index.php"><i class="fa-solid fa-xmark me-1"></i>Limpar filtros</a>
+</div>
+<?php endif; ?>
+
 <!-- Cards de Estatísticas -->
 <div class="row g-3 mb-4">
   <div class="col-12 col-md-3">
@@ -111,8 +178,8 @@ include __DIR__ . '/includes/header.php';
       <h2 class="h4 m-0"><i class="fa fa-table me-2 text-primary"></i><?= h(t('list.title')) ?></h2>
       <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-success" href="cadastrar.php"><i class="fa-solid fa-circle-plus me-2"></i><?= h(t('list.add')) ?></a>
-        <a class="btn btn-outline-success" href="export_excel.php"><i class="fa-solid fa-file-excel me-2"></i><?= h(t('list.export.excel')) ?></a>
-        <a class="btn btn-outline-danger" href="export_pdf.php"><i class="fa-solid fa-file-pdf me-2"></i><?= h(t('list.export.pdf')) ?></a>
+        <a class="btn btn-outline-success" href="<?= h($exportExcelHref) ?>"><i class="fa-solid fa-file-excel me-2"></i><?= h(t('list.export.excel')) ?></a>
+        <a class="btn btn-outline-danger" href="<?= h($exportPdfHref) ?>"><i class="fa-solid fa-file-pdf me-2"></i><?= h(t('list.export.pdf')) ?></a>
         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
           <i class="fa-solid fa-trash-can me-2"></i>Apagar Todos
         </button>

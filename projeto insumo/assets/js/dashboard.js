@@ -7,15 +7,27 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   var palette = {
-    red: '#dc3545',
-    amber: '#fd7e14',
-    yellow: '#ffc107',
-    green: '#198754',
-    blue: '#0d6efd',
-    cyan: '#20c997',
-    axis: '#6c757d',
-    grid: '#e9ecef'
+    red: '#E45757',
+    amber: '#F2A93B',
+    yellow: '#FFD166',
+    green: '#2FBF71',
+    blue: '#2D8CFF',
+    cyan: '#23B5D3',
+    axis: '#5B6777',
+    grid: '#E8EDF5',
+    text: '#1E293B'
   };
+
+  var chartState = {
+    validade: null,
+    unidades: null,
+    tendencia: null
+  };
+
+  function formatNumber(value) {
+    var number = Number(value || 0);
+    return number.toLocaleString('pt-BR');
+  }
 
   function setupCanvas(canvas) {
     if (!canvas) return null;
@@ -28,14 +40,32 @@ document.addEventListener('DOMContentLoaded', function () {
     return { ctx: ctx, w: Math.floor(canvas.width / dpr), h: Math.floor(canvas.height / dpr) };
   }
 
+  function roundRect(ctx, x, y, width, height, radius) {
+    var r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
   function drawLegend(containerId, labels, values, colors) {
     var root = document.getElementById(containerId);
     if (!root) return;
     var html = '';
     for (var i = 0; i < labels.length; i += 1) {
-      html += '<div class="d-flex align-items-center mb-1">'
+      html += '<div class="legend-item d-flex align-items-center justify-content-between mb-1">'
+        + '<div class="d-flex align-items-center">'
         + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + colors[i % colors.length] + ';margin-right:8px;"></span>'
-        + '<span class="small text-muted">' + String(labels[i]) + ': ' + String(values[i]) + '</span>'
+        + '<span class="small text-muted">' + String(labels[i]) + '</span>'
+        + '</div>'
+        + '<strong class="small">' + formatNumber(values[i]) + '</strong>'
         + '</div>';
     }
     root.innerHTML = html;
@@ -80,10 +110,13 @@ document.addEventListener('DOMContentLoaded', function () {
       start = end;
     }
 
-    ctx.fillStyle = '#212529';
+    ctx.fillStyle = palette.text;
     ctx.font = '700 18px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(String(total), cx, cy + 6);
+    ctx.fillText(formatNumber(total), cx, cy + 2);
+    ctx.fillStyle = palette.axis;
+    ctx.font = '12px sans-serif';
+    ctx.fillText('TOTAL', cx, cy + 20);
     drawLegend('legend-validade', labels, values, colors);
   }
 
@@ -128,12 +161,16 @@ document.addEventListener('DOMContentLoaded', function () {
       var bh = (values[i] / max) * (plotH - 8);
       var y = top + plotH - bh;
 
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, barW, bh);
+      var grad = ctx.createLinearGradient(0, y, 0, top + plotH);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, 'rgba(45, 140, 255, 0.25)');
+      ctx.fillStyle = grad;
+      roundRect(ctx, x, y, barW, bh, 8);
+      ctx.fill();
 
-      ctx.fillStyle = '#212529';
+      ctx.fillStyle = palette.text;
       ctx.font = '12px sans-serif';
-      ctx.fillText(String(values[i]), x + barW / 2, y - 6);
+      ctx.fillText(formatNumber(values[i]), x + barW / 2, y - 6);
 
       var label = String(labels[i] || '');
       var shortLabel = label.length > 11 ? label.slice(0, 10) + '…' : label;
@@ -191,7 +228,10 @@ document.addEventListener('DOMContentLoaded', function () {
     ctx.lineTo(points[points.length - 1].x, top + plotH);
     ctx.lineTo(points[0].x, top + plotH);
     ctx.closePath();
-    ctx.fillStyle = fill;
+    var gradFill = ctx.createLinearGradient(0, top, 0, top + plotH);
+    gradFill.addColorStop(0, fill);
+    gradFill.addColorStop(1, 'rgba(35, 181, 211, 0.02)');
+    ctx.fillStyle = gradFill;
     ctx.fill();
 
     ctx.beginPath();
@@ -200,14 +240,19 @@ document.addEventListener('DOMContentLoaded', function () {
       ctx.lineTo(points[i].x, points[i].y);
     }
     ctx.strokeStyle = stroke;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.fillStyle = stroke;
     for (i = 0; i < points.length; i += 1) {
       ctx.beginPath();
-      ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2);
+      ctx.arc(points[i].x, points[i].y, 3.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.arc(points[i].x, points[i].y, 5.5, 0, Math.PI * 2);
+      ctx.stroke();
 
       ctx.fillStyle = palette.axis;
       ctx.font = '11px sans-serif';
@@ -217,25 +262,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  drawDoughnut(
-    document.getElementById('chart-validade'),
-    data.validade.labels || [],
-    data.validade.values || [],
-    [palette.red, palette.amber, palette.yellow, palette.green]
-  );
+  function renderAll() {
+    drawDoughnut(
+      document.getElementById('chart-validade'),
+      data.validade.labels || [],
+      data.validade.values || [],
+      [palette.red, palette.amber, palette.yellow, palette.green]
+    );
 
-  drawBar(
-    document.getElementById('chart-unidades'),
-    data.unidades.labels || [],
-    data.unidades.values || [],
-    palette.blue
-  );
+    drawBar(
+      document.getElementById('chart-unidades'),
+      data.unidades.labels || [],
+      data.unidades.values || [],
+      palette.blue
+    );
 
-  drawLine(
-    document.getElementById('chart-tendencia'),
-    data.tendencia.labels || [],
-    data.tendencia.values || [],
-    palette.cyan,
-    'rgba(32, 201, 151, 0.18)'
-  );
+    drawLine(
+      document.getElementById('chart-tendencia'),
+      data.tendencia.labels || [],
+      data.tendencia.values || [],
+      palette.cyan,
+      'rgba(35, 181, 211, 0.20)'
+    );
+  }
+
+  function debounce(fn, wait) {
+    var timeout = null;
+    return function () {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(fn, wait);
+    };
+  }
+
+  renderAll();
+  window.addEventListener('resize', debounce(renderAll, 140));
 });

@@ -130,6 +130,16 @@ function isAdmin(): bool {
 function getPrimaryAdminId(): int {
     ensureUserAuthSchema();
     $pdo = getPDO();
+
+    // Prefer explicit primary admin account when available.
+    $primaryAdminEmail = 'weder.messias@hotmail.com';
+    $preferred = $pdo->prepare("SELECT id FROM usuarios WHERE role = 'admin' AND aprovado = 1 AND LOWER(email) = LOWER(?) LIMIT 1");
+    $preferred->execute([$primaryAdminEmail]);
+    $preferredRow = $preferred->fetch();
+    if (!empty($preferredRow['id'])) {
+        return (int)$preferredRow['id'];
+    }
+
     $row = $pdo->query("SELECT id FROM usuarios WHERE role = 'admin' AND aprovado = 1 ORDER BY id ASC LIMIT 1")->fetch();
     return (int)($row['id'] ?? 0);
 }
