@@ -1,17 +1,26 @@
 <?php
-// DEBUG temporário - verificar por que o login falha
-// Uso (navegador):
-// http://localhost/dashboard/projeto%20insumo/database/check_login_debug.php?email=WMESSIA&senha=SENHA
-// Substitua WMESSIA e SENHA por valores reais. Apague este arquivo depois de usar.
+// DEBUG local via terminal (CLI) para verificar login.
+// Uso:
+// php database/check_login_debug.php --email=usuario@dominio.com --senha=123456
 require_once __DIR__ . '/../db.php';
 
-$email = $_GET['email'] ?? '';
-$senha = $_GET['senha'] ?? '';
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Acesso negado. Execute este script apenas via CLI.');
+}
+
+if (isProductionEnvironment()) {
+    exit("Script de manutencao desabilitado em ambiente de producao.\n");
+}
+
+$opts = getopt('', ['email:', 'senha:']);
+$email = trim((string)($opts['email'] ?? ''));
+$senha = (string)($opts['senha'] ?? '');
 
 header('Content-Type: text/plain; charset=utf-8');
 echo "DEBUG - Verificação de login\n";
 if ($email === '' || $senha === '') {
-    echo "Uso: passe ?email=seu_email&senha=sua_senha\n";
+    echo "Uso: php database/check_login_debug.php --email=seu_email --senha=sua_senha\n";
     exit;
 }
 
@@ -38,6 +47,6 @@ try {
     echo "Erro ao conectar/consultar: " . $e->getMessage() . "\n";
 }
 
-echo "\nApague este arquivo por segurança quando terminar.\n";
+echo "\nEste script deve ser usado apenas em ambiente local de suporte.\n";
 
 ?>

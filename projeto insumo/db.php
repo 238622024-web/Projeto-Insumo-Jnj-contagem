@@ -26,13 +26,35 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+function loadAppConfig(): void {
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    if (file_exists(__DIR__ . '/config.php')) {
+        require_once __DIR__ . '/config.php';
+    }
+    $loaded = true;
+}
+
+function getAppEnvironment(): string {
+    loadAppConfig();
+    $env = getenv('APP_ENV');
+    if ($env === false || $env === '') {
+        $env = defined('APP_ENV') ? APP_ENV : 'development';
+    }
+    return strtolower(trim((string)$env));
+}
+
+function isProductionEnvironment(): bool {
+    return in_array(getAppEnvironment(), ['prod', 'production'], true);
+}
+
 function getPDO(): PDO {
     static $pdo = null;
     if ($pdo === null) {
         // Carregar configuração externa se existir (fallback se não houver variáveis de ambiente)
-        if (file_exists(__DIR__ . '/config.php')) {
-            require_once __DIR__ . '/config.php';
-        }
+        loadAppConfig();
 
         // Permitir configuração via variáveis de ambiente (Docker/Kubernetes)
         $host = getenv('DB_HOST') ?: (defined('DB_HOST') ? DB_HOST : 'localhost');

@@ -1,17 +1,25 @@
 <?php
 // Atualiza o campo avatar de um usuário pelo e-mail.
-// Uso no navegador (ajuste os parâmetros):
-// http://localhost/dashboard/projeto%20insumo/database/set_avatar.php?email=SEU_EMAIL&file=NOME_DO_ARQUIVO.png
+// Uso via terminal:
+// php database/set_avatar.php --email=SEU_EMAIL --file=NOME_DO_ARQUIVO.png
 
 require_once __DIR__ . '/../db.php';
 
-header('Content-Type: text/plain; charset=utf-8');
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Acesso negado. Execute este script apenas via CLI.');
+}
 
-$email = isset($_GET['email']) ? trim($_GET['email']) : '';
-$file  = isset($_GET['file']) ? trim($_GET['file']) : '';
+if (isProductionEnvironment()) {
+    exit("Script de manutencao desabilitado em ambiente de producao.\n");
+}
+
+$opts = getopt('', ['email:', 'file:']);
+$email = trim((string)($opts['email'] ?? ''));
+$file  = trim((string)($opts['file'] ?? ''));
 
 if ($email === '' || $file === '') {
-    echo "Parâmetros ausentes. Informe ?email=...&file=...\n";
+    echo "Parametros ausentes. Informe --email=... --file=...\n";
     exit(1);
 }
 

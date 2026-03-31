@@ -1,6 +1,16 @@
 <?php
 // Script de diagnóstico: lista usuários e o valor do campo `avatar`, e lista arquivos em assets/uploads
 require_once __DIR__ . '/../db.php';
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Acesso negado. Execute este script apenas via CLI.');
+}
+
+if (isProductionEnvironment()) {
+    exit("Script de manutencao desabilitado em ambiente de producao.\n");
+}
+
 try {
     $pdo = getPDO();
     $col = $pdo->query("SHOW COLUMNS FROM usuarios LIKE 'avatar'")->fetch();
