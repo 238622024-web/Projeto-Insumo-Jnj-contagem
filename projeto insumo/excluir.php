@@ -24,33 +24,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 include __DIR__ . '/includes/header.php';
 ?>
-<div class="d-flex justify-content-center align-items-start" style="min-height:50vh;">
-    <div class="card shadow-lg" style="max-width: 600px; width:100%;">
-        <div class="card-header bg-danger text-white d-flex align-items-center">
-            <i class="fa fa-triangle-exclamation me-2"></i>
-            <strong>Confirmar exclusão</strong>
-        </div>
-        <div class="card-body">
-            <p class="mb-3">Tem certeza que deseja excluir este material? Esta ação não pode ser desfeita.</p>
-            <div class="border rounded p-3 bg-light">
-                <div class="row g-2 small">
-                    <div class="col-12"><strong>ID:</strong> <?= h($item['id']) ?></div>
-                    <div class="col-12"><strong>Nome:</strong> <?= h($item['nome']) ?></div>
-                    <div class="col-md-6"><strong>Posição:</strong> <?= h($item['posicao']) ?></div>
-                    <div class="col-md-6"><strong>Lote:</strong> <?= h($item['lote'] ?? '') ?></div>
-                    <div class="col-md-6"><strong>Qtd:</strong> <?= h(number_format((int)$item['quantidade'], 0, ',', '.')) ?></div>
-                    <div class="col-md-6"><strong>Validade:</strong> <?= isset($item['validade']) ? h(date('d/m/Y', strtotime($item['validade']))) : '' ?></div>
-                </div>
+<div class="delete-screen-wrap">
+    <div class="delete-card shadow-lg">
+        <div class="delete-card-header">
+            <div class="delete-header-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div>
+                <h2 class="h5 mb-1">Confirmacao de exclusao</h2>
+                <p class="mb-0 text-muted">Esta operacao remove o material de forma permanente.</p>
             </div>
         </div>
-        <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i>Cancelar</a>
-            <form method="post" class="m-0 d-flex align-items-center gap-2">
-                <input type="text" name="confirm_text" id="confirm_text" class="form-control form-control-sm" placeholder="Digite EXCLUIR para confirmar" style="max-width:260px;" autocomplete="off">
-                <button id="btnDelete" name="confirm" value="SIM" class="btn btn-danger btn-rounded" disabled><i class="fa fa-trash me-1"></i>Sim, excluir</button>
-            </form>
+
+        <div class="delete-risk-banner" role="alert">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Acao critica:</strong> apos confirmar, este registro nao podera ser recuperado pela tela do sistema.
+            </div>
         </div>
+
+        <div class="delete-item-grid">
+            <div class="delete-item-cell"><span>ID</span><strong>#<?= h($item['id']) ?></strong></div>
+            <div class="delete-item-cell"><span>Nome</span><strong><?= h($item['nome']) ?></strong></div>
+            <div class="delete-item-cell"><span>Posicao</span><strong><?= h($item['posicao']) ?></strong></div>
+            <div class="delete-item-cell"><span>Lote</span><strong><?= h($item['lote'] ?? '-') ?></strong></div>
+            <div class="delete-item-cell"><span>Quantidade</span><strong><?= h(number_format((int)$item['quantidade'], 0, ',', '.')) ?></strong></div>
+            <div class="delete-item-cell"><span>Validade</span><strong><?= isset($item['validade']) ? h(date('d/m/Y', strtotime($item['validade']))) : '-' ?></strong></div>
+        </div>
+
+        <form method="post" class="delete-confirm-form" novalidate>
+            <label for="confirm_text" class="form-label fw-semibold">Digite EXCLUIR para continuar</label>
+            <input type="text" name="confirm_text" id="confirm_text" class="form-control" placeholder="EXCLUIR" autocomplete="off" maxlength="20">
+
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" value="1" id="ack_delete">
+                <label class="form-check-label" for="ack_delete">
+                    Confirmo que revisei os dados e desejo excluir este material.
+                </label>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+                <a href="index.php" class="btn btn-outline-secondary btn-rounded"><i class="fa fa-arrow-left me-1"></i>Voltar sem excluir</a>
+                <button id="btnDelete" name="confirm" value="SIM" class="btn btn-danger btn-rounded" disabled>
+                    <i class="fa-solid fa-trash-can me-1"></i>Confirmar exclusao
+                </button>
+            </div>
+        </form>
     </div>
-    </div>
+</div>
 <script src="assets/js/delete-confirmation.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
