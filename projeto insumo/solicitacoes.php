@@ -29,6 +29,25 @@ function ensureSolicitacoesAuditSchema(PDO $pdo): void {
   );
 }
 
+function ensurePasswordResetRequestsSchema(PDO $pdo): void {
+  $pdo->exec(
+    "CREATE TABLE IF NOT EXISTS password_reset_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL,
+      email VARCHAR(190) NOT NULL,
+      motivo_usuario TEXT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',
+      admin_note TEXT NULL,
+      requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      processed_at DATETIME NULL,
+      processed_by INT NULL,
+      INDEX idx_prr_status (status),
+      INDEX idx_prr_user (user_id),
+      INDEX idx_prr_email (email)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+  );
+}
+
 function logSolicitacaoAudit(PDO $pdo, array $target, string $acao, int $executadoPor, string $motivo = ''): void {
   $ins = $pdo->prepare(
     'INSERT INTO solicitacoes_auditoria (user_id, user_nome, user_email, user_role, acao, motivo, executado_por) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -45,6 +64,7 @@ function logSolicitacaoAudit(PDO $pdo, array $target, string $acao, int $executa
 }
 
 ensureSolicitacoesAuditSchema($pdo);
+ensurePasswordResetRequestsSchema($pdo);
 
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -65,7 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $action = $_POST['action'] ?? '';
     $userId = (int)($_POST['user_id'] ?? 0);
+    $requestId = (int)($_POST['request_id'] ?? 0);
   $reason = trim((string)($_POST['reason'] ?? ''));
+    $tempPassword = trim((string)($_POST['temp_password'] ?? ''));
 
     if ($userId > 0) {
         if ($action === 'approve') {
@@ -178,6 +200,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           flash('error', 'Não foi possível apagar esta conta.');
         }
         }
+    } elseif ($requestId > 0) {
+      if ($action === 'reset_approve') {
+        if ($tempPassword === '' || strlen($tempPassword) < 6) {
+          flash('error', 'A senha temporária deve ter pelo menos 6 caracteres.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        $reqStmt = $pdo->prepare(
+          "SELECT pr.id, pr.user_id, pr.email, pr.status, pr.motivo_usuario, u.nome, u.role, u.aprovado
+           FROM password_reset_requests pr
+           LEFT JOIN usuarios u ON u.id = pr.user_id
+           WHERE pr.id = ? AND pr.status = 'pending' LIMIT 1"
+        );
+        $reqStmt->execute([$requestId]);
+        $req = $reqStmt->fetch();
+
+        if (!$req) {
+          flash('error', 'Solicitação de redefinição não encontrada ou já processada.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        if ((int)($req['user_id'] ?? 0) <= 0 || (int)($req['aprovado'] ?? 0) !== 1) {
+          flash('error', 'Usuário desta solicitação não está ativo/aprovado.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        if (($req['role'] ?? 'user') === 'admin' && $adminId !== $primaryAdminId) {
+          flash('error', 'Apenas o administrador principal pode redefinir senha de contas admin.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
+
+        $pdo->beginTransaction();
+        try {
+          $upUser = $pdo->prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ? AND aprovado = 1');
+          $upUser->execute([$hash, (int)$req['user_id']]);
+
+          $upReq = $pdo->prepare("UPDATE password_reset_requests SET status = 'completed', admin_note = ?, processed_at = NOW(), processed_by = ? WHERE id = ? AND status = 'pending'");
+          $upReq->execute([$reason, $adminId, $requestId]);
+
+          $pdo->commit();
+
+          logSolicitacaoAudit($pdo, [
+            'id' => (int)$req['user_id'],
+            'nome' => (string)($req['nome'] ?? ''),
+            'email' => (string)($req['email'] ?? ''),
+            'role' => (string)($req['role'] ?? 'user'),
+          ], 'password_reset_completed', $adminId, $reason !== '' ? $reason : 'Senha temporária definida pelo administrador.');
+
+          flash('success', 'Senha redefinida com sucesso. Passe a senha temporária ao usuário.');
+        } catch (Throwable $e) {
+          if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+          }
+          flash('error', 'Não foi possível concluir a redefinição de senha.');
+        }
+      } elseif ($action === 'reset_reject') {
+        if ($reason === '') {
+          flash('error', 'Informe o motivo da rejeição da solicitação de senha.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        $reqStmt = $pdo->prepare(
+          "SELECT pr.id, pr.user_id, pr.email, pr.status, u.nome, u.role
+           FROM password_reset_requests pr
+           LEFT JOIN usuarios u ON u.id = pr.user_id
+           WHERE pr.id = ? AND pr.status = 'pending' LIMIT 1"
+        );
+        $reqStmt->execute([$requestId]);
+        $req = $reqStmt->fetch();
+
+        if (!$req) {
+          flash('error', 'Solicitação de redefinição não encontrada ou já processada.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        if (($req['role'] ?? 'user') === 'admin' && $adminId !== $primaryAdminId) {
+          flash('error', 'Apenas o administrador principal pode rejeitar pedido de redefinição para admin.');
+          header('Location: solicitacoes.php');
+          exit;
+        }
+
+        $upReq = $pdo->prepare("UPDATE password_reset_requests SET status = 'rejected', admin_note = ?, processed_at = NOW(), processed_by = ? WHERE id = ? AND status = 'pending'");
+        $upReq->execute([$reason, $adminId, $requestId]);
+
+        if ($upReq->rowCount() > 0) {
+          logSolicitacaoAudit($pdo, [
+            'id' => (int)($req['user_id'] ?? 0),
+            'nome' => (string)($req['nome'] ?? ''),
+            'email' => (string)($req['email'] ?? ''),
+            'role' => (string)($req['role'] ?? 'user'),
+          ], 'password_reset_rejected', $adminId, $reason);
+
+          flash('success', 'Solicitação de redefinição rejeitada.');
+        } else {
+          flash('error', 'Não foi possível rejeitar esta solicitação de senha.');
+        }
+      }
     }
 
     header('Location: solicitacoes.php');
@@ -246,6 +373,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $approvedStmt->execute($approvedExecParams);
   $approvedUsers = $approvedStmt->fetchAll();
 
+  $resetRequestsStmt = $pdo->query(
+    "SELECT
+      pr.id,
+      pr.user_id,
+      pr.email,
+      pr.motivo_usuario,
+      pr.requested_at,
+      u.nome,
+      u.role,
+      u.aprovado
+    FROM password_reset_requests pr
+    LEFT JOIN usuarios u ON u.id = pr.user_id
+    WHERE pr.status = 'pending'
+    ORDER BY pr.requested_at ASC, pr.id ASC"
+  );
+  $pendingResetRequests = $resetRequestsStmt->fetchAll();
+
   $buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $pendingPage, $approvedPage): string {
     $base = [
       'q' => $q,
@@ -293,6 +437,75 @@ require_once __DIR__ . '/includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Solicitações de cadastro</h1>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-0 pt-3 pb-0">
+    <h2 class="h5 mb-3"><i class="fa-solid fa-key me-2 text-primary"></i>Solicitações de redefinição de senha</h2>
+  </div>
+  <div class="card-body pt-0">
+    <?php if (empty($pendingResetRequests)): ?>
+      <div class="alert alert-info mb-0">Não há solicitações de redefinição de senha pendentes.</div>
+    <?php else: ?>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>ID Req.</th>
+              <th>Usuário</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th>Motivo informado</th>
+              <th>Solicitado em</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach ($pendingResetRequests as $r): ?>
+            <?php
+              $isAdminReset = (($r['role'] ?? 'user') === 'admin');
+              $resetBlocked = $isAdminReset && ($adminId !== $primaryAdminId);
+              $resetTitle = $resetBlocked ? 'Apenas o administrador principal pode processar redefinição de senha para admins' : '';
+            ?>
+            <tr>
+              <td><?= (int)$r['id'] ?></td>
+              <td><?= h((string)($r['nome'] ?? 'Usuário não encontrado')) ?></td>
+              <td><?= h((string)$r['email']) ?></td>
+              <td>
+                <?php if ($isAdminReset): ?>
+                  <span class="badge bg-warning text-dark">Administrador</span>
+                <?php else: ?>
+                  <span class="badge bg-secondary">Conta normal</span>
+                <?php endif; ?>
+              </td>
+              <td><?= h((string)($r['motivo_usuario'] ?? '-')) ?></td>
+              <td><?= !empty($r['requested_at']) ? h(date('d/m/Y H:i', strtotime((string)$r['requested_at']))) : '-' ?></td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-2">
+                  <form method="post" class="m-0" onsubmit="return requestTempPassword(this);">
+                    <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                    <input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="action" value="reset_approve">
+                    <input type="hidden" name="temp_password" value="">
+                    <input type="hidden" name="reason" value="">
+                    <button type="submit" class="btn btn-sm btn-success" <?= $resetBlocked ? 'disabled' : '' ?> <?= $resetTitle !== '' ? 'title="'.h($resetTitle).'"' : '' ?>><i class="fa-solid fa-key me-1"></i>Definir senha temporária</button>
+                  </form>
+                  <form method="post" class="m-0" onsubmit="return requestActionReason(this, 'rejeitar esta solicitação de redefinição');">
+                    <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                    <input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="action" value="reset_reject">
+                    <input type="hidden" name="reason" value="">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" <?= $resetBlocked ? 'disabled' : '' ?> <?= $resetTitle !== '' ? 'title="'.h($resetTitle).'"' : '' ?>><i class="fa-solid fa-xmark me-1"></i>Rejeitar</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -528,6 +741,33 @@ function requestActionReason(form, actionLabel) {
   var input = form.querySelector('input[name="reason"]');
   if (input) {
     input.value = reason;
+  }
+  return true;
+}
+
+function requestTempPassword(form) {
+  var tempPassword = window.prompt('Digite a senha temporária (mínimo 6 caracteres):', '');
+  if (tempPassword === null) {
+    return false;
+  }
+  tempPassword = tempPassword.trim();
+  if (tempPassword.length < 6) {
+    alert('A senha temporária deve ter pelo menos 6 caracteres.');
+    return false;
+  }
+
+  var note = window.prompt('Observação para auditoria (opcional):', '');
+  if (note === null) {
+    note = '';
+  }
+
+  var passInput = form.querySelector('input[name="temp_password"]');
+  var reasonInput = form.querySelector('input[name="reason"]');
+  if (passInput) {
+    passInput.value = tempPassword;
+  }
+  if (reasonInput) {
+    reasonInput.value = note.trim();
   }
   return true;
 }
