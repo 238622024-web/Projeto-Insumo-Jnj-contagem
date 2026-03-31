@@ -126,6 +126,7 @@
 
       $('table.table').each(function() {
         const $table = $(this);
+        const isMaterialsTable = $table.hasClass('js-materials-search');
         const headerCount = $table.find('thead th').length;
         const $bodyRows = $table.find('tbody tr');
 
@@ -170,7 +171,7 @@
           columnsDef.push({});
         }
 
-        $table.DataTable({
+        const options = {
           pageLength: pageLength,
           lengthMenu: [5, 6, 10, 15, 25],
           search: {
@@ -186,7 +187,28 @@
             url: 'assets/vendor/datatables/i18n/pt-BR.json',
             searchPlaceholder: 'Pesquisar...'
           }
-        });
+        };
+
+        if (isMaterialsTable) {
+          options.pageLength = 6;
+          options.lengthMenu = [6, 12, 24, 48];
+          options.dom = "<'materials-table-top d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3'<'materials-top-left'l><'materials-top-right'f>>" +
+            "t" +
+            "<'materials-table-bottom d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3'<'materials-bottom-left'i><'materials-bottom-right'p>>";
+          options.language.lengthMenu = 'Exibir _MENU_ resultados por pagina';
+          options.language.search = 'Pesquisar';
+          options.language.info = 'Mostrando _START_ a _END_ de _TOTAL_ materiais';
+          options.language.zeroRecords = 'Nenhum material encontrado';
+          options.language.emptyTable = 'Nenhum material cadastrado';
+          options.initComplete = function() {
+            const wrapper = this.api().table().container();
+            if (wrapper && wrapper.classList) {
+              wrapper.classList.add('materials-dt-wrapper');
+            }
+          };
+        }
+
+        $table.DataTable(options);
       });
     });
   }
