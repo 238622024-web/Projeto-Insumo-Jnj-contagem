@@ -428,6 +428,86 @@ iframe {
 	border-bottom: 1px solid #edf2fa;
 }
 
+.materials-action-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.materials-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.38rem;
+	font-weight: 600;
+	border-radius: 999px;
+	padding: 0.34rem 0.7rem;
+	border: 1px solid transparent;
+	transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.materials-action-btn i {
+	font-size: 0.82rem;
+}
+
+.materials-action-edit {
+	background: #eef4ff;
+	border-color: #c8d8f3;
+	color: #1f4b8f;
+}
+
+.materials-action-edit:hover {
+	background: #dfeaff;
+	border-color: #9eb6e0;
+	color: #173a70;
+	box-shadow: 0 6px 14px rgba(31, 75, 143, 0.14);
+	transform: translateY(-1px);
+}
+
+.materials-action-delete {
+	background: #fff1f1;
+	border-color: #efc8c8;
+	color: #a72b2b;
+}
+
+.materials-action-delete:hover {
+	background: #ffe4e4;
+	border-color: #e3a0a0;
+	color: #832020;
+	box-shadow: 0 6px 14px rgba(167, 43, 43, 0.14);
+	transform: translateY(-1px);
+}
+
+.materials-action-btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(93, 135, 206, 0.24);
+}
+
+.theme-dark .materials-action-edit {
+	background: rgba(77, 136, 233, 0.18);
+	border-color: rgba(120, 167, 241, 0.45);
+	color: #b9d6ff;
+}
+
+.theme-dark .materials-action-edit:hover {
+	background: rgba(77, 136, 233, 0.28);
+	border-color: rgba(139, 181, 245, 0.75);
+	color: #d6e8ff;
+}
+
+.theme-dark .materials-action-delete {
+	background: rgba(217, 70, 70, 0.18);
+	border-color: rgba(235, 117, 117, 0.42);
+	color: #ffb9b9;
+}
+
+.theme-dark .materials-action-delete:hover {
+	background: rgba(217, 70, 70, 0.26);
+	border-color: rgba(247, 149, 149, 0.72);
+	color: #ffd6d6;
+}
+
 @media (max-width: 768px) {
 	.materials-dt-wrapper .materials-table-top,
 	.materials-dt-wrapper .materials-table-bottom {
@@ -447,6 +527,11 @@ iframe {
 
 	.materials-dt-wrapper .dataTables_paginate {
 		text-align: left !important;
+	}
+
+	.materials-action-btn {
+		padding: 0.32rem 0.6rem;
+		font-size: 0.78rem;
 	}
 }
 

@@ -253,9 +253,15 @@ include __DIR__ . '/includes/header.php';
           <td style="padding: 1rem;"><?= h(date('d/m/Y', strtotime($row['validade']))) ?><br><?= $badge ?></td>
           <td class="small" style="padding: 1rem; max-width: 200px;"><?= nl2br(h($row['observacoes'] ?? '')) ?></td>
           <td class="text-center" style="padding: 1rem;">
-            <div class="btn-group" role="group">
-              <a class="btn btn-sm btn-outline-primary" href="editar.php?id=<?= h($row['id']) ?>" title="Editar"><i class="fa fa-pen me-1"></i>Editar</a>
-              <a class="btn btn-sm btn-outline-danger" href="excluir.php?id=<?= h($row['id']) ?>" title="Excluir"><i class="fa fa-trash me-1"></i>Excluir</a>
+            <div class="materials-action-group" role="group" aria-label="Acoes do item <?= h($row['id']) ?>">
+              <a class="btn btn-sm materials-action-btn materials-action-edit" href="editar.php?id=<?= h($row['id']) ?>" title="Editar item #<?= h($row['id']) ?>" aria-label="Editar item #<?= h($row['id']) ?>">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Editar</span>
+              </a>
+              <a class="btn btn-sm materials-action-btn materials-action-delete" href="excluir.php?id=<?= h($row['id']) ?>" title="Excluir item #<?= h($row['id']) ?>" aria-label="Excluir item #<?= h($row['id']) ?>">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Excluir</span>
+              </a>
             </div>
           </td>
         </tr>
