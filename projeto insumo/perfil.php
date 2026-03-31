@@ -12,9 +12,9 @@ $csrfToken = (string)$_SESSION['csrf_token'];
 // Verifica se a coluna 'avatar' existe para evitar erro em bancos sem migração
 $hasAvatarCol = (bool)$pdo->query("SHOW COLUMNS FROM usuarios LIKE 'avatar'")->fetch();
 if ($hasAvatarCol) {
-  $user = $pdo->prepare('SELECT id,nome,email,avatar,senha_hash,role FROM usuarios WHERE id = ? LIMIT 1');
+  $user = $pdo->prepare('SELECT id,nome,email,avatar,senha_hash,role,must_change_password FROM usuarios WHERE id = ? LIMIT 1');
 } else {
-  $user = $pdo->prepare('SELECT id,nome,email,senha_hash,role FROM usuarios WHERE id = ? LIMIT 1');
+    $user = $pdo->prepare('SELECT id,nome,email,senha_hash,role,must_change_password FROM usuarios WHERE id = ? LIMIT 1');
 }
 $user->execute([$_SESSION['usuario_id']]);
 $me = $user->fetch();
@@ -93,12 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($isChangingPassword) {
       $hash = password_hash($senha, PASSWORD_DEFAULT);
             if ($hasAvatarCol) {
-        $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, senha_hash = ?, avatar = ? WHERE id = ?');
+        $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, senha_hash = ?, avatar = ?, must_change_password = 0, temp_password_expires_at = NULL WHERE id = ?');
         $stmt->execute([$nome, $hash, $avatarFilename, $_SESSION['usuario_id']]);
             } else {
-        $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, senha_hash = ? WHERE id = ?');
+        $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, senha_hash = ?, must_change_password = 0, temp_password_expires_at = NULL WHERE id = ?');
         $stmt->execute([$nome, $hash, $_SESSION['usuario_id']]);
             }
+      $_SESSION['usuario_must_change_password'] = 0;
         } else {
       if ($hasAvatarCol) {
         $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, avatar = ? WHERE id = ?');
@@ -145,6 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 <h2 class="h4 mb-3"><i class="fa fa-user me-2"></i>Meu Perfil</h2>
+<?php if ((int)($me['must_change_password'] ?? 0) === 1): ?>
+  <div class="alert alert-warning">
+    Você está usando uma senha temporária. Para continuar no sistema, defina uma nova senha agora.
+  </div>
+<?php endif; ?>
 <?php if ($m = flash('error')): ?>
   <div class="alert alert-danger"><?= h($m) ?></div>
 <?php endif; ?>

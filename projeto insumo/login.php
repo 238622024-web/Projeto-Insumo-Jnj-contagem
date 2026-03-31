@@ -2,7 +2,15 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/settings.php';
-if (currentUser()) { header('Location: index.php'); exit; }
+$loggedUser = currentUser();
+if ($loggedUser) {
+  if (mustChangePassword($loggedUser)) {
+    header('Location: perfil.php?force_password_change=1');
+  } else {
+    header('Location: index.php');
+  }
+  exit;
+}
 
 // Detectar logo igual ao header
 $projectBase = (function(){
@@ -55,7 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $senha = $_POST['password'] ?? '';
     if (login($email, $senha)) {
         flash('success', 'Login efetuado com sucesso.');
-        header('Location: index.php');
+        if (mustChangePassword()) {
+          header('Location: perfil.php?force_password_change=1');
+        } else {
+          header('Location: index.php');
+        }
         exit;
     } else {
     flash('error', getLastAuthError() ?? 'E-mail ou senha inválidos.');

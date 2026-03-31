@@ -27,6 +27,13 @@ function ensureUserAuthSchema(): void {
     if (empty($existing['aprovado_por'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN aprovado_por INT NULL AFTER aprovado_em');
     }
+    if (empty($existing['must_change_password'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER aprovado_por');
+        $pdo->exec('ALTER TABLE usuarios ADD INDEX idx_usuarios_must_change_password (must_change_password)');
+    }
+    if (empty($existing['temp_password_expires_at'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN temp_password_expires_at DATETIME NULL AFTER must_change_password');
+    }
 
     // Bootstrap: if there is no approved admin yet, promote the oldest user.
     $adminCount = (int)($pdo->query("SELECT COUNT(*) AS c FROM usuarios WHERE role = 'admin' AND aprovado = 1")->fetch()['c'] ?? 0);
@@ -57,7 +64,7 @@ function getLastAuthError(): ?string {
 function login(string $email, string $senha): bool {
     ensureUserAuthSchema();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado FROM usuarios WHERE email = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,must_change_password,temp_password_expires_at FROM usuarios WHERE email = ? LIMIT 1');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     if ($user) {
@@ -67,11 +74,18 @@ function login(string $email, string $senha): bool {
                 setLastAuthError('Sua conta ainda está pendente de aprovação do administrador.');
                 return false;
             }
+            $mustChangePassword = (int)($user['must_change_password'] ?? 0) === 1;
+            $tempExpiresAt = (string)($user['temp_password_expires_at'] ?? '');
+            if ($mustChangePassword && $tempExpiresAt !== '' && strtotime($tempExpiresAt) !== false && strtotime($tempExpiresAt) < time()) {
+                setLastAuthError('Sua senha temporária expirou. Solicite uma nova redefinição ao administrador.');
+                return false;
+            }
             if (session_status() === PHP_SESSION_ACTIVE) { session_regenerate_id(true); }
             $_SESSION['usuario_id'] = $user['id'];
             $_SESSION['usuario_email'] = $user['email'];
             $_SESSION['usuario_nome'] = $user['nome'];
             $_SESSION['usuario_role'] = $user['role'] ?? 'user';
+            $_SESSION['usuario_must_change_password'] = $mustChangePassword ? 1 : 0;
             unset($_SESSION['last_auth_error']);
             return true;
         }
@@ -97,10 +111,13 @@ function currentUser(): ?array {
         // Fetch fresh data from DB to include avatar and updated info
         try {
             $pdo = getPDO();
-            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado FROM usuarios WHERE id = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at FROM usuarios WHERE id = ? LIMIT 1');
             $stmt->execute([$_SESSION['usuario_id']]);
             $user = $stmt->fetch();
-            if ($user) return $user;
+            if ($user) {
+                $_SESSION['usuario_must_change_password'] = (int)($user['must_change_password'] ?? 0);
+                return $user;
+            }
         } catch (Exception $e) {
             // fallback to session data
             return [
@@ -108,17 +125,34 @@ function currentUser(): ?array {
                 'email' => $_SESSION['usuario_email'],
                 'nome' => $_SESSION['usuario_nome'],
                 'role' => $_SESSION['usuario_role'] ?? 'user',
+                'must_change_password' => (int)($_SESSION['usuario_must_change_password'] ?? 0),
             ];
         }
     }
     return null;
 }
 
+function mustChangePassword(?array $user = null): bool {
+    $u = $user ?? currentUser();
+    return !empty($u) && (int)($u['must_change_password'] ?? 0) === 1;
+}
+
 function requireLogin(): void {
-    if (!currentUser()) {
+    $user = currentUser();
+    if (!$user) {
         flash('error', 'Faça login para acessar.');
         header('Location: login.php');
         exit;
+    }
+
+    if (mustChangePassword($user)) {
+        $currentScript = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+        $allowed = ['perfil.php', 'logout.php', 'login.php'];
+        if (!in_array($currentScript, $allowed, true)) {
+            flash('error', 'Troque sua senha temporária para continuar usando o sistema.');
+            header('Location: perfil.php?force_password_change=1');
+            exit;
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/settings.php';
 requireAdmin();
 
 $pdo = getPDO();
@@ -61,6 +62,11 @@ function logSolicitacaoAudit(PDO $pdo, array $target, string $acao, int $executa
     $motivo,
     $executadoPor > 0 ? $executadoPor : null,
   ]);
+}
+
+function getTempPasswordExpiryHours(): int {
+  $hours = (int)getSetting('temp_password_expiry_hours', 24);
+  return max(1, min(168, $hours));
 }
 
 ensureSolicitacoesAuditSchema($pdo);
@@ -237,10 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $hash = password_hash($tempPassword, PASSWORD_DEFAULT);
 
+        $expiryHours = getTempPasswordExpiryHours();
+        $expiryAt = date('Y-m-d H:i:s', time() + ($expiryHours * 3600));
+
         $pdo->beginTransaction();
         try {
-          $upUser = $pdo->prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ? AND aprovado = 1');
-          $upUser->execute([$hash, (int)$req['user_id']]);
+          $upUser = $pdo->prepare('UPDATE usuarios SET senha_hash = ?, must_change_password = 1, temp_password_expires_at = ? WHERE id = ? AND aprovado = 1');
+          $upUser->execute([$hash, $expiryAt, (int)$req['user_id']]);
 
           $upReq = $pdo->prepare("UPDATE password_reset_requests SET status = 'completed', admin_note = ?, processed_at = NOW(), processed_by = ? WHERE id = ? AND status = 'pending'");
           $upReq->execute([$reason, $adminId, $requestId]);
@@ -254,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'role' => (string)($req['role'] ?? 'user'),
           ], 'password_reset_completed', $adminId, $reason !== '' ? $reason : 'Senha temporária definida pelo administrador.');
 
-          flash('success', 'Senha redefinida com sucesso. Passe a senha temporária ao usuário.');
+          flash('success', 'Senha redefinida com sucesso. Passe a senha temporária ao usuário (validade: ' . $expiryHours . 'h).');
         } catch (Throwable $e) {
           if ($pdo->inTransaction()) {
             $pdo->rollBack();

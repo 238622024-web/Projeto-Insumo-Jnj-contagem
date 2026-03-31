@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $itens = (int)($_POST['itens_pagina'] ?? 25);
     $val_curta = (int)($_POST['alerta_validade_curta'] ?? 7);
     $val_media = (int)($_POST['alerta_validade_media'] ?? 30);
+    $temp_expiry_hours = (int)($_POST['temp_password_expiry_hours'] ?? 24);
     $mostrar_lote = isset($_POST['mostrar_lote']) ? '1' : '0';
 
     $saveErrors = [];
@@ -23,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!setSetting('itens_pagina', max(5, min(200, $itens)))) { $saveErrors[] = 'itens_pagina'; }
     if (!setSetting('alerta_validade_curta', max(0, $val_curta))) { $saveErrors[] = 'alerta_validade_curta'; }
     if (!setSetting('alerta_validade_media', max(0, $val_media))) { $saveErrors[] = 'alerta_validade_media'; }
+    if (!setSetting('temp_password_expiry_hours', max(1, min(168, $temp_expiry_hours)))) { $saveErrors[] = 'temp_password_expiry_hours'; }
     if (!setSetting('mostrar_lote', $mostrar_lote)) { $saveErrors[] = 'mostrar_lote'; }
 
     // Upload de logo opcional
@@ -69,6 +71,8 @@ $primaryColorAtual = getSetting('primary_color', '#b50000');
 $itensAtual = (int)getSetting('itens_pagina', 25);
 $valCurta = (int)getSetting('alerta_validade_curta', 7);
 $valMedia = (int)getSetting('alerta_validade_media', 30);
+$tempPasswordExpiryHours = (int)getSetting('temp_password_expiry_hours', 24);
+$tempPasswordExpiryHours = max(1, min(168, $tempPasswordExpiryHours));
 $mostrarLote = getSetting('mostrar_lote', '1') === '1';
 $zipDisponivel = class_exists('ZipArchive');
 // agora inclui o header (após o processamento POST e possíveis redirecionamentos)
@@ -112,6 +116,11 @@ include __DIR__ . '/includes/header.php';
     <div class="col-md-4">
       <label class="form-label">Aviso validade média (dias)</label>
       <input type="number" name="alerta_validade_media" class="form-control" min="0" value="<?= $valMedia ?>">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Validade senha temporária (horas)</label>
+      <input type="number" name="temp_password_expiry_hours" class="form-control" min="1" max="168" value="<?= $tempPasswordExpiryHours ?>">
+      <div class="form-text">Define por quantas horas a senha temporária liberada pelo admin permanece válida.</div>
     </div>
   </div>
 
