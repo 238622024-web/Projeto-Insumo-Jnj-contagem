@@ -90,8 +90,10 @@ Senha: `senha123`
 
 ### Backend
 
+Se voce estiver usando Laragon, abra o projeto no workspace do Laragon ou use o terminal integrado apontando para a pasta `backend/` e confirme que o MySQL do Laragon esta ativo.
+
 ```powershell
-Set-Location "c:\xampp\htdocs\Projeto-Insumo-Jnj-contagem\backend"
+Set-Location "c:\Users\weder\Downloads\projeto_insumo\Projeto-Insumo-Jnj-contagem\backend"
 npm install
 Copy-Item .env.example .env
 ```
@@ -112,6 +114,8 @@ Executar:
 ```powershell
 npm run dev
 ```
+
+Se preferir testar no navegador dentro do fluxo do Laragon, mantenha a API em `http://localhost:3000` e use o proxy do frontend para `/api`.
 
 Health check:
 

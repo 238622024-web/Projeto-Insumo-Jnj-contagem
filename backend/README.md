@@ -20,6 +20,30 @@ Backend REST para o modulo de insumos durante a migracao do sistema PHP para Jav
 2. MySQL ativo com banco `controle_insumos_jnj`.
 3. Tabela `insumos_jnj` criada via scripts de `../projeto insumo/database`.
 
+## Uso no Laragon
+
+1. Coloque o projeto em uma pasta acessivel pelo Laragon, por exemplo `C:\laragon\www\Projeto-Insumo-Jnj-contagem`.
+2. Inicie o MySQL do Laragon.
+3. Abra um terminal na pasta `backend/`.
+4. Instale as dependencias com `npm install`.
+5. Crie o arquivo `.env` a partir de `.env.example`.
+6. Aponte o banco para a instancia local do Laragon, normalmente:
+
+```env
+PORT=3000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=controle_insumos_jnj
+```
+
+7. Execute a API com `npm run dev`.
+
+Se preferir manter uma configuracao separada para o Laragon, copie `.env.laragon.example` para `.env.laragon` e ajuste somente esse arquivo.
+
+Se voce quiser expor a API por um dominio local do Laragon, mantenha a aplicacao Node ouvindo em `localhost:3000` e aponte o frontend ou o navegador para esse endereco.
+
 ## Configuracao
 
 1. Instalar dependencias:

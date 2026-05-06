@@ -35,6 +35,9 @@ function ensureUserAuthSchema(): void {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN temp_password_expires_at DATETIME NULL AFTER must_change_password');
     }
 
+    ensurePrimaryAdminAccount($pdo);
+    ensureContagemTrackingSchema($pdo);
+
     // Bootstrap: if there is no approved admin yet, promote the oldest user.
     $adminCount = (int)($pdo->query("SELECT COUNT(*) AS c FROM usuarios WHERE role = 'admin' AND aprovado = 1")->fetch()['c'] ?? 0);
     if ($adminCount === 0) {
@@ -46,6 +49,72 @@ function ensureUserAuthSchema(): void {
     }
 
     $checked = true;
+}
+
+function ensureContagemTrackingSchema(PDO $pdo): void {
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $cols = $pdo->query('SHOW COLUMNS FROM insumos_jnj')->fetchAll();
+    $existing = [];
+    foreach ($cols as $col) {
+        $existing[$col['Field']] = true;
+    }
+
+    if (empty($existing['data_contagem'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN data_contagem DATE NULL AFTER id');
+    }
+    if (empty($existing['contagem_por_id'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_por_id INT NULL AFTER data_contagem');
+    }
+    if (empty($existing['contagem_por_nome'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_por_nome VARCHAR(150) NULL AFTER contagem_por_id');
+    }
+    if (empty($existing['contagem_em'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_em DATETIME NULL AFTER contagem_por_nome');
+    }
+    if (empty($existing['unidade'])) {
+        $pdo->exec("ALTER TABLE insumos_jnj ADD COLUMN unidade VARCHAR(30) DEFAULT 'UN' AFTER contagem_em");
+    }
+    if (empty($existing['lote'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN lote VARCHAR(100) NULL AFTER posicao');
+    }
+    if (empty($existing['codigo_barra'])) {
+        $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN codigo_barra VARCHAR(100) NULL AFTER lote');
+    }
+
+    $checked = true;
+}
+
+function ensurePrimaryAdminAccount(PDO $pdo): void {
+    static $seeded = false;
+    if ($seeded) {
+        return;
+    }
+
+    if (isProductionEnvironment()) {
+        return;
+    }
+
+    $primaryAdminName = 'WEDER MESSIAS DA SILVA PEREIRA';
+    $primaryAdminEmail = 'weder.messias@hotmail.com';
+    $primaryAdminHash = '$2y$10$FtDWxiRNq9fM9VwflXBoi.US7TU4m/HZUvgKX7x5amq2fZg11nEKq';
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO usuarios (nome, email, senha_hash, role, aprovado, aprovado_em)
+         VALUES (?, ?, ?, 'admin', 1, NOW())
+         ON DUPLICATE KEY UPDATE
+           nome = VALUES(nome),
+           senha_hash = VALUES(senha_hash),
+           role = 'admin',
+           aprovado = 1,
+           aprovado_em = NOW()"
+    );
+    $stmt->execute([$primaryAdminName, $primaryAdminEmail, $primaryAdminHash]);
+
+    $seeded = true;
 }
 
 function setLastAuthError(string $message): void {

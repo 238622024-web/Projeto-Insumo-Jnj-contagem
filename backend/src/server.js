@@ -1,9 +1,9 @@
 import cors from 'cors';
-import dotenv from 'dotenv';
 import express from 'express';
 import insumosRouter from './routes/insumos.js';
+import { loadEnv } from './config/loadEnv.js';
 
-dotenv.config();
+loadEnv();
 
 const app = express();
 

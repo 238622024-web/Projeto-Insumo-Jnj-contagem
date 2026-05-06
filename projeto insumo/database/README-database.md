@@ -12,9 +12,9 @@ Esta pasta contém arquivos SQL para criar e popular o banco de dados local rapi
 2. Se o banco ainda não existir, basta executar o conteúdo de `schema.sql` (ele cria o banco).
 3. Depois execute `seed.sql` para popular com dados de exemplo.
 4. Faça login no sistema usando:
-   - Email: `usuario@jnj.com`
-   - Senha: `senha123`
-   Observação: Se o login não funcionar, gere um novo hash com `password_hash('senha123', PASSWORD_DEFAULT)` e atualize a coluna `senha_hash` do usuário.
+   - Email principal: `weder.messias@hotmail.com`
+   - Senha: `64664158Weder@`
+   - Se o login ainda falhar em um banco já existente, abra `database/bootstrap_primary_admin.php` uma vez no navegador para recriar a conta principal.
 
 ## Linha de comando (MySQL CLI)
 ```bash
