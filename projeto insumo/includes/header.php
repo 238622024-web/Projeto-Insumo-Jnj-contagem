@@ -24,6 +24,11 @@ function buildAssetUrl(string $base, string $rel): string {
   return $base . '/' . implode('/', $parts);
 }
 
+function assetVersion(string $relativePath): string {
+  $absolutePath = __DIR__ . '/../' . ltrim($relativePath, '/');
+  return file_exists($absolutePath) ? (string)filemtime($absolutePath) : (string)time();
+}
+
 $logoUrl = '';
 if (!empty($logoPath)) {
   // Só usa logo_path se o arquivo realmente existir localmente.
@@ -83,16 +88,16 @@ if ($logoUrl === '') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/v4-shims.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="assets/vendor/datatables/css/jquery.dataTables.min.css" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="assets/css/header-footer.css" />
+    <link rel="stylesheet" href="style.css?v=<?= h(assetVersion('style.css')) ?>" />
+    <link rel="stylesheet" href="assets/css/header-footer.css?v=<?= h(assetVersion('assets/css/header-footer.css')) ?>" />
     <?php if ($currentPage === 'login.php'): ?>
-      <link rel="stylesheet" href="assets/css/login.css" />
+      <link rel="stylesheet" href="assets/css/login.css?v=<?= h(assetVersion('assets/css/login.css')) ?>" />
     <?php endif; ?>
     <?php if ($currentPage === 'create-account.php'): ?>
-      <link rel="stylesheet" href="assets/css/create-account.css" />
+      <link rel="stylesheet" href="assets/css/create-account.css?v=<?= h(assetVersion('assets/css/create-account.css')) ?>" />
     <?php endif; ?>
     <?php if ($currentPage === 'forgot-password.php'): ?>
-      <link rel="stylesheet" href="assets/css/forgot-password.css" />
+      <link rel="stylesheet" href="assets/css/forgot-password.css?v=<?= h(assetVersion('assets/css/forgot-password.css')) ?>" />
     <?php endif; ?>
 <?php
   // Aplicar cor primária dinâmica se configurada

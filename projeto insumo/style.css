@@ -1115,3 +1115,208 @@ button {
 		font-size: 1rem;
 	}
 }
+
+/* ========================================
+   SOLICITAÇÕES - PAINEL ADMINISTRATIVO
+   ======================================== */
+.solicitacoes-page {
+	position: relative;
+}
+
+.solicitacoes-page::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at top right, rgba(255, 70, 10, 0.12), transparent 38%),
+		radial-gradient(circle at top left, rgba(15, 23, 42, 0.04), transparent 30%);
+	pointer-events: none;
+	border-radius: 1rem;
+}
+
+.solicitacoes-page > * {
+	position: relative;
+	z-index: 1;
+}
+
+.solicitacoes-hero {
+	background: linear-gradient(135deg, rgba(255, 70, 10, 0.08) 0%, rgba(255, 255, 255, 0.95) 55%, rgba(248, 250, 252, 1) 100%);
+	border: 1px solid rgba(255, 70, 10, 0.08);
+	border-radius: 1.5rem;
+}
+
+.solicitacoes-kicker {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.35rem 0.75rem;
+	border-radius: 999px;
+	background: rgba(255, 70, 10, 0.12);
+	color: var(--color-primary);
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	margin-bottom: 0.85rem;
+}
+
+.solicitacoes-subtitle {
+	max-width: 56rem;
+	color: var(--color-muted);
+	font-size: 1rem;
+	line-height: 1.65;
+}
+
+.solicitacoes-pill,
+.section-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.45rem 0.8rem;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid rgba(15, 23, 42, 0.08);
+	box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+	font-weight: 600;
+	font-size: 0.88rem;
+	color: #334155;
+}
+
+.metric-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+	padding: 1.1rem 1.2rem;
+	border-radius: 1.1rem;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid rgba(15, 23, 42, 0.06);
+	box-shadow: 0 16px 32px rgba(15, 23, 42, 0.05);
+	backdrop-filter: blur(8px);
+}
+
+.metric-icon {
+	width: 3rem;
+	height: 3rem;
+	border-radius: 0.9rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.1rem;
+	flex: 0 0 auto;
+}
+
+.metric-icon-warning {
+	background: rgba(255, 176, 32, 0.16);
+	color: #b45309;
+}
+
+.metric-icon-info {
+	background: rgba(59, 130, 246, 0.12);
+	color: #2563eb;
+}
+
+.metric-icon-success {
+	background: rgba(34, 197, 94, 0.12);
+	color: #15803d;
+}
+
+.metric-label {
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-weight: 700;
+	color: var(--color-muted);
+	margin-bottom: 0.2rem;
+}
+
+.metric-value {
+	font-size: 1.9rem;
+	font-weight: 800;
+	line-height: 1;
+	color: #0f172a;
+	margin-bottom: 0.35rem;
+}
+
+.metric-help {
+	color: var(--color-muted);
+	font-size: 0.88rem;
+	line-height: 1.45;
+}
+
+.section-card {
+	border-radius: 1.25rem;
+	overflow: hidden;
+	border: 1px solid rgba(15, 23, 42, 0.06);
+	box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
+}
+
+.section-card .card-body {
+	padding-top: 1rem;
+	padding-bottom: 1.35rem;
+}
+
+.section-card-header {
+	background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.request-table-wrap {
+	border-radius: 1rem;
+	overflow: hidden;
+	border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.request-table {
+	margin-bottom: 0;
+	--bs-table-bg: #fff;
+}
+
+.request-table thead th {
+	background: #f8fafc;
+	color: #334155;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.request-table tbody tr {
+	transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.request-table tbody tr:hover {
+	background: #f8fafc;
+	transform: translateY(-1px);
+}
+
+.solicitacoes-filter .form-control,
+.solicitacoes-filter .form-select {
+	height: 3rem;
+	border-radius: 0.9rem;
+	border-color: rgba(15, 23, 42, 0.12);
+	box-shadow: none;
+}
+
+.solicitacoes-filter .form-control:focus,
+.solicitacoes-filter .form-select:focus {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 0.2rem rgba(255, 70, 10, 0.12);
+}
+
+@media (max-width: 768px) {
+	.solicitacoes-hero {
+		border-radius: 1rem;
+	}
+
+	.metric-card {
+		padding: 1rem;
+	}
+
+	.metric-value {
+		font-size: 1.6rem;
+	}
+
+	.section-card,
+	.section-card-header {
+		border-radius: 1rem;
+	}
+}

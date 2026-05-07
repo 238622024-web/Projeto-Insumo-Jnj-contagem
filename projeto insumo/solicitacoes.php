@@ -398,6 +398,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ORDER BY pr.requested_at ASC, pr.id ASC"
   );
   $pendingResetRequests = $resetRequestsStmt->fetchAll();
+  $pendingResetCount = count($pendingResetRequests);
+  $pendingCadastroCount = count($pendingUsers);
 
   $buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $pendingPage, $approvedPage): string {
     $base = [
@@ -444,20 +446,66 @@ if ($hasContagemTracking) {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Solicitações de cadastro</h1>
-</div>
+<div class="solicitacoes-page">
+  <section class="solicitacoes-hero card border-0 shadow-lg mb-4 overflow-hidden">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3">
+        <div>
+          <span class="solicitacoes-kicker">Administração central</span>
+          <h1 class="display-6 fw-semibold mb-2">Solicitações</h1>
+          <p class="solicitacoes-subtitle mb-0">Centralize aprovações, redefinições de senha e contas já liberadas em uma única visão.</p>
+        </div>
+        <div class="text-lg-end">
+          <div class="solicitacoes-pill">Atualizado com ações seguras e rastreáveis</div>
+          <small class="text-muted d-block mt-2">Use os filtros para priorizar contas por nome, e-mail ou perfil.</small>
+        </div>
+      </div>
 
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-white border-0 pt-3 pb-0">
+      <div class="row g-3 mt-4">
+        <div class="col-12 col-md-4">
+          <div class="metric-card h-100">
+            <div class="metric-icon metric-icon-warning"><i class="fa-solid fa-user-clock"></i></div>
+            <div>
+              <div class="metric-label">Cadastro pendente</div>
+              <div class="metric-value"><?= h(number_format($pendingCadastroCount, 0, ',', '.')) ?></div>
+              <div class="metric-help">Aguardando aprovação do time administrativo.</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="metric-card h-100">
+            <div class="metric-icon metric-icon-info"><i class="fa-solid fa-key"></i></div>
+            <div>
+              <div class="metric-label">Redefinições pendentes</div>
+              <div class="metric-value"><?= h(number_format($pendingResetCount, 0, ',', '.')) ?></div>
+              <div class="metric-help">Pedidos que exigem senha temporária ou recusa motivada.</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="metric-card h-100">
+            <div class="metric-icon metric-icon-success"><i class="fa-solid fa-user-check"></i></div>
+            <div>
+              <div class="metric-label">Contas aprovadas</div>
+              <div class="metric-value"><?= h(number_format($approvedTotal, 0, ',', '.')) ?></div>
+              <div class="metric-help">Base ativa disponível para manutenção e auditoria.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<div class="section-card card border-0 shadow-sm mb-4">
+  <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
     <h2 class="h5 mb-3"><i class="fa-solid fa-key me-2 text-primary"></i>Solicitações de redefinição de senha</h2>
   </div>
   <div class="card-body pt-0">
     <?php if (empty($pendingResetRequests)): ?>
       <div class="alert alert-info mb-0">Não há solicitações de redefinição de senha pendentes.</div>
     <?php else: ?>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+      <div class="table-responsive request-table-wrap">
+        <table class="table table-hover align-middle mb-0 request-table">
           <thead>
             <tr>
               <th>ID Req.</th>
@@ -490,7 +538,7 @@ require_once __DIR__ . '/includes/header.php';
               <td><?= h((string)($r['motivo_usuario'] ?? '-')) ?></td>
               <td><?= !empty($r['requested_at']) ? h(date('d/m/Y H:i', strtotime((string)$r['requested_at']))) : '-' ?></td>
               <td class="text-end">
-                <div class="d-inline-flex gap-2">
+                <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
                   <form method="post" class="m-0" onsubmit="return requestTempPassword(this);">
                     <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
                     <input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>">
@@ -517,9 +565,9 @@ require_once __DIR__ . '/includes/header.php';
   </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
+<div class="section-card card border-0 shadow-sm mb-4">
   <div class="card-body">
-    <form method="get" class="row g-2 align-items-end">
+    <form method="get" class="row g-2 align-items-end solicitacoes-filter">
       <div class="col-12 col-md-5">
         <label class="form-label small text-muted mb-1">Buscar por nome ou e-mail</label>
         <input type="text" class="form-control" name="q" value="<?= h($q) ?>" placeholder="Ex.: joao@empresa.com">
@@ -540,8 +588,8 @@ require_once __DIR__ . '/includes/header.php';
   </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header bg-white border-0 pt-3 pb-0">
+<div class="section-card card border-0 shadow-sm mb-4">
+  <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
     <h2 class="h5 mb-3"><i class="fa fa-users me-2 text-primary"></i>Quem está na contagem</h2>
   </div>
   <div class="card-body">
@@ -550,8 +598,8 @@ require_once __DIR__ . '/includes/header.php';
     <?php elseif (empty($quemConta)): ?>
       <div class="text-muted">Nenhuma contagem registrada com usuário ainda.</div>
     <?php else: ?>
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
+      <div class="table-responsive request-table-wrap">
+        <table class="table table-sm align-middle mb-0 request-table">
           <thead>
             <tr>
               <th>Colaborador</th>
@@ -579,8 +627,8 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (empty($pendingUsers)): ?>
   <div class="alert alert-info">Não há solicitações pendentes no momento.</div>
 <?php else: ?>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
+  <div class="table-responsive request-table-wrap">
+    <table class="table table-hover align-middle request-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -620,7 +668,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
           </td>
           <td class="text-end">
-            <div class="d-inline-flex gap-2">
+            <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
               <form method="post" class="m-0" onsubmit="return confirm('Deseja aprovar esta solicitação?');">
                 <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
                 <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
@@ -654,16 +702,16 @@ require_once __DIR__ . '/includes/header.php';
   <?php endif; ?>
 <?php endif; ?>
 
-<div class="card border-0 shadow-sm mt-4">
-  <div class="card-header bg-white border-0 pt-3 pb-0">
+<div class="section-card card border-0 shadow-sm mt-4">
+  <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
     <h2 class="h5 mb-3"><i class="fa-solid fa-user-check me-2 text-primary"></i>Contas aprovadas</h2>
   </div>
   <div class="card-body pt-0">
     <?php if (empty($approvedUsers)): ?>
       <div class="alert alert-info mb-0">Não há contas aprovadas.</div>
     <?php else: ?>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+      <div class="table-responsive request-table-wrap">
+        <table class="table table-hover align-middle mb-0 request-table">
           <thead>
             <tr>
               <th>ID</th>

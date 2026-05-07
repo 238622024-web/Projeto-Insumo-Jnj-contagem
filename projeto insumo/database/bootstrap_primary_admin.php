@@ -27,7 +27,7 @@ try {
     echo "Conta principal atualizada com sucesso.\n";
     echo "E-mail: {$email}\n";
     echo "Senha: {$senha}\n";
-    echo "Abra agora: /projeto-insumo/login.php\n";
+    echo "Abra agora: /Projeto-Insumo-Jnj-contagem/projeto%20insumo/login.php\n";
     echo "Depois de confirmar, remova este arquivo por seguranca.\n";
 } catch (Throwable $e) {
     echo "Erro ao atualizar conta principal: " . $e->getMessage() . "\n";
