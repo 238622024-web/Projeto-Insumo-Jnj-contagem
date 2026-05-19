@@ -20,6 +20,7 @@ export class InsumosPageComponent implements OnInit {
 
   startDate = '';
   endDate = '';
+  searchName = '';
 
   isLoading = false;
   saving = false;
@@ -57,7 +58,8 @@ export class InsumosPageComponent implements OnInit {
     this.insumosService
       .list({
         startDate: this.startDate || undefined,
-        endDate: this.endDate || undefined
+        endDate: this.endDate || undefined,
+        name: this.searchName || undefined
       })
       .subscribe({
         next: (response) => {
@@ -79,6 +81,7 @@ export class InsumosPageComponent implements OnInit {
   clearFilters(): void {
     this.startDate = '';
     this.endDate = '';
+    this.searchName = '';
     this.load();
   }
 

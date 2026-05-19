@@ -89,6 +89,7 @@ router.get('/', async (req, res) => {
   try {
     const startDate = String(req.query.start_date || '').trim();
     const endDate = String(req.query.end_date || '').trim();
+    const name = String(req.query.nome || '').trim();
 
     const where = [];
     const params = [];
@@ -101,6 +102,11 @@ router.get('/', async (req, res) => {
     if (endDate) {
       where.push('data_entrada <= ?');
       params.push(endDate);
+    }
+
+    if (name) {
+      where.push('nome LIKE ?');
+      params.push(`%${name}%`);
     }
 
     let sql = 'SELECT * FROM insumos_jnj';

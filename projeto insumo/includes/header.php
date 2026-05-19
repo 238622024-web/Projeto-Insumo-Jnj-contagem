@@ -113,41 +113,73 @@ if ($logoUrl === '') {
   }
 ?>
 </head>
-<body class="<?= $temaAtual === 'escuro' ? 'theme-dark' : '' ?>">
-<header class="navbar navbar-dark fixed-top shadow" style="background: var(--color-primary) !important;">
-  <div class="container-fluid">
-    <span class="navbar-brand mb-0 h1 d-flex align-items-center">
-      <img src="<?= h($logoUrl) ?>" alt="Manserv" class="site-logo" />
-    </span>
+<body class="<?= trim(($temaAtual === 'escuro' ? 'theme-dark ' : '') . ($user ? 'app-shell' : '')) ?>">
+<?php if ($user): ?>
+<div class="app-shell" data-app-shell>
+  <aside class="app-sidebar" data-sidebar>
+    <div class="sidebar-brand">
+      <a class="sidebar-logo-link" href="index.php" aria-label="Ir para a página inicial">
+        <img src="<?= h($logoUrl) ?>" alt="Manserv" class="site-logo sidebar-logo" />
+      </a>
+      <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
 
-    <nav class="d-flex gap-2">
-      <?php if ($user): ?>
-        <a class="btn btn-sm btn-light" href="index.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><?= h(t('nav.home')) ?></a>
-        <?php if (isAdmin()): ?>
-          <a class="btn btn-sm btn-light" href="dashboard.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h3"></path><path d="M8 18h8"></path></svg><?= h(t('nav.dashboard')) ?></a>
-        <?php endif; ?>
-        <a class="btn btn-sm btn-light" href="perfil.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><?= h(t('nav.profile')) ?></a>
-        <?php if (isAdmin()): ?>
-          <a class="btn btn-sm btn-light" href="solicitacoes.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Solicitações</a>
-        <?php endif; ?>
-        <a class="btn btn-sm btn-light" href="configuracoes.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.96 2.96l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m2.96-2.96l4.24-4.24"></path></svg><?= h(t('nav.settings')) ?></a>
-        <!-- Theme toggle removed per request -->
-        <?php if (!empty($user['avatar'])): ?>
-          <a href="perfil.php" class="d-inline-block"><img src="assets/uploads/<?= h($user['avatar']) ?>" alt="avatar" style="height:30px;width:30px;border-radius:6px;object-fit:cover;margin-right:6px;" /></a>
-        <?php else: ?>
-          <a href="perfil.php" class="badge bg-light text-dark align-self-center text-decoration-none"><?= h($user['email']) ?></a>
-        <?php endif; ?>
-          <a class="btn btn-sm btn-outline-light" href="logout.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg><?= h(t('nav.logout')) ?></a>
+    <div class="sidebar-user">
+      <?php if (!empty($user['avatar'])): ?>
+        <img src="assets/uploads/<?= h($user['avatar']) ?>" alt="avatar" class="sidebar-avatar" />
       <?php else: ?>
-        <?php if (empty($hideAuthButtons)): ?>
-          <a class="btn btn-sm btn-light" href="login.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg><?= h(t('nav.login')) ?></a>
-          <a class="btn btn-sm btn-outline-light" href="create-account.php"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="display:inline;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="16" y1="11" x2="16" y2="17"></line><line x1="19" y1="14" x2="13" y2="14"></line></svg><?= h(t('nav.register')) ?></a>
-        <?php endif; ?>
+        <div class="sidebar-avatar sidebar-avatar-fallback"><?= h(strtoupper(substr($user['email'], 0, 1))) ?></div>
+      <?php endif; ?>
+      <div class="sidebar-user-meta">
+        <strong><?= h($user['name'] ?? 'Usuário') ?></strong>
+        <span><?= h($user['email']) ?></span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Menu lateral">
+      <a class="sidebar-link" href="index.php"><i class="fa-solid fa-house"></i><span><?= h(t('nav.home')) ?></span></a>
+      <?php if (isAdmin()): ?>
+        <a class="sidebar-link" href="dashboard.php"><i class="fa-solid fa-chart-column"></i><span><?= h(t('nav.dashboard')) ?></span></a>
+      <?php endif; ?>
+      <a class="sidebar-link" href="perfil.php"><i class="fa-solid fa-user"></i><span><?= h(t('nav.profile')) ?></span></a>
+      <?php if (isAdmin()): ?>
+        <a class="sidebar-link" href="solicitacoes.php"><i class="fa-solid fa-clipboard-list"></i><span>Solicitações</span></a>
+      <?php endif; ?>
+      <a class="sidebar-link" href="configuracoes.php"><i class="fa-solid fa-gear"></i><span><?= h(t('nav.settings')) ?></span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a class="sidebar-link sidebar-link-logout" href="logout.php"><i class="fa-solid fa-right-from-bracket"></i><span><?= h(t('nav.logout')) ?></span></a>
+    </div>
+  </aside>
+  <div class="app-content">
+    <header class="app-topbar">
+      <button class="sidebar-toggle sidebar-toggle-inline" type="button" data-sidebar-toggle aria-label="Recolher menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="app-topbar-title">
+        <span><?= h(t('app.title')) ?></span>
+      </div>
+    </header>
+    <main class="app-main container-fluid">
+<?php else: ?>
+<header class="auth-topbar shadow-sm" style="background: var(--color-primary) !important;">
+  <div class="container-fluid d-flex align-items-center justify-content-between py-2">
+    <a href="login.php" class="d-inline-flex align-items-center text-decoration-none">
+      <img src="<?= h($logoUrl) ?>" alt="Manserv" class="site-logo" />
+    </a>
+    <nav class="d-flex gap-2">
+      <?php if (empty($hideAuthButtons)): ?>
+        <a class="btn btn-sm btn-light" href="login.php"><i class="fa-solid fa-right-to-bracket me-1"></i><?= h(t('nav.login')) ?></a>
+        <a class="btn btn-sm btn-outline-light" href="create-account.php"><i class="fa-solid fa-user-plus me-1"></i><?= h(t('nav.register')) ?></a>
       <?php endif; ?>
     </nav>
   </div>
 </header>
-<main class="container" style="padding-top:90px;">
+<main class="container auth-main">
+<?php endif; ?>
   <?php if ($m = flash('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
       <i class="fa fa-check-circle me-1"></i><?= h($m) ?>

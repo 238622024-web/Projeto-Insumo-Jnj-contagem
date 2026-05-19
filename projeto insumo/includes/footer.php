@@ -1,5 +1,9 @@
-    </main>
-    <footer class="text-center py-4 mt-auto small text-muted footer-spacer">
+        </main>
+        <?php if (currentUser()): ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        <footer class="text-center py-4 mt-auto small text-muted footer-spacer">
         <strong>Manserv</strong>
         <?php if (!currentUser()): ?>
             <div class="footer-links mt-2">

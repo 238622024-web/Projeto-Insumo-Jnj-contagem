@@ -11,7 +11,7 @@ export class InsumosService {
 
   constructor(private readonly http: HttpClient) {}
 
-  list(filters?: { startDate?: string; endDate?: string }): Observable<InsumosListResponse> {
+  list(filters?: { startDate?: string; endDate?: string; name?: string }): Observable<InsumosListResponse> {
     let params = new HttpParams();
 
     if (filters?.startDate) {
@@ -20,6 +20,10 @@ export class InsumosService {
 
     if (filters?.endDate) {
       params = params.set('end_date', filters.endDate);
+    }
+
+    if (filters?.name) {
+      params = params.set('nome', filters.name);
     }
 
     return this.http.get<InsumosListResponse>(this.baseUrl, { params });

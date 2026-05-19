@@ -6,6 +6,33 @@
 (function() {
   'use strict';
 
+  function setSidebarCollapsed(isCollapsed) {
+    document.body.classList.toggle('sidebar-collapsed', isCollapsed);
+  }
+
+  function initSidebarToggle() {
+    if (!document.body.classList.contains('app-shell')) return;
+
+    const sidebar = document.querySelector('[data-sidebar]');
+    const toggleButtons = document.querySelectorAll('[data-sidebar-toggle]');
+    if (!sidebar || !toggleButtons.length) return;
+
+    toggleButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+      });
+    });
+
+    sidebar.addEventListener('click', function(event) {
+      const clickedLink = event.target.closest('a.sidebar-link');
+      if (!clickedLink) return;
+
+      if (window.innerWidth <= 991.98) {
+        setSidebarCollapsed(true);
+      }
+    });
+  }
+
   function normalizeText(value) {
     return (value || '')
       .toString()
@@ -233,10 +260,12 @@
    */
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
+      initSidebarToggle();
       initDataTables();
       initAutoCloseAlerts();
     });
   } else {
+    initSidebarToggle();
     initDataTables();
     initAutoCloseAlerts();
   }
