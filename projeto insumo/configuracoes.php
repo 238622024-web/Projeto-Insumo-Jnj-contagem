@@ -129,43 +129,6 @@ include __DIR__ . '/includes/header.php';
     <label class="form-check-label" for="mostrarLote">Mostrar coluna "Lote" na listagem</label>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">Logo do sistema (SVG/PNG/JPG)</label>
-    <input type="file" name="logo" accept=".svg,.png,.jpg,.jpeg" class="form-control">
-    <div class="form-text">O arquivo será salvo em assets/uploads/.</div>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Ou URL do logo (http(s)://...)</label>
-    <input type="url" name="logo_url" class="form-control" placeholder="https://example.com/logo.png" value="<?= h(getSetting('logo_url','')) ?>">
-    <div class="form-text">Se preencher uma URL, a imagem será usada diretamente (prioridade menor que upload).</div>
-  </div>
   <button class="btn btn-primary btn-rounded" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i>Salvar</button>
 </form>
-
-<div class="shadow-sm bg-white p-4 rounded mt-3">
-  <h3 class="h5 mb-3"><i class="fa-solid fa-desktop me-2"></i>Instalar no PC</h3>
-  <p class="mb-3">
-    Para usar como software no Windows, baixe o instalador e execute no computador.
-  </p>
-  <?php if (!$zipDisponivel): ?>
-    <div class="alert alert-warning py-2" role="alert">
-      Extensao ZIP desativada no PHP. O botao principal vai baixar o instalador .bat direto.
-    </div>
-  <?php endif; ?>
-  <div class="d-flex flex-wrap gap-2">
-    <a class="btn btn-success" href="download-instalador.php">
-      <i class="fa-solid fa-download me-1"></i><?= $zipDisponivel ? 'Baixar instalador (.zip)' : 'Baixar instalador (.bat)' ?>
-    </a>
-    <a class="btn btn-outline-secondary" href="INSTALAR-ATALHO-APP.bat" download>
-      <i class="fa-solid fa-download me-1"></i>Baixar .bat direto (unico arquivo)
-    </a>
-  </div>
-  <div class="form-text mt-2">
-    <?php if ($zipDisponivel): ?>
-      Depois de baixar o .zip, extraia os arquivos e clique duas vezes em INSTALAR-ATALHO-APP.bat para criar o atalho na Area de Trabalho.
-    <?php else: ?>
-      Depois de baixar, clique duas vezes em INSTALAR-ATALHO-APP.bat para criar o atalho na Area de Trabalho (sem depender de outros arquivos).
-    <?php endif; ?>
-  </div>
-</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

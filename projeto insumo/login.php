@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
   <div class="min-vh-100 d-flex align-items-center justify-content-center">
-    <div class="card shadow-sm" style="max-width:360px; width:100%; border-radius:12px;">
+    <div class="card shadow-sm login-card-drop" style="max-width:360px; width:100%; border-radius:12px;">
       <div class="card-body p-4">
         <div class="login-logo-wrapper d-flex justify-content-center mb-3">
           <img src="logo_manserv.png" alt="logo" style="height:72px; max-width:90%; width:auto; object-fit:contain; display:block; margin:0 auto;" />

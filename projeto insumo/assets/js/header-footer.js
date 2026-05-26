@@ -10,26 +10,146 @@
     document.body.classList.toggle('sidebar-collapsed', isCollapsed);
   }
 
+  function setMobileSidebarOpen(isOpen) {
+    document.body.classList.toggle('sidebar-open-mobile', isOpen);
+    document.body.classList.toggle('sidebar-scroll-lock', isOpen);
+
+    const mobileSidebarToggle = document.querySelector('#mobile-sidebar-toggle');
+    if (mobileSidebarToggle && mobileSidebarToggle.checked !== isOpen) {
+      mobileSidebarToggle.checked = isOpen;
+    }
+
+    const toggleButtons = document.querySelectorAll('[data-sidebar-toggle]');
+    toggleButtons.forEach(function(button) {
+      button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    const backdrop = document.querySelector('[data-sidebar-backdrop]');
+    if (backdrop) {
+      backdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+  }
+
+  function isMobileViewport() {
+    return window.innerWidth <= 991.98;
+  }
+
+  let lastSidebarToggleAt = 0;
+  let lastViewportIsMobile = isMobileViewport();
+  let ignoreNextClickUntil = 0;
+
+  function handleSidebarToggle(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (event.type === 'click' && Date.now() < ignoreNextClickUntil) {
+        return;
+      }
+
+      if (event.type === 'pointerup' && event.pointerType === 'touch') {
+        ignoreNextClickUntil = Date.now() + 650;
+      }
+    }
+
+    const now = Date.now();
+    if (now - lastSidebarToggleAt < 300) {
+      return;
+    }
+    lastSidebarToggleAt = now;
+
+    if (isMobileViewport()) {
+      setSidebarCollapsed(false);
+      setMobileSidebarOpen(!document.body.classList.contains('sidebar-open-mobile'));
+      return;
+    }
+
+    document.body.classList.toggle('sidebar-collapsed');
+  }
+
+  function syncSidebarStateToViewport() {
+    const isMobile = isMobileViewport();
+    if (isMobile === lastViewportIsMobile) {
+      return;
+    }
+
+    lastViewportIsMobile = isMobile;
+
+    if (isMobile) {
+      setSidebarCollapsed(false);
+      setMobileSidebarOpen(false);
+      return;
+    }
+
+    setMobileSidebarOpen(false);
+  }
+
   function initSidebarToggle() {
     if (!document.body.classList.contains('app-shell')) return;
 
     const sidebar = document.querySelector('[data-sidebar]');
+    const backdrop = document.querySelector('[data-sidebar-backdrop]');
+    const mobileSidebarToggle = document.querySelector('#mobile-sidebar-toggle');
     const toggleButtons = document.querySelectorAll('[data-sidebar-toggle]');
     if (!sidebar || !toggleButtons.length) return;
 
+    if (isMobileViewport()) {
+      setSidebarCollapsed(false);
+      setMobileSidebarOpen(false);
+    } else {
+      setMobileSidebarOpen(false);
+    }
+
     toggleButtons.forEach(function(button) {
-      button.addEventListener('click', function() {
-        const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-      });
+      button.addEventListener('pointerup', function(event) {
+        if (event.pointerType === 'touch') {
+          handleSidebarToggle(event);
+        }
+      }, { passive: false });
+      button.addEventListener('click', handleSidebarToggle);
     });
+
+    if (mobileSidebarToggle) {
+      mobileSidebarToggle.addEventListener('change', function() {
+        setSidebarCollapsed(false);
+        setMobileSidebarOpen(this.checked);
+      });
+    }
 
     sidebar.addEventListener('click', function(event) {
       const clickedLink = event.target.closest('a.sidebar-link');
       if (!clickedLink) return;
 
-      if (window.innerWidth <= 991.98) {
-        setSidebarCollapsed(true);
+      if (isMobileViewport()) {
+        setMobileSidebarOpen(false);
       }
+    });
+
+    const closeButton = sidebar.querySelector('.sidebar-close-mobile');
+    if (closeButton) {
+      closeButton.addEventListener('click', function() {
+        if (isMobileViewport()) {
+          setMobileSidebarOpen(false);
+        }
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', function() {
+        if (isMobileViewport()) {
+          setMobileSidebarOpen(false);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && document.body.classList.contains('sidebar-open-mobile')) {
+        setMobileSidebarOpen(false);
+      }
+    });
+
+    window.addEventListener('resize', function() {
+      syncSidebarStateToViewport();
     });
   }
 
@@ -153,6 +273,7 @@
 
       $('table.table').each(function() {
         const $table = $(this);
+        if ($table.hasClass('js-no-datatable')) return;
         const isMaterialsTable = $table.hasClass('js-materials-search');
         const headerCount = $table.find('thead th').length;
         const $bodyRows = $table.find('tbody tr');

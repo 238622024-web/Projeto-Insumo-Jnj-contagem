@@ -71,6 +71,7 @@ function getTempPasswordExpiryHours(): int {
 
 ensureSolicitacoesAuditSchema($pdo);
 ensurePasswordResetRequestsSchema($pdo);
+ensureInsumoRequestsSchema($pdo);
 
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -452,7 +453,7 @@ require_once __DIR__ . '/includes/header.php';
       <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3">
         <div>
           <span class="solicitacoes-kicker">Administração central</span>
-          <h1 class="display-6 fw-semibold mb-2">Solicitações</h1>
+          <h1 class="display-6 fw-semibold mb-2">Administração</h1>
           <p class="solicitacoes-subtitle mb-0">Centralize aprovações, redefinições de senha e contas já liberadas em uma única visão.</p>
         </div>
         <div class="text-lg-end">
@@ -462,7 +463,7 @@ require_once __DIR__ . '/includes/header.php';
       </div>
 
       <div class="row g-3 mt-4">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="metric-card h-100">
             <div class="metric-icon metric-icon-warning"><i class="fa-solid fa-user-clock"></i></div>
             <div>
@@ -472,7 +473,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="metric-card h-100">
             <div class="metric-icon metric-icon-info"><i class="fa-solid fa-key"></i></div>
             <div>
@@ -482,7 +483,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="metric-card h-100">
             <div class="metric-icon metric-icon-success"><i class="fa-solid fa-user-check"></i></div>
             <div>
@@ -564,7 +565,6 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
   </div>
 </div>
-
 <div class="section-card card border-0 shadow-sm mb-4">
   <div class="card-body">
     <form method="get" class="row g-2 align-items-end solicitacoes-filter">

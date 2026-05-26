@@ -18,10 +18,40 @@ $scriptDir = '/' . trim(dirname($scriptName), '/');
 $projectBase = $scriptDir === '/' ? '' : $scriptDir;
 $currentPage = basename($scriptName ?: ($_SERVER['PHP_SELF'] ?? ''));
 
+$pendingInsumoSolicitationsCount = 0;
+if ($user && isAdmin()) {
+  try {
+    $pdo = getPDO();
+    ensureInsumoRequestsSchema($pdo);
+    $pendingStmt = $pdo->query(
+      "SELECT COUNT(*) AS c
+       FROM (
+         SELECT COALESCE(NULLIF(batch_id, ''), CONCAT('legacy:', id)) AS solicitation_key
+         FROM insumo_requests
+         WHERE status = 'pending'
+         GROUP BY solicitation_key
+       ) pending_groups"
+    );
+    $pendingInsumoSolicitationsCount = (int)($pendingStmt->fetch()['c'] ?? 0);
+  } catch (Throwable $e) {
+    $pendingInsumoSolicitationsCount = 0;
+  }
+}
+
 function buildAssetUrl(string $base, string $rel): string {
+  $base = str_replace('\\', '/', $base);
+  $base = trim($base);
+  $base = trim($base, '/');
+  $rel = str_replace('\\', '/', $rel);
   $rel = ltrim($rel, '/');
-  $parts = array_map('rawurlencode', explode('/', $rel));
-  return $base . '/' . implode('/', $parts);
+  $parts = array_map('rawurlencode', array_filter(explode('/', $rel), static fn($part) => $part !== ''));
+  $path = implode('/', $parts);
+
+  if ($path === '') {
+    return '/';
+  }
+
+  return $base === '' ? '/' . $path : '/' . implode('/', array_map('rawurlencode', array_filter(explode('/', $base), static fn($part) => $part !== ''))) . '/' . $path;
 }
 
 function assetVersion(string $relativePath): string {
@@ -115,15 +145,18 @@ if ($logoUrl === '') {
 </head>
 <body class="<?= trim(($temaAtual === 'escuro' ? 'theme-dark ' : '') . ($user ? 'app-shell' : '')) ?>">
 <?php if ($user): ?>
+<input type="checkbox" id="mobile-sidebar-toggle" class="sidebar-toggle-state" aria-hidden="true" tabindex="-1">
 <div class="app-shell" data-app-shell>
   <aside class="app-sidebar" data-sidebar>
+    <div class="sidebar-mobile-actions d-lg-none">
+      <label class="sidebar-toggle sidebar-close-mobile" for="mobile-sidebar-toggle" aria-label="Fechar menu">
+        <i class="fa-solid fa-xmark"></i>
+      </label>
+    </div>
     <div class="sidebar-brand">
       <a class="sidebar-logo-link" href="index.php" aria-label="Ir para a página inicial">
         <img src="<?= h($logoUrl) ?>" alt="Manserv" class="site-logo sidebar-logo" />
       </a>
-      <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Recolher menu">
-        <i class="fa-solid fa-bars"></i>
-      </button>
     </div>
 
     <div class="sidebar-user">
@@ -133,36 +166,67 @@ if ($logoUrl === '') {
         <div class="sidebar-avatar sidebar-avatar-fallback"><?= h(strtoupper(substr($user['email'], 0, 1))) ?></div>
       <?php endif; ?>
       <div class="sidebar-user-meta">
-        <strong><?= h($user['name'] ?? 'Usuário') ?></strong>
-        <span><?= h($user['email']) ?></span>
+        <span class="sidebar-user-label">Usuário</span>
+        <strong class="sidebar-user-name <?= isAdmin() ? 'is-admin' : '' ?>"><?= h($user['email']) ?></strong>
+        <small class="sidebar-user-role <?= isAdmin() ? 'role-admin' : 'role-user' ?>">
+          <i class="fa-solid <?= isAdmin() ? 'fa-shield-halved' : 'fa-user' ?> me-1"></i>
+          <?= isAdmin() ? 'Administrador' : 'Conta normal' ?>
+        </small>
       </div>
     </div>
 
     <nav class="sidebar-nav" aria-label="Menu lateral">
-      <a class="sidebar-link" href="index.php"><i class="fa-solid fa-house"></i><span><?= h(t('nav.home')) ?></span></a>
+      <a class="sidebar-link <?= $currentPage === 'index.php' ? 'active' : '' ?>" href="index.php"><i class="fa-solid fa-house"></i><span><?= h(t('nav.home')) ?></span></a>
       <?php if (isAdmin()): ?>
-        <a class="sidebar-link" href="dashboard.php"><i class="fa-solid fa-chart-column"></i><span><?= h(t('nav.dashboard')) ?></span></a>
+        <a class="sidebar-link <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>" href="dashboard.php"><i class="fa-solid fa-chart-column"></i><span><?= h(t('nav.dashboard')) ?></span></a>
+        <a class="sidebar-link <?= $currentPage === 'solicitacoes.php' ? 'active' : '' ?>" href="solicitacoes.php"><i class="fa-solid fa-clipboard-list"></i><span>Administração</span></a>
+        <a class="sidebar-link <?= in_array($currentPage, ['contagem.php', 'cadastrar.php', 'editar.php'], true) ? 'active' : '' ?>" href="contagem.php"><i class="fa-solid fa-boxes-stacked"></i><span>Contagem de insumos</span></a>
+        <a class="sidebar-link <?= $currentPage === 'pedidos-insumos-pendentes.php' ? 'active' : '' ?>" href="pedidos-insumos-pendentes.php">
+          <i class="fa-solid fa-box-open"></i>
+          <span class="sidebar-link-text">Pedidos pendentes</span>
+          <?php if ($pendingInsumoSolicitationsCount > 0): ?>
+            <span class="sidebar-link-badge" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
+              <?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?>
+            </span>
+          <?php endif; ?>
+        </a>
+        <a class="sidebar-link <?= $currentPage === 'historico-pedidos-insumos.php' ? 'active' : '' ?>" href="historico-pedidos-insumos.php"><i class="fa-solid fa-box-archive"></i><span>Histórico de insumos</span></a>
       <?php endif; ?>
-      <a class="sidebar-link" href="perfil.php"><i class="fa-solid fa-user"></i><span><?= h(t('nav.profile')) ?></span></a>
-      <?php if (isAdmin()): ?>
-        <a class="sidebar-link" href="solicitacoes.php"><i class="fa-solid fa-clipboard-list"></i><span>Solicitações</span></a>
+      <?php if (!isAdmin()): ?>
+        <a class="sidebar-link <?= $currentPage === 'solicitar-insumo.php' ? 'active' : '' ?>" href="solicitar-insumo.php"><i class="fa-solid fa-box-open"></i><span>Solicitar insumo</span></a>
+        <a class="sidebar-link <?= $currentPage === 'meus-pedidos-insumos.php' ? 'active' : '' ?>" href="meus-pedidos-insumos.php"><i class="fa-solid fa-box-archive"></i><span>Meus pedidos</span></a>
       <?php endif; ?>
-      <a class="sidebar-link" href="configuracoes.php"><i class="fa-solid fa-gear"></i><span><?= h(t('nav.settings')) ?></span></a>
+      <a class="sidebar-link <?= $currentPage === 'perfil.php' ? 'active' : '' ?>" href="perfil.php"><i class="fa-solid fa-user"></i><span><?= h(t('nav.profile')) ?></span></a>
+      <a class="sidebar-link <?= $currentPage === 'configuracoes.php' ? 'active' : '' ?>" href="configuracoes.php"><i class="fa-solid fa-gear"></i><span><?= h(t('nav.settings')) ?></span></a>
     </nav>
-
-    <div class="sidebar-footer">
-      <a class="sidebar-link sidebar-link-logout" href="logout.php"><i class="fa-solid fa-right-from-bracket"></i><span><?= h(t('nav.logout')) ?></span></a>
-    </div>
   </aside>
   <div class="app-content">
     <header class="app-topbar">
       <button class="sidebar-toggle sidebar-toggle-inline" type="button" data-sidebar-toggle aria-label="Recolher menu">
         <i class="fa-solid fa-bars"></i>
       </button>
+      <label class="sidebar-toggle sidebar-toggle-mobile" for="mobile-sidebar-toggle" aria-label="Abrir menu">
+        <i class="fa-solid fa-bars"></i>
+      </label>
       <div class="app-topbar-title">
         <span><?= h(t('app.title')) ?></span>
       </div>
+      <div class="app-topbar-actions">
+        <?php if (isAdmin() && $pendingInsumoSolicitationsCount > 0): ?>
+          <a class="btn btn-sm btn-outline-warning app-notification-btn" href="pedidos-insumos-pendentes.php" aria-label="Ver solicitações de insumo pendentes" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
+            <i class="fa-solid fa-bell"></i>
+            <span class="app-notification-count"><?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?></span>
+          </a>
+        <?php endif; ?>
+        <a class="btn btn-sm btn-outline-secondary app-theme-btn" href="toggletheme.php" aria-label="Alternar tema" title="<?= h($temaAtual === 'escuro' ? 'Mudar para tema claro' : 'Mudar para tema escuro') ?>">
+          <i class="fa-solid <?= $temaAtual === 'escuro' ? 'fa-sun' : 'fa-moon' ?>"></i>
+        </a>
+        <a class="btn btn-sm btn-outline-danger app-logout-btn" href="logout.php">
+          <i class="fa-solid fa-right-from-bracket me-1"></i><?= h(t('nav.logout')) ?>
+        </a>
+      </div>
     </header>
+    <label class="sidebar-backdrop" for="mobile-sidebar-toggle" data-sidebar-backdrop aria-hidden="true"></label>
     <main class="app-main container-fluid">
 <?php else: ?>
 <header class="auth-topbar shadow-sm" style="background: var(--color-primary) !important;">

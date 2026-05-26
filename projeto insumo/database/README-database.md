@@ -43,6 +43,9 @@ O script bloqueia acesso via navegador por seguranca.
 ## Observações sobre o schema
 - O `schema.sql` já inclui a coluna `avatar` em `usuarios`, a coluna `lote` em `insumos_jnj` e a tabela `configuracoes`.
 - Se você já tinha um banco antigo sem essas colunas/tabela, use `database/apply_migrations.php` para aplicar migrações incrementais.
+- Para a fila de insumos por solicitação, aplique também `database/migration_add_batch_id.sql` uma vez na hospedagem ou no phpMyAdmin.
+- Para corrigir o fluxo de "Atender tudo" e "Rejeitar tudo", rode `database/apply_migrations.php` na hospedagem ou pelo CLI; ele verifica as colunas e índices antes de alterar.
+- Se você ainda preferir usar SQL manual no phpMyAdmin, então aplique `database/migration_add_insumo_requests_fields.sql`, mas ele pode falhar se parte do schema já existir.
 
 ## Restaurar backup gerado pelo sistema
 Os arquivos em `db_backups/` (ex: `backup_controle_insumos_jnj_YYYYMMDD_HHMMSS.sql`) contêm INSERTs. Execute:

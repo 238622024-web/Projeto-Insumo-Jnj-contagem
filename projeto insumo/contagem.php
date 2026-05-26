@@ -4,31 +4,6 @@ require_once __DIR__ . '/auth.php';
 requireLogin();
 $pdo = getPDO();
 
-function ensureContagemTrackingSchema(PDO $pdo): void {
-  static $checked = false;
-  if ($checked) {
-    return;
-  }
-
-  $cols = $pdo->query('SHOW COLUMNS FROM insumos_jnj')->fetchAll();
-  $existing = [];
-  foreach ($cols as $col) {
-    $existing[$col['Field']] = true;
-  }
-
-  if (empty($existing['contagem_por_id'])) {
-    $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_por_id INT NULL AFTER data_contagem');
-  }
-  if (empty($existing['contagem_por_nome'])) {
-    $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_por_nome VARCHAR(150) NULL AFTER contagem_por_id');
-  }
-  if (empty($existing['contagem_em'])) {
-    $pdo->exec('ALTER TABLE insumos_jnj ADD COLUMN contagem_em DATETIME NULL AFTER contagem_por_nome');
-  }
-
-  $checked = true;
-}
-
 ensureContagemTrackingSchema($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

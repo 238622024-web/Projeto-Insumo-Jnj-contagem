@@ -8,6 +8,21 @@ function ensureUserAuthSchema(): void {
     }
 
     $pdo = getPDO();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS usuarios (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nome VARCHAR(150) NOT NULL,
+        email VARCHAR(150) NOT NULL UNIQUE,
+        senha_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'user',
+        aprovado TINYINT(1) NOT NULL DEFAULT 0,
+        aprovado_em DATETIME NULL,
+        aprovado_por INT NULL,
+        avatar VARCHAR(255) NULL,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email (email),
+        INDEX idx_usuarios_aprovado (aprovado)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     $cols = $pdo->query('SHOW COLUMNS FROM usuarios')->fetchAll();
     $existing = [];
     foreach ($cols as $col) {
@@ -35,6 +50,18 @@ function ensureUserAuthSchema(): void {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN temp_password_expires_at DATETIME NULL AFTER must_change_password');
     }
 
+    if (empty($existing['last_login_at'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN last_login_at DATETIME NULL AFTER avatar');
+    }
+    if (empty($existing['last_login_ip'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN last_login_ip VARCHAR(45) NULL AFTER last_login_at');
+    }
+    if (empty($existing['criado_em'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN criado_em DATETIME DEFAULT CURRENT_TIMESTAMP AFTER last_login_ip');
+    }
+
+    ensureUserActivityLogSchema($pdo);
+
     ensurePrimaryAdminAccount($pdo);
     ensureContagemTrackingSchema($pdo);
 
@@ -51,11 +78,71 @@ function ensureUserAuthSchema(): void {
     $checked = true;
 }
 
+function ensureUserActivityLogSchema(PDO $pdo): void {
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS usuario_atividades (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        acao VARCHAR(60) NOT NULL,
+        titulo VARCHAR(160) NOT NULL,
+        detalhes TEXT NULL,
+        ip_address VARCHAR(45) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_usuario_atividades_usuario_id (usuario_id),
+        INDEX idx_usuario_atividades_created_at (created_at),
+        CONSTRAINT fk_usuario_atividades_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $checked = true;
+}
+
+function logUserActivity(int $userId, string $action, string $title, string $details = ''): void {
+    try {
+        ensureUserAuthSchema();
+        $pdo = getPDO();
+        ensureUserActivityLogSchema($pdo);
+
+        $stmt = $pdo->prepare('INSERT INTO usuario_atividades (usuario_id, acao, titulo, detalhes, ip_address) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([
+            $userId,
+            $action,
+            $title,
+            $details !== '' ? $details : null,
+            substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45) ?: null,
+        ]);
+    } catch (Throwable $e) {
+        // Registro de atividade é opcional.
+    }
+}
+
 function ensureContagemTrackingSchema(PDO $pdo): void {
     static $checked = false;
     if ($checked) {
         return;
     }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS insumos_jnj (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        data_contagem DATE NULL,
+        contagem_por_id INT NULL,
+        contagem_por_nome VARCHAR(150) NULL,
+        contagem_em DATETIME NULL,
+        unidade VARCHAR(30) DEFAULT 'UN',
+        nome VARCHAR(150) NOT NULL,
+        posicao VARCHAR(20) NOT NULL,
+        lote VARCHAR(100) NULL,
+        codigo_barra VARCHAR(100) NULL,
+        quantidade INT NOT NULL DEFAULT 0,
+        data_entrada DATE NOT NULL,
+        validade DATE NOT NULL,
+        observacoes TEXT,
+        INDEX idx_validade (validade),
+        INDEX idx_posicao (posicao)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     $cols = $pdo->query('SHOW COLUMNS FROM insumos_jnj')->fetchAll();
     $existing = [];
@@ -86,6 +173,80 @@ function ensureContagemTrackingSchema(PDO $pdo): void {
     }
 
     $checked = true;
+}
+
+function ensureInsumoRequestsSchema(PDO $pdo): void {
+    try {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS insumo_requests (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              user_id INT NOT NULL,
+              user_nome VARCHAR(150) NOT NULL,
+              user_email VARCHAR(190) NOT NULL,
+              user_role VARCHAR(20) NOT NULL DEFAULT 'user',
+              batch_id VARCHAR(64) NULL,
+              setor VARCHAR(120) NULL,
+              data_solicitada_entrega DATE NULL,
+              insumo_nome VARCHAR(190) NOT NULL,
+              quantidade DECIMAL(10,2) NOT NULL DEFAULT 1,
+              unidade VARCHAR(30) NOT NULL DEFAULT 'UN',
+              quantidade_entregue DECIMAL(10,2) NULL,
+              lote VARCHAR(100) NULL,
+              fabricacao DATE NULL,
+              validade DATE NULL,
+              motivo_usuario TEXT NULL,
+              status VARCHAR(20) NOT NULL DEFAULT 'pending',
+              admin_note TEXT NULL,
+              requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              processed_at DATETIME NULL,
+              processed_by INT NULL,
+              INDEX idx_ir_status (status),
+              INDEX idx_ir_batch_id (batch_id),
+              INDEX idx_ir_user (user_id),
+              INDEX idx_ir_requested_at (requested_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+
+        $cols = $pdo->query('SHOW COLUMNS FROM insumo_requests')->fetchAll();
+        $existing = [];
+        foreach ($cols as $col) {
+            $existing[$col['Field']] = true;
+        }
+
+        $addColumnIfMissing = static function (string $column, string $sql) use (&$existing, $pdo): void {
+            if (empty($existing[$column])) {
+                $pdo->exec($sql);
+                $existing[$column] = true;
+            }
+        };
+
+        $addColumnIfMissing('setor', 'ALTER TABLE insumo_requests ADD COLUMN setor VARCHAR(120) NULL AFTER user_role');
+        $addColumnIfMissing('batch_id', 'ALTER TABLE insumo_requests ADD COLUMN batch_id VARCHAR(64) NULL AFTER user_role');
+        $addColumnIfMissing('data_solicitada_entrega', 'ALTER TABLE insumo_requests ADD COLUMN data_solicitada_entrega DATE NULL AFTER setor');
+        $addColumnIfMissing('status', "ALTER TABLE insumo_requests ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending' AFTER motivo_usuario");
+        $addColumnIfMissing('admin_note', 'ALTER TABLE insumo_requests ADD COLUMN admin_note TEXT NULL AFTER status');
+        $addColumnIfMissing('requested_at', 'ALTER TABLE insumo_requests ADD COLUMN requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER admin_note');
+        $addColumnIfMissing('processed_at', 'ALTER TABLE insumo_requests ADD COLUMN processed_at DATETIME NULL AFTER requested_at');
+        $addColumnIfMissing('processed_by', 'ALTER TABLE insumo_requests ADD COLUMN processed_by INT NULL AFTER processed_at');
+        $addColumnIfMissing('quantidade_entregue', 'ALTER TABLE insumo_requests ADD COLUMN quantidade_entregue DECIMAL(10,2) NULL AFTER unidade');
+        $addColumnIfMissing('lote', 'ALTER TABLE insumo_requests ADD COLUMN lote VARCHAR(100) NULL AFTER quantidade_entregue');
+        $addColumnIfMissing('fabricacao', 'ALTER TABLE insumo_requests ADD COLUMN fabricacao DATE NULL AFTER lote');
+        $addColumnIfMissing('validade', 'ALTER TABLE insumo_requests ADD COLUMN validade DATE NULL AFTER fabricacao');
+    } catch (Throwable $e) {
+        // Em hospedagem sem permissão de ALTER TABLE, seguimos com o banco existente.
+        // A migração deve ser aplicada manualmente quando faltar alguma coluna.
+    }
+}
+
+function formatInsumoRequestDate(?string $value): ?string {
+    if ($value === null) {
+        return null;
+    }
+    $value = trim($value);
+    if ($value === '') {
+        return null;
+    }
+    return $value;
 }
 
 function ensurePrimaryAdminAccount(PDO $pdo): void {
@@ -133,7 +294,7 @@ function getLastAuthError(): ?string {
 function login(string $email, string $senha): bool {
     ensureUserAuthSchema();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,must_change_password,temp_password_expires_at FROM usuarios WHERE email = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip FROM usuarios WHERE email = ? LIMIT 1');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     if ($user) {
@@ -156,6 +317,18 @@ function login(string $email, string $senha): bool {
             $_SESSION['usuario_role'] = $user['role'] ?? 'user';
             $_SESSION['usuario_must_change_password'] = $mustChangePassword ? 1 : 0;
             unset($_SESSION['last_auth_error']);
+
+            try {
+                $stmt = $pdo->prepare('UPDATE usuarios SET last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
+                $stmt->execute([
+                    substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45) ?: null,
+                    (int)$user['id'],
+                ]);
+                logUserActivity((int)$user['id'], 'login', 'Novo login', 'Acesso ao sistema com sucesso.');
+            } catch (Throwable $e) {
+                // Não bloquear o login se o log falhar.
+            }
+
             return true;
         }
     }
@@ -180,7 +353,7 @@ function currentUser(): ?array {
         // Fetch fresh data from DB to include avatar and updated info
         try {
             $pdo = getPDO();
-            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at FROM usuarios WHERE id = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em FROM usuarios WHERE id = ? LIMIT 1');
             $stmt->execute([$_SESSION['usuario_id']]);
             $user = $stmt->fetch();
             if ($user) {
