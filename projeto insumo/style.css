@@ -2183,6 +2183,108 @@ button {
 	background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
 }
 
+.section-card-subtitle {
+	color: var(--color-muted);
+	font-size: 0.94rem;
+	line-height: 1.55;
+}
+
+.approved-accounts-card {
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+	border-color: rgba(15, 23, 42, 0.07);
+	box-shadow: 0 22px 44px rgba(15, 23, 42, 0.06);
+}
+
+.approved-accounts-header {
+	padding-bottom: 1rem;
+}
+
+.approved-summary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	justify-content: flex-end;
+	min-width: min(100%, 22rem);
+}
+
+.approved-summary-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 9.5rem;
+	padding: 0.85rem 1rem;
+	border-radius: 1rem;
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid rgba(15, 23, 42, 0.08);
+	box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+	text-align: left;
+}
+
+.approved-summary-item span {
+	font-size: 0.74rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+
+.approved-summary-item strong {
+	font-size: 1.05rem;
+	font-weight: 800;
+	color: #0f172a;
+}
+
+.approved-table-toolbar {
+	padding: 0.9rem 1rem;
+	border-radius: 1rem;
+	background: linear-gradient(135deg, rgba(255, 70, 10, 0.05), rgba(255, 255, 255, 0.96));
+	border: 1px solid rgba(255, 70, 10, 0.09);
+}
+
+.approved-table-note {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	color: #475569;
+	font-size: 0.92rem;
+	line-height: 1.45;
+}
+
+.approved-table-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.45rem 0.8rem;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid rgba(15, 23, 42, 0.08);
+	box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+	font-size: 0.84rem;
+	font-weight: 700;
+	color: #334155;
+}
+
+.approved-table-wrap {
+	border-color: rgba(15, 23, 42, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.approved-table-wrap .request-table thead th {
+	background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+	color: #334155;
+	border-bottom: 1px solid rgba(15, 23, 42, 0.09);
+}
+
+.approved-table-wrap .request-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.approved-row-badge {
+	border-radius: 999px;
+	padding-left: 0.55rem;
+	padding-right: 0.55rem;
+}
+
 .request-table-wrap {
 	border-radius: 1rem;
 	overflow: hidden;
@@ -2476,6 +2578,58 @@ button {
 	border: 1px solid rgba(37, 99, 235, 0.08);
 }
 
+.insumo-historico-hero-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.insumo-historico-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.45rem 0.8rem;
+	border-radius: 999px;
+	background: rgba(37, 99, 235, 0.08);
+	border: 1px solid rgba(37, 99, 235, 0.12);
+	color: #1d4ed8;
+	font-size: 0.82rem;
+	font-weight: 700;
+	box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+}
+
+.insumo-historico-summary {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.insumo-historico-summary-item {
+	padding: 0.9rem 1rem;
+	border-radius: 1rem;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid rgba(37, 99, 235, 0.08);
+	box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+}
+
+.insumo-historico-summary-item span {
+	display: block;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+	margin-bottom: 0.2rem;
+}
+
+.insumo-historico-summary-item strong {
+	display: block;
+	font-size: 1.1rem;
+	font-weight: 800;
+	color: #0f172a;
+	line-height: 1.15;
+}
+
 .insumo-historico-card {
 	border: 1px solid rgba(37, 99, 235, 0.08);
 	box-shadow: 0 22px 42px rgba(15, 23, 42, 0.07);
@@ -2499,6 +2653,30 @@ button {
 
 .insumo-historico-document {
 	border-radius: 1rem;
+	border: 1px solid rgba(15, 23, 42, 0.07);
+	box-shadow: 0 16px 30px rgba(15, 23, 42, 0.05);
+}
+
+.insumo-historico-meta-card {
+	height: 100%;
+	padding: 0.85rem 0.95rem;
+	border-radius: 0.95rem;
+	background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+	border: 1px solid rgba(37, 99, 235, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.insumo-historico-meta-card .small.text-muted {
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.insumo-historico-badge {
+	border-radius: 999px;
+	padding: 0.45rem 0.7rem;
+	font-weight: 700;
 }
 
 .insumo-historico-meta-grid .small.text-muted {
@@ -2517,6 +2695,19 @@ button {
 }
 
 @media (max-width: 768px) {
+	.insumo-historico-summary {
+		grid-template-columns: 1fr;
+	}
+
+	.insumo-historico-hero-chips {
+		gap: 0.4rem;
+	}
+
+	.insumo-historico-chip {
+		width: 100%;
+		justify-content: center;
+	}
+
 	.pending-insumos-table {
 		font-size: 0.88rem;
 		border-spacing: 0 0.45rem;
@@ -2887,6 +3078,52 @@ button {
 	padding: 1.1rem;
 }
 
+.profile-preferences-note {
+	padding: 0.9rem 1rem;
+	border-radius: 1rem;
+	background: linear-gradient(135deg, rgba(255, 70, 10, 0.06), rgba(255, 255, 255, 0.96));
+	border: 1px solid rgba(255, 70, 10, 0.1);
+	color: #475569;
+	box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+}
+
+.profile-preference-switches {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.9rem 1rem;
+	border-radius: 1rem;
+	background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+	border: 1px solid rgba(15, 23, 42, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.profile-preference-switch {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	margin: 0;
+	padding-left: 2.2rem;
+	min-height: 1.75rem;
+	color: #334155;
+}
+
+.profile-preference-switch .form-check-input {
+	margin-left: -2.2rem;
+	margin-top: 0;
+	box-shadow: none;
+}
+
+.profile-preference-switch .form-check-input:checked {
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+.profile-preference-switch .form-check-label {
+	margin-bottom: 0;
+	font-size: 0.95rem;
+}
+
 .profile-form .form-label {
 	font-weight: 700;
 	color: #334155;
@@ -3111,6 +3348,11 @@ button {
 @media (max-width: 575.98px) {
 	.profile-summary-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.profile-preferences-note,
+	.profile-preference-switches {
+		padding: 0.85rem;
 	}
 
 	.profile-section-card .card-body,

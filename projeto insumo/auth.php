@@ -18,6 +18,10 @@ function ensureUserAuthSchema(): void {
         aprovado_em DATETIME NULL,
         aprovado_por INT NULL,
         avatar VARCHAR(255) NULL,
+        preferred_theme VARCHAR(20) NOT NULL DEFAULT 'claro',
+        preferred_language VARCHAR(10) NOT NULL DEFAULT 'pt-br',
+        email_notifications TINYINT(1) NOT NULL DEFAULT 1,
+        security_notifications TINYINT(1) NOT NULL DEFAULT 1,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_email (email),
         INDEX idx_usuarios_aprovado (aprovado)
@@ -58,6 +62,18 @@ function ensureUserAuthSchema(): void {
     }
     if (empty($existing['criado_em'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN criado_em DATETIME DEFAULT CURRENT_TIMESTAMP AFTER last_login_ip');
+    }
+    if (empty($existing['preferred_theme'])) {
+        $pdo->exec("ALTER TABLE usuarios ADD COLUMN preferred_theme VARCHAR(20) NOT NULL DEFAULT 'claro' AFTER avatar");
+    }
+    if (empty($existing['preferred_language'])) {
+        $pdo->exec("ALTER TABLE usuarios ADD COLUMN preferred_language VARCHAR(10) NOT NULL DEFAULT 'pt-br' AFTER preferred_theme");
+    }
+    if (empty($existing['email_notifications'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN email_notifications TINYINT(1) NOT NULL DEFAULT 1 AFTER preferred_language');
+    }
+    if (empty($existing['security_notifications'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN security_notifications TINYINT(1) NOT NULL DEFAULT 1 AFTER email_notifications');
     }
 
     ensureUserActivityLogSchema($pdo);
@@ -353,7 +369,7 @@ function currentUser(): ?array {
         // Fetch fresh data from DB to include avatar and updated info
         try {
             $pdo = getPDO();
-            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em FROM usuarios WHERE id = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em,preferred_theme,preferred_language,email_notifications,security_notifications FROM usuarios WHERE id = ? LIMIT 1');
             $stmt->execute([$_SESSION['usuario_id']]);
             $user = $stmt->fetch();
             if ($user) {

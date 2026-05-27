@@ -6,6 +6,9 @@ require_once __DIR__ . '/../i18n.php';
 $user = currentUser();
 // Tema do usuário (padrão claro)
 $temaAtual = getSetting('tema_padrao', $_SESSION['tema_jnj'] ?? 'claro');
+if (!empty($user['preferred_theme']) && in_array((string)$user['preferred_theme'], ['claro', 'escuro'], true)) {
+  $temaAtual = (string)$user['preferred_theme'];
+}
 // Preferência: 1) logo carregado (logo_path) 2) logo externo (logo_url) 3) logo padrão interno
 $logoPath = getSetting('logo_path', '');
 $logoUrlSetting = getSetting('logo_url', '');
@@ -104,7 +107,12 @@ if ($logoUrl === '') {
 ?>
 
 <!DOCTYPE html>
-<?php $lang = getSetting('lang', $_SESSION['lang_jnj'] ?? 'pt-br'); ?>
+<?php
+  $lang = getSetting('lang', $_SESSION['lang_jnj'] ?? 'pt-br');
+  if (!empty($user['preferred_language']) && in_array((string)$user['preferred_language'], ['pt-br', 'en'], true)) {
+    $lang = (string)$user['preferred_language'];
+  }
+?>
 <html lang="<?= h($lang) ?>">
 <head>
     <meta charset="UTF-8" />

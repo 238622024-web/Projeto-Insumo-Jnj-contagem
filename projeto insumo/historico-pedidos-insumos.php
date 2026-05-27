@@ -224,6 +224,10 @@ require_once __DIR__ . '/includes/header.php';
           <span class="solicitacoes-kicker">Arquivo operacional</span>
           <h1 class="display-6 fw-semibold mb-2">Histórico de pedidos de insumo</h1>
           <p class="solicitacoes-subtitle mb-0">Os documentos aprovados ficam arquivados aqui com os dados de entrega, lote, fabricação e validade já consolidados.</p>
+          <div class="insumo-historico-hero-chips mt-3">
+            <span class="insumo-historico-chip"><i class="fa-solid fa-folder-tree"></i>Arquivo consolidado</span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-magnifying-glass"></i>Busca por setor, insumo ou observação</span>
+          </div>
         </div>
         <div class="text-lg-end d-flex flex-column gap-2 align-items-lg-end">
           <a href="export_historico_pedidos_insumos_pdf.php" class="btn btn-outline-danger">
@@ -233,6 +237,21 @@ require_once __DIR__ . '/includes/header.php';
             <i class="fa-solid fa-box-open me-1"></i>Voltar às pendências
           </a>
           <small class="text-muted d-block">Use a busca para localizar um documento já aprovado.</small>
+        </div>
+      </div>
+
+      <div class="insumo-historico-summary mt-4">
+        <div class="insumo-historico-summary-item">
+          <span>Documentos</span>
+          <strong><?= h(number_format($historyDocumentsCount, 0, ',', '.')) ?></strong>
+        </div>
+        <div class="insumo-historico-summary-item">
+          <span>Itens</span>
+          <strong><?= h(number_format($historyItemsCount, 0, ',', '.')) ?></strong>
+        </div>
+        <div class="insumo-historico-summary-item">
+          <span>Quantidade entregue</span>
+          <strong><?= h(number_format($historyDeliveredTotal, 2, ',', '.')) ?></strong>
         </div>
       </div>
 
@@ -276,7 +295,7 @@ require_once __DIR__ . '/includes/header.php';
       <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
         <div>
           <h2 class="h5 mb-1"><i class="fa-solid fa-box-archive me-2 text-primary"></i>Documentos arquivados</h2>
-          <div class="text-muted small">Visualize o documento completo, exporte em PDF ou remova do histórico quando necessário.</div>
+          <div class="section-card-subtitle">Visualize o documento completo, exporte em PDF ou remova do histórico quando necessário.</div>
         </div>
         <div class="pending-insumos-pill insumo-historico-pill">
           <i class="fa-solid fa-clock me-1"></i>
@@ -309,39 +328,54 @@ require_once __DIR__ . '/includes/header.php';
             <div class="card-header bg-white border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
               <div>
                 <h3 class="h6 mb-1"><i class="fa-solid fa-layer-group me-2 text-primary"></i><?= h($group['sector']) ?></h3>
-                <div class="text-muted small"><?= h(number_format(count($group['items']), 0, ',', '.')) ?> item<?= count($group['items']) === 1 ? '' : 's' ?> neste documento</div>
+                <div class="section-card-subtitle mb-0"><?= h(number_format(count($group['items']), 0, ',', '.')) ?> item<?= count($group['items']) === 1 ? '' : 's' ?> neste documento</div>
               </div>
-              <span class="badge bg-light text-dark border"><?= h($group['batch_id'] !== '' ? 'Documento em lote' : 'Documento avulso') ?></span>
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <span class="badge bg-light text-dark border insumo-historico-badge"><?= h($group['batch_id'] !== '' ? 'Documento em lote' : 'Documento avulso') ?></span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle insumo-historico-badge"><?= h(formatHistoryDate($group['processed_at'] ?? null, 'd/m/Y')) ?></span>
+              </div>
             </div>
             <div class="card-body pt-0">
               <div class="row g-3 mb-4 insumo-historico-meta-grid">
                 <div class="col-12 col-lg-3">
-                  <div class="small text-muted">Solicitante</div>
-                  <div class="fw-semibold"><?= h((string)$group['user_nome']) ?></div>
-                  <div class="small text-muted"><?= h((string)$group['user_email']) ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Solicitante</div>
+                    <div class="fw-semibold"><?= h((string)$group['user_nome']) ?></div>
+                    <div class="small text-muted"><?= h((string)$group['user_email']) ?></div>
+                  </div>
                 </div>
                 <div class="col-12 col-lg-3">
-                  <div class="small text-muted">Data solicitada para entrega</div>
-                  <div class="fw-semibold"><?= formatHistoryDate($group['data_solicitada_entrega'] ?? null, 'd/m/Y') ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Data solicitada para entrega</div>
+                    <div class="fw-semibold"><?= formatHistoryDate($group['data_solicitada_entrega'] ?? null, 'd/m/Y') ?></div>
+                  </div>
                 </div>
                 <div class="col-12 col-lg-3">
-                  <div class="small text-muted">Solicitado em</div>
-                  <div class="fw-semibold"><?= formatHistoryDate($group['requested_at'] ?? null) ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Solicitado em</div>
+                    <div class="fw-semibold"><?= formatHistoryDate($group['requested_at'] ?? null) ?></div>
+                  </div>
                 </div>
                 <div class="col-12 col-lg-3">
-                  <div class="small text-muted">Aprovado em</div>
-                  <div class="fw-semibold"><?= formatHistoryDate($group['processed_at'] ?? null) ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Aprovado em</div>
+                    <div class="fw-semibold"><?= formatHistoryDate($group['processed_at'] ?? null) ?></div>
+                  </div>
                 </div>
               </div>
 
               <div class="row g-3 mb-4">
                 <div class="col-12 col-lg-6">
-                  <div class="small text-muted">Aprovado por</div>
-                  <div class="fw-semibold"><?= h((string)($group['processed_by_nome'] !== '' ? $group['processed_by_nome'] : 'Administrador')) ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Aprovado por</div>
+                    <div class="fw-semibold"><?= h((string)($group['processed_by_nome'] !== '' ? $group['processed_by_nome'] : 'Administrador')) ?></div>
+                  </div>
                 </div>
                 <div class="col-12 col-lg-6">
-                  <div class="small text-muted">Origem</div>
-                  <div class="fw-semibold"><?= h($group['batch_id'] !== '' ? 'Lote único da solicitação' : 'Registro legado') ?></div>
+                  <div class="insumo-historico-meta-card">
+                    <div class="small text-muted">Origem</div>
+                    <div class="fw-semibold"><?= h($group['batch_id'] !== '' ? 'Lote único da solicitação' : 'Registro legado') ?></div>
+                  </div>
                 </div>
               </div>
 

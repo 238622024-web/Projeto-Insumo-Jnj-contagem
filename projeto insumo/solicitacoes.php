@@ -330,6 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $pendingPage = max(1, (int)($_GET['ppage'] ?? 1));
   $approvedPage = max(1, (int)($_GET['apage'] ?? 1));
   $perPage = 10;
+  $approvedPerPage = 6;
 
   $pendingWhere = ['aprovado = 0'];
   $pendingParams = [];
@@ -373,15 +374,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $approvedCountStmt = $pdo->prepare('SELECT COUNT(*) AS c FROM usuarios WHERE ' . $approvedWhereSql);
   $approvedCountStmt->execute($approvedParams);
   $approvedTotal = (int)($approvedCountStmt->fetch()['c'] ?? 0);
-  $approvedPages = max(1, (int)ceil($approvedTotal / $perPage));
+  $approvedPages = max(1, (int)ceil($approvedTotal / $approvedPerPage));
   $approvedPage = min($approvedPage, $approvedPages);
-  $approvedOffset = ($approvedPage - 1) * $perPage;
+  $approvedOffset = ($approvedPage - 1) * $approvedPerPage;
 
   $approvedSql = 'SELECT id, nome, email, role, aprovado_em FROM usuarios WHERE ' . $approvedWhereSql . ' ORDER BY role DESC, nome ASC LIMIT ? OFFSET ?';
   $approvedStmt = $pdo->prepare($approvedSql);
-  $approvedExecParams = array_merge($approvedParams, [$perPage, $approvedOffset]);
+  $approvedExecParams = array_merge($approvedParams, [$approvedPerPage, $approvedOffset]);
   $approvedStmt->execute($approvedExecParams);
   $approvedUsers = $approvedStmt->fetchAll();
+  $approvedShowingStart = $approvedTotal > 0 ? (($approvedPage - 1) * $approvedPerPage) + 1 : 0;
+  $approvedShowingEnd = min($approvedTotal, $approvedPage * $approvedPerPage);
 
   $resetRequestsStmt = $pdo->query(
     "SELECT
@@ -702,16 +705,42 @@ require_once __DIR__ . '/includes/header.php';
   <?php endif; ?>
 <?php endif; ?>
 
-<div class="section-card card border-0 shadow-sm mt-4">
-  <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
-    <h2 class="h5 mb-3"><i class="fa-solid fa-user-check me-2 text-primary"></i>Contas aprovadas</h2>
+<div class="section-card card border-0 shadow-sm mt-4 approved-accounts-card">
+  <div class="section-card-header card-header bg-white border-0 pt-3 pb-0 approved-accounts-header">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3">
+      <div>
+        <span class="section-badge mb-2"><i class="fa-solid fa-user-shield"></i>Base ativa</span>
+        <h2 class="h5 mb-2"><i class="fa-solid fa-user-check me-2 text-primary"></i>Contas aprovadas</h2>
+        <p class="section-card-subtitle mb-0">Acompanhe quem já está liberado no sistema, com foco em manutenção, auditoria e controle de acesso.</p>
+      </div>
+      <div class="approved-summary">
+        <div class="approved-summary-item">
+          <span>Total aprovado</span>
+          <strong><?= h(number_format($approvedTotal, 0, ',', '.')) ?></strong>
+        </div>
+        <div class="approved-summary-item">
+          <span>Exibindo</span>
+          <strong><?= $approvedTotal > 0 ? h(number_format($approvedShowingStart, 0, ',', '.')) . ' - ' . h(number_format($approvedShowingEnd, 0, ',', '.')) : '0' ?></strong>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="card-body pt-0">
     <?php if (empty($approvedUsers)): ?>
       <div class="alert alert-info mb-0">Não há contas aprovadas.</div>
     <?php else: ?>
-      <div class="table-responsive request-table-wrap">
-        <table class="table table-hover align-middle mb-0 request-table">
+      <div class="approved-table-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <div class="approved-table-note">
+          <i class="fa-solid fa-wand-magic-sparkles me-1 text-primary"></i>
+          Visual limpo, paginação compacta e leitura rápida para a equipe administrativa.
+        </div>
+        <div class="approved-table-chip">
+          <i class="fa-solid fa-layer-group"></i>
+          <?= h(number_format($approvedPerPage, 0, ',', '.')) ?> por página
+        </div>
+      </div>
+      <div class="table-responsive request-table-wrap approved-table-wrap">
+        <table class="table table-hover align-middle mb-0 request-table js-no-datatable">
           <thead>
             <tr>
               <th>ID</th>
@@ -739,10 +768,10 @@ require_once __DIR__ . '/includes/header.php';
               <td>
                 <?= h((string)$u['nome']) ?>
                 <?php if ($isPrimaryAdminRow): ?>
-                  <span class="badge bg-primary ms-1">Principal</span>
+                  <span class="badge bg-primary ms-1 approved-row-badge">Principal</span>
                 <?php endif; ?>
                 <?php if ($isCurrentUserRow): ?>
-                  <span class="badge bg-light text-dark border ms-1">Você</span>
+                  <span class="badge bg-light text-dark border ms-1 approved-row-badge">Você</span>
                 <?php endif; ?>
               </td>
               <td><?= h((string)$u['email']) ?></td>

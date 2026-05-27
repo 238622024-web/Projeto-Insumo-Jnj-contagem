@@ -25,6 +25,14 @@ $activityStmt = $pdo->prepare('SELECT acao,titulo,detalhes,ip_address,created_at
 $activityStmt->execute([(int)$me['id']]);
 $recentActivities = $activityStmt->fetchAll();
 
+function profilePreferenceValue(array $me, string $key, $default) {
+  if (!array_key_exists($key, $me) || $me[$key] === null || $me[$key] === '') {
+    return $default;
+  }
+
+  return $me[$key];
+}
+
 function profileFormatDate(?string $value, string $format = 'd/m/Y H:i'): string {
   $value = trim((string)$value);
   if ($value === '') {
@@ -198,6 +206,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 
+  if ($profileAction === 'preferences') {
+    $tabToActivate = 'preferencias';
+    $preferredTheme = (string)($_POST['preferred_theme'] ?? 'claro');
+    $preferredLanguage = (string)($_POST['preferred_language'] ?? 'pt-br');
+    $emailNotifications = isset($_POST['email_notifications']) && (string)$_POST['email_notifications'] === '1' ? 1 : 0;
+    $securityNotifications = isset($_POST['security_notifications']) && (string)$_POST['security_notifications'] === '1' ? 1 : 0;
+
+    if (!in_array($preferredTheme, ['claro', 'escuro'], true)) {
+      $errors[] = 'Selecione um tema válido.';
+    }
+    if (!in_array($preferredLanguage, ['pt-br', 'en'], true)) {
+      $errors[] = 'Selecione um idioma válido.';
+    }
+
+    if (!$errors) {
+      $stmt = $pdo->prepare('UPDATE usuarios SET preferred_theme = ?, preferred_language = ?, email_notifications = ?, security_notifications = ? WHERE id = ?');
+      $stmt->execute([$preferredTheme, $preferredLanguage, $emailNotifications, $securityNotifications, (int)$me['id']]);
+      $_SESSION['tema_jnj'] = $preferredTheme === 'escuro' ? 'escuro' : 'claro';
+      $_SESSION['lang_jnj'] = $preferredLanguage;
+      flash('success', 'Suas preferências foram salvas.');
+      header('Location: perfil.php#preferencias');
+      exit;
+    }
+  }
+
   if ($errors) {
     flash('error', implode(' ', $errors));
   }
@@ -209,6 +242,10 @@ $accountStatusClass = (int)($me['aprovado'] ?? 0) === 1 ? 'success' : 'warning';
 $roleLabel = (($me['role'] ?? 'user') === 'admin') ? 'Administrador' : 'Conta normal';
 $roleBadgeClass = (($me['role'] ?? 'user') === 'admin') ? 'primary' : 'secondary';
 $avatarUrl = !empty($me['avatar']) ? 'assets/uploads/' . h((string)$me['avatar']) : '';
+$preferredTheme = (string)profilePreferenceValue($me, 'preferred_theme', 'claro');
+$preferredLanguage = (string)profilePreferenceValue($me, 'preferred_language', 'pt-br');
+$emailNotifications = (int)profilePreferenceValue($me, 'email_notifications', 1) === 1;
+$securityNotifications = (int)profilePreferenceValue($me, 'security_notifications', 1) === 1;
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -291,6 +328,9 @@ include __DIR__ . '/includes/header.php';
     </li>
     <li class="nav-item" role="presentation">
       <button class="nav-link <?= $tabToActivate === 'atividades' ? 'active' : '' ?>" id="atividades-tab" data-bs-toggle="tab" data-bs-target="#atividades" type="button" role="tab" aria-controls="atividades" aria-selected="<?= $tabToActivate === 'atividades' ? 'true' : 'false' ?>">Atividade recente</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link <?= $tabToActivate === 'preferencias' ? 'active' : '' ?>" id="preferencias-tab" data-bs-toggle="tab" data-bs-target="#preferencias" type="button" role="tab" aria-controls="preferencias" aria-selected="<?= $tabToActivate === 'preferencias' ? 'true' : 'false' ?>">Preferências</button>
     </li>
   </ul>
 
@@ -462,6 +502,56 @@ include __DIR__ . '/includes/header.php';
               <p class="text-muted mb-0">As ações mais recentes do seu perfil aparecerão aqui, como login, troca de senha e atualização de avatar.</p>
             </div>
           <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane fade <?= $tabToActivate === 'preferencias' ? 'show active' : '' ?>" id="preferencias" role="tabpanel" aria-labelledby="preferencias-tab">
+      <div class="card profile-section-card shadow-sm">
+        <div class="card-body">
+          <form method="post" class="profile-form">
+            <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>" />
+            <input type="hidden" name="profile_action" value="preferences" />
+            <div class="profile-preferences-note mb-3">
+              Ajuste o comportamento da sua conta. Essas opções ficam salvas no seu perfil e podem ser aplicadas em próximas visitas.
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-lg-4">
+                <label class="form-label">Tema da interface</label>
+                <select class="form-select form-select-lg" name="preferred_theme">
+                  <option value="claro" <?= $preferredTheme === 'claro' ? 'selected' : '' ?>>Claro</option>
+                  <option value="escuro" <?= $preferredTheme === 'escuro' ? 'selected' : '' ?>>Escuro</option>
+                </select>
+                <div class="form-text mt-2">Define a aparência visual da sua conta.</div>
+              </div>
+              <div class="col-12 col-lg-4">
+                <label class="form-label">Idioma</label>
+                <select class="form-select form-select-lg" name="preferred_language">
+                  <option value="pt-br" <?= $preferredLanguage === 'pt-br' ? 'selected' : '' ?>>Português (Brasil)</option>
+                  <option value="en" <?= $preferredLanguage === 'en' ? 'selected' : '' ?>>English</option>
+                </select>
+                <div class="form-text mt-2">Afeta a linguagem exibida no layout quando disponível.</div>
+              </div>
+              <div class="col-12 col-lg-4">
+                <label class="form-label d-block">Notificações</label>
+                <div class="profile-preference-switches">
+                  <label class="form-check form-switch profile-preference-switch">
+                    <input type="hidden" name="email_notifications" value="0">
+                    <input class="form-check-input" type="checkbox" name="email_notifications" value="1" <?= $emailNotifications ? 'checked' : '' ?>>
+                    <span class="form-check-label fw-semibold">Receber avisos por e-mail</span>
+                  </label>
+                  <label class="form-check form-switch profile-preference-switch">
+                    <input type="hidden" name="security_notifications" value="0">
+                    <input class="form-check-input" type="checkbox" name="security_notifications" value="1" <?= $securityNotifications ? 'checked' : '' ?>>
+                    <span class="form-check-label fw-semibold">Alertas de segurança</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="profile-form-actions mt-3 d-flex flex-wrap gap-2">
+              <button class="btn btn-primary"><i class="fa-solid fa-sliders me-1"></i>Salvar preferências</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
