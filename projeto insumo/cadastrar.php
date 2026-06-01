@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt = $pdo->prepare("INSERT INTO insumos_jnj (nome,posicao,lote,codigo_barra,quantidade,data_contagem,data_entrada,validade,observacoes,unidade) VALUES (?,?,?,?,?,?,?,?,?,?)");
       $stmt->execute([$nome, $posicao, $lote, $codigo_barra, $quantidade, $formatted_data_contagem, $formatted_data_entrada, $formatted_validade, $observacoes, $unidade]);
       flash('success', 'Material cadastrado com sucesso!');
-      header('Location: index.php');
+      header('Location: cadastrar.php');
       exit;
     } else {
       flash('error', implode(' ', $erros));

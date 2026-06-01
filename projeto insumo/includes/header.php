@@ -22,6 +22,7 @@ $projectBase = $scriptDir === '/' ? '' : $scriptDir;
 $currentPage = basename($scriptName ?: ($_SERVER['PHP_SELF'] ?? ''));
 
 $pendingInsumoSolicitationsCount = 0;
+$pendingInsumoNotifications = [];
 if ($user && isAdmin()) {
   try {
     $pdo = getPDO();
@@ -36,8 +37,37 @@ if ($user && isAdmin()) {
        ) pending_groups"
     );
     $pendingInsumoSolicitationsCount = (int)($pendingStmt->fetch()['c'] ?? 0);
+
+    $notificationsStmt = $pdo->query(
+      "SELECT
+          g.group_key,
+          MAX(g.batch_id) AS batch_id,
+          MAX(g.sector) AS sector,
+          MAX(g.requested_at) AS requested_at,
+          MAX(g.data_solicitada_entrega) AS data_solicitada_entrega,
+          MAX(g.user_nome) AS user_nome,
+          MAX(g.user_email) AS user_email,
+          COUNT(*) AS items_count
+       FROM (
+          SELECT
+            COALESCE(NULLIF(batch_id, ''), CONCAT('legacy:', id)) AS group_key,
+            batch_id,
+            setor AS sector,
+            requested_at,
+            data_solicitada_entrega,
+            user_nome,
+            user_email
+          FROM insumo_requests
+          WHERE status = 'pending'
+       ) g
+       GROUP BY g.group_key
+       ORDER BY MAX(g.requested_at) DESC, g.group_key DESC
+       LIMIT 5"
+    );
+    $pendingInsumoNotifications = $notificationsStmt->fetchAll() ?: [];
   } catch (Throwable $e) {
     $pendingInsumoSolicitationsCount = 0;
+    $pendingInsumoNotifications = [];
   }
 }
 
@@ -221,10 +251,10 @@ if ($logoUrl === '') {
       </div>
       <div class="app-topbar-actions">
         <?php if (isAdmin() && $pendingInsumoSolicitationsCount > 0): ?>
-          <a class="btn btn-sm btn-outline-warning app-notification-btn" href="pedidos-insumos-pendentes.php" aria-label="Ver solicitações de insumo pendentes" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
+          <button class="btn btn-sm btn-outline-warning app-notification-btn" type="button" data-bs-toggle="modal" data-bs-target="#insumoNotificationsModal" aria-label="Abrir mensagens de solicitações de insumo pendentes" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
             <i class="fa-solid fa-bell"></i>
             <span class="app-notification-count"><?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?></span>
-          </a>
+          </button>
         <?php endif; ?>
         <a class="btn btn-sm btn-outline-secondary app-theme-btn" href="toggletheme.php" aria-label="Alternar tema" title="<?= h($temaAtual === 'escuro' ? 'Mudar para tema claro' : 'Mudar para tema escuro') ?>">
           <i class="fa-solid <?= $temaAtual === 'escuro' ? 'fa-sun' : 'fa-moon' ?>"></i>
@@ -235,6 +265,78 @@ if ($logoUrl === '') {
       </div>
     </header>
     <label class="sidebar-backdrop" for="mobile-sidebar-toggle" data-sidebar-backdrop aria-hidden="true"></label>
+
+    <?php if (isAdmin()): ?>
+      <div class="modal fade" id="insumoNotificationsModal" tabindex="-1" aria-labelledby="insumoNotificationsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content insumo-notification-modal">
+            <div class="modal-header border-0 pb-0">
+              <div>
+                <p class="insumo-notification-kicker mb-1">Central de mensagens</p>
+                <h5 class="modal-title" id="insumoNotificationsModalLabel">Solicitações de insumo por setor</h5>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body pt-3">
+              <?php if (!empty($pendingInsumoNotifications)): ?>
+                <div class="insumo-notification-list">
+                  <?php foreach ($pendingInsumoNotifications as $notification): ?>
+                    <div class="insumo-notification-item">
+                      <div class="insumo-notification-icon">
+                        <i class="fa-solid fa-layer-group"></i>
+                      </div>
+                      <div class="insumo-notification-content">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                          <div>
+                            <h6 class="mb-1"><?= h((string)($notification['sector'] ?? 'Sem setor')) ?></h6>
+                            <p class="mb-1 text-muted small">
+                              <?= h(number_format((int)($notification['items_count'] ?? 0), 0, ',', '.')) ?> item<?= (int)($notification['items_count'] ?? 0) === 1 ? '' : 's' ?> aguardando atendimento
+                            </p>
+                          </div>
+                          <span class="insumo-notification-badge badge rounded-pill text-bg-light border align-self-start">
+                            <?= h(!empty($notification['batch_id']) ? 'Em lote' : 'Avulsa') ?>
+                          </span>
+                        </div>
+                        <div class="insumo-notification-message">
+                          Chegou uma solicitação do setor <?= h((string)($notification['sector'] ?? 'Sem setor')) ?>.
+                          <?= !empty($notification['user_nome']) ? ' Solicitante: ' . h((string)$notification['user_nome']) . '.' : '' ?>
+                          <?= !empty($notification['requested_at']) ? ' Recebida em ' . h(date('d/m/Y H:i', strtotime((string)$notification['requested_at']))) . '.' : '' ?>
+                        </div>
+                        <?php if (!empty($notification['data_solicitada_entrega'])): ?>
+                          <div class="insumo-notification-meta small text-muted">
+                            Entrega desejada: <?= h(date('d/m/Y', strtotime((string)$notification['data_solicitada_entrega']))) ?>
+                          </div>
+                        <?php endif; ?>
+                        <div class="mt-2">
+                          <a class="btn btn-sm btn-outline-primary" href="pedidos-insumos-pendentes.php?sector=<?= h(rawurlencode((string)($notification['sector'] ?? ''))) ?>">
+                            <i class="fa-solid fa-arrow-right me-1"></i>Abrir fila deste setor
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div class="insumo-notification-empty">
+                  <div class="insumo-notification-icon">
+                    <i class="fa-regular fa-circle-check"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Nenhuma solicitação pendente no momento</h6>
+                    <p class="mb-0 text-muted">Quando um setor enviar um novo pedido, ele aparecerá aqui com o resumo da mensagem.</p>
+                  </div>
+                </div>
+              <?php endif; ?>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+              <a href="pedidos-insumos-pendentes.php" class="btn btn-primary">
+                <i class="fa-solid fa-arrow-right me-1"></i>Ver fila completa
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    <?php endif; ?>
     <main class="app-main container-fluid">
 <?php else: ?>
 <header class="auth-topbar shadow-sm" style="background: var(--color-primary) !important;">

@@ -197,6 +197,13 @@ $insumoRequestsStmt = $pdo->prepare(
 );
 $insumoRequestsStmt->execute();
 $pendingInsumoRequests = $insumoRequestsStmt->fetchAll();
+$sectorFilter = trim((string)($_GET['sector'] ?? ''));
+if ($sectorFilter !== '') {
+  $sectorFilterNormalized = mb_strtolower($sectorFilter);
+  $pendingInsumoRequests = array_values(array_filter($pendingInsumoRequests, static function (array $request) use ($sectorFilterNormalized): bool {
+    return mb_strtolower(trim((string)($request['setor'] ?? ''))) === $sectorFilterNormalized;
+  }));
+}
 $pendingInsumoCount = count($pendingInsumoRequests);
 
 $pendingInsumoRequestsByGroup = [];
@@ -236,6 +243,17 @@ require_once __DIR__ . '/includes/header.php';
           <span class="solicitacoes-kicker">Fila operacional</span>
           <h1 class="display-6 fw-semibold mb-2">Pedidos de insumo pendentes</h1>
           <p class="solicitacoes-subtitle mb-0">Atenda solicitações abertas em blocos por setor, sem misturar com a administração geral.</p>
+          <?php if ($sectorFilter !== ''): ?>
+            <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
+              <span class="solicitacoes-pill">
+                <i class="fa-solid fa-filter"></i>
+                Filtro ativo: <?= h($sectorFilter) ?>
+              </span>
+              <a href="pedidos-insumos-pendentes.php" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-xmark me-1"></i>Limpar filtro
+              </a>
+            </div>
+          <?php endif; ?>
         </div>
         <div class="text-lg-end d-flex flex-column gap-2 align-items-lg-end">
           <a href="export_pedidos_insumos_pdf.php" class="btn btn-outline-danger">
@@ -281,17 +299,30 @@ require_once __DIR__ . '/includes/header.php';
     </div>
     <div class="card-body pt-0 pending-insumos-body">
       <?php if (empty($pendingInsumoRequestsByGroup)): ?>
-        <div class="alert alert-info mb-0">Não há pedidos de insumo pendentes no momento.</div>
+        <div class="alert alert-info mb-0">
+          <?php if ($sectorFilter !== ''): ?>
+            Não há pedidos de insumo pendentes para o setor <?= h($sectorFilter) ?> no momento.
+          <?php else: ?>
+            Não há pedidos de insumo pendentes no momento.
+          <?php endif; ?>
+        </div>
       <?php else: ?>
         <?php foreach ($pendingInsumoRequestsByGroup as $group): ?>
           <?php $rowFormId = 'insumo-batch-' . md5((string)$group['group_key']); ?>
-          <div class="pending-insumos-sector card border-0 shadow-sm mb-4">
+          <div class="pending-insumos-sector card border-0 shadow-sm mb-4 <?= $sectorFilter !== '' ? 'pending-insumos-sector-filtered' : '' ?>">
             <div class="card-header bg-white border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
               <div>
                 <h3 class="h6 mb-1"><i class="fa-solid fa-layer-group me-2 text-primary"></i><?= h($group['sector']) ?></h3>
                 <div class="text-muted small"><?= h(number_format(count($group['items']), 0, ',', '.')) ?> item<?= count($group['items']) === 1 ? '' : 's' ?> nesta solicitação</div>
               </div>
-              <span class="badge bg-light text-dark border"><?= h($group['batch_id'] !== '' ? 'Solicitação em lote' : 'Solicitação avulsa') ?></span>
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <?php if ($sectorFilter !== ''): ?>
+                  <span class="badge rounded-pill text-bg-primary pending-insumos-sector-badge">
+                    <i class="fa-solid fa-filter me-1"></i><?= h($sectorFilter) ?>
+                  </span>
+                <?php endif; ?>
+                <span class="badge bg-light text-dark border"><?= h($group['batch_id'] !== '' ? 'Solicitação em lote' : 'Solicitação avulsa') ?></span>
+              </div>
             </div>
             <div class="card-body pt-0">
               <div class="row g-3 mb-4">

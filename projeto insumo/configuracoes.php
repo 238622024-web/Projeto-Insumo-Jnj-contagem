@@ -75,60 +75,148 @@ $tempPasswordExpiryHours = (int)getSetting('temp_password_expiry_hours', 24);
 $tempPasswordExpiryHours = max(1, min(168, $tempPasswordExpiryHours));
 $mostrarLote = getSetting('mostrar_lote', '1') === '1';
 $zipDisponivel = class_exists('ZipArchive');
+$logoPathAtual = getSetting('logo_path', '');
+$logoUrlAtual = getSetting('logo_url', '');
+$logoPreviewUrl = '';
+if (!empty($logoPathAtual)) {
+  $logoAbs = realpath(__DIR__ . '/' . ltrim($logoPathAtual, '/'));
+  if ($logoAbs && file_exists($logoAbs)) {
+    $logoPreviewUrl = $logoPathAtual;
+  }
+}
+if ($logoPreviewUrl === '' && !empty($logoUrlAtual) && preg_match('/^https?:\/\//i', $logoUrlAtual)) {
+  $logoPreviewUrl = $logoUrlAtual;
+}
 // agora inclui o header (após o processamento POST e possíveis redirecionamentos)
 include __DIR__ . '/includes/header.php';
 ?>
-<h2 class="h4 mb-3"><i class="fa-solid fa-gear me-2"></i>Configurações</h2>
-<form method="post" enctype="multipart/form-data" class="shadow-sm bg-white p-4 rounded">
-  <div class="mb-3">
-    <label class="form-label">Tema</label>
-    <select name="tema" class="form-select">
-      <option value="claro" <?= $temaAtual==='claro'?'selected':'' ?>>Claro</option>
-      <option value="escuro" <?= $temaAtual==='escuro'?'selected':'' ?>>Escuro</option>
-    </select>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Idioma</label>
-    <select name="lang" class="form-select">
-      <option value="pt-br" <?= $langAtual==='pt-br'?'selected':'' ?>>Português (Brasil)</option>
-      <option value="en" <?= $langAtual==='en'?'selected':'' ?>>English</option>
-    </select>
-    <div class="form-text">Define o idioma preferido. (Textos principais ainda estão em Português)</div>
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Cor Primária (hex)</label>
-    <input type="color" name="primary_color" class="form-control" value="<?= h($primaryColorAtual) ?>">
-    <div class="form-text">Escolha a cor principal (usa no cabeçalho, botões, destaques).</div>
-  </div>
-  <div class="row g-3">
-    <div class="col-md-4">
-      <label class="form-label">Itens por página</label>
-      <select name="itens_pagina" class="form-select">
-        <?php foreach ([10,25,50,100] as $opt): ?>
-          <option value="<?= $opt ?>" <?= $itensAtual==$opt?'selected':'' ?>><?= $opt ?></option>
-        <?php endforeach; ?>
-      </select>
+<div class="settings-page">
+  <section class="solicitacoes-hero card border-0 shadow-lg mb-4 overflow-hidden">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3">
+        <div>
+          <span class="solicitacoes-kicker">Painel administrativo</span>
+          <h1 class="display-6 fw-semibold mb-2">Configurações</h1>
+          <p class="solicitacoes-subtitle mb-0">Ajuste aparência, paginação, alertas e identidade visual do sistema em um só lugar.</p>
+        </div>
+        <div class="text-lg-end d-flex flex-column gap-2 align-items-lg-end">
+          <span class="solicitacoes-pill"><i class="fa-solid fa-wand-magic-sparkles"></i>Configuração global</span>
+          <small class="text-muted d-block">Tema, idioma e marca afetam toda a aplicação.</small>
+        </div>
+      </div>
     </div>
-    <div class="col-md-4">
-      <label class="form-label">Aviso validade curta (dias)</label>
-      <input type="number" name="alerta_validade_curta" class="form-control" min="0" value="<?= $valCurta ?>">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Aviso validade média (dias)</label>
-      <input type="number" name="alerta_validade_media" class="form-control" min="0" value="<?= $valMedia ?>">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Validade senha temporária (horas)</label>
-      <input type="number" name="temp_password_expiry_hours" class="form-control" min="1" max="168" value="<?= $tempPasswordExpiryHours ?>">
-      <div class="form-text">Define por quantas horas a senha temporária liberada pelo admin permanece válida.</div>
-    </div>
-  </div>
+  </section>
 
-  <div class="form-check form-switch my-3">
-    <input class="form-check-input" type="checkbox" id="mostrarLote" name="mostrar_lote" <?= $mostrarLote?'checked':'' ?>>
-    <label class="form-check-label" for="mostrarLote">Mostrar coluna "Lote" na listagem</label>
-  </div>
+  <form method="post" enctype="multipart/form-data" class="settings-form">
+    <div class="row g-4">
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 profile-section-card">
+          <div class="card-body">
+            <h2 class="h5 mb-3"><i class="fa-solid fa-palette me-2 text-primary"></i>Aparência</h2>
+            <div class="mb-3">
+              <label class="form-label">Tema</label>
+              <select name="tema" class="form-select">
+                <option value="claro" <?= $temaAtual==='claro'?'selected':'' ?>>Claro</option>
+                <option value="escuro" <?= $temaAtual==='escuro'?'selected':'' ?>>Escuro</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Idioma</label>
+              <select name="lang" class="form-select">
+                <option value="pt-br" <?= $langAtual==='pt-br'?'selected':'' ?>>Português (Brasil)</option>
+                <option value="en" <?= $langAtual==='en'?'selected':'' ?>>English</option>
+              </select>
+              <div class="form-text">O sistema já usa esse idioma no shell e nas preferências do usuário.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Cor primária</label>
+              <div class="d-flex gap-3 align-items-center flex-wrap">
+                <input type="color" name="primary_color" class="form-control form-control-color settings-color-input" value="<?= h($primaryColorAtual) ?>" aria-label="Cor primária">
+                <div class="settings-color-preview" style="background: <?= h($primaryColorAtual) ?>;">
+                  <strong><?= h($primaryColorAtual) ?></strong>
+                </div>
+              </div>
+              <div class="form-text">Usada em botões, destaques e cabeçalho.</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <button class="btn btn-primary btn-rounded" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i>Salvar</button>
-</form>
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 profile-section-card">
+          <div class="card-body">
+            <h2 class="h5 mb-3"><i class="fa-solid fa-sliders me-2 text-primary"></i>Listagem e alertas</h2>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Itens por página</label>
+                <select name="itens_pagina" class="form-select">
+                  <?php foreach ([10,25,50,100] as $opt): ?>
+                    <option value="<?= $opt ?>" <?= $itensAtual==$opt?'selected':'' ?>><?= $opt ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 col-lg-12">
+                <label class="form-label">Aviso validade curta (dias)</label>
+                <input type="number" name="alerta_validade_curta" class="form-control" min="0" value="<?= $valCurta ?>">
+              </div>
+              <div class="col-12 col-md-6 col-lg-12">
+                <label class="form-label">Aviso validade média (dias)</label>
+                <input type="number" name="alerta_validade_media" class="form-control" min="0" value="<?= $valMedia ?>">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Validade senha temporária (horas)</label>
+                <input type="number" name="temp_password_expiry_hours" class="form-control" min="1" max="168" value="<?= $tempPasswordExpiryHours ?>">
+                <div class="form-text">Define por quantas horas a senha temporária liberada pelo admin permanece válida.</div>
+              </div>
+            </div>
+            <div class="form-check form-switch mt-3">
+              <input class="form-check-input" type="checkbox" id="mostrarLote" name="mostrar_lote" <?= $mostrarLote?'checked':'' ?>>
+              <label class="form-check-label" for="mostrarLote">Mostrar coluna "Lote" na listagem</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100 profile-section-card">
+          <div class="card-body">
+            <h2 class="h5 mb-3"><i class="fa-solid fa-badge-check me-2 text-primary"></i>Marca</h2>
+            <div class="mb-3">
+              <label class="form-label">Logo da aplicação</label>
+              <input type="file" name="logo" class="form-control" accept=".svg,.png,.jpg,.jpeg">
+              <div class="form-text">Envie um arquivo novo para substituir o logo usado no sistema.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">URL do logo</label>
+              <input type="url" name="logo_url" class="form-control" value="<?= h($logoUrlAtual) ?>" placeholder="https://...">
+              <div class="form-text">Útil para apontar para um logo hospedado externamente.</div>
+            </div>
+            <div class="settings-logo-preview card border-0 shadow-sm">
+              <div class="card-body text-center">
+                <?php if ($logoPreviewUrl !== ''): ?>
+                  <img src="<?= h($logoPreviewUrl) ?>" alt="Prévia do logo" class="settings-logo-image mb-3">
+                  <div class="small text-muted">Prévia do logo atual</div>
+                <?php else: ?>
+                  <div class="settings-logo-placeholder mb-3">
+                    <i class="fa-solid fa-image"></i>
+                  </div>
+                  <div class="small text-muted">Nenhum logo personalizado definido</div>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="d-flex flex-column flex-md-row justify-content-end gap-2">
+          <a href="index.php" class="btn btn-outline-secondary btn-rounded">
+            <i class="fa-solid fa-arrow-left me-1"></i>Voltar
+          </a>
+          <button class="btn btn-primary btn-rounded" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i>Salvar configurações</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -6,6 +6,20 @@ requireLogin();
 $pdo = getPDO();
 ensureInsumoRequestsSchema($pdo);
 $current = currentUser() ?: [];
+$nomesInsumos = require __DIR__ . '/materiais-lista.php';
+sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
+$setoresDisponiveis = [
+  'Inbound',
+  'Outbound',
+  'AdequaçãoAdm',
+  'DPS/VLM',
+  'KIT-DPS',
+  'FATURAMENTO',
+  'QUALIDADE',
+  'INVENTÁRIO',
+  'EXPORTACÃO',
+  'REVERSA',
+];
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
   session_start();
@@ -33,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $errors = [];
   if ($setor === '') {
     $errors[] = 'Informe o setor solicitante.';
+  } elseif (!in_array($setor, $setoresDisponiveis, true)) {
+    $errors[] = 'Selecione um setor válido.';
   }
   if ($dataEntrega !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataEntrega)) {
     $errors[] = 'A data solicitada para entrega é inválida.';
@@ -49,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($insumoNome === '') {
       $errors[] = 'Preencha o tipo de insumo da linha ' . ((int)$index + 1) . '.';
+      continue;
+    }
+    if (!in_array($insumoNome, $nomesInsumos, true)) {
+      $errors[] = 'O tipo de insumo da linha ' . ((int)$index + 1) . ' não está na lista disponível.';
       continue;
     }
     if ($quantidade <= 0) {
@@ -161,7 +181,12 @@ require_once __DIR__ . '/includes/header.php';
         <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
         <div class="col-12 col-md-6">
           <label class="form-label">Setor</label>
-          <input type="text" class="form-control" name="setor" required>
+          <select class="form-select" name="setor" required>
+            <option value="">Selecione o setor</option>
+            <?php foreach ($setoresDisponiveis as $setorItem): ?>
+              <option value="<?= h($setorItem) ?>" <?= (($_POST['setor'] ?? '') === $setorItem) ? 'selected' : '' ?>><?= h($setorItem) ?></option>
+            <?php endforeach; ?>
+          </select>
         </div>
         <div class="col-12 col-md-6">
           <label class="form-label">Data solicitada para entrega</label>
@@ -183,7 +208,14 @@ require_once __DIR__ . '/includes/header.php';
               <tbody>
                 <?php for ($i = 0; $i < 15; $i++): ?>
                   <tr>
-                    <td><input type="text" class="form-control" name="insumo_nome[]"></td>
+                    <td>
+                      <select class="form-select" name="insumo_nome[]">
+                        <option value="">Selecione o material</option>
+                        <?php foreach ($nomesInsumos as $nomeItem): ?>
+                          <option value="<?= h($nomeItem) ?>" <?= (($_POST['insumo_nome'][$i] ?? '') === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    </td>
                     <td><input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0"></td>
                     <td class="text-muted small">Preenchimento do departamento responsável</td>
                     <td class="text-muted small">Preenchimento do departamento responsável</td>
