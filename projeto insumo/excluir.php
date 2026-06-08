@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
-requireLogin();
+requireAdmin();
 $pdo = getPDO();
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { flash('error','ID inválido.'); header('Location: index.php'); exit; }
@@ -11,7 +11,34 @@ $item = $stmt->fetch();
 if (!$item) { flash('error','Material não encontrado.'); header('Location: index.php'); exit; }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $senhaConfirmacao = (string)($_POST['senha_confirmacao'] ?? '');
     $typed = strtoupper(trim($_POST['confirm_text'] ?? ''));
+
+    if ($senhaConfirmacao === '') {
+        flash('error', 'Digite a senha do administrador para excluir este material.');
+        header('Location: excluir.php?id=' . $id);
+        exit;
+    }
+
+    $user = currentUser();
+    $userId = (int)($user['id'] ?? 0);
+    if ($userId <= 0) {
+        flash('error', 'Nao foi possivel validar o usuario logado.');
+        header('Location: excluir.php?id=' . $id);
+        exit;
+    }
+
+    $stmtUser = $pdo->prepare('SELECT senha_hash FROM usuarios WHERE id = ? LIMIT 1');
+    $stmtUser->execute([$userId]);
+    $userRow = $stmtUser->fetch();
+    $senhaHash = (string)($userRow['senha_hash'] ?? '');
+
+    if ($senhaHash === '' || !password_verify($senhaConfirmacao, $senhaHash)) {
+        flash('error', 'Senha incorreta. A exclusão não foi executada.');
+        header('Location: excluir.php?id=' . $id);
+        exit;
+    }
+
     if (isset($_POST['confirm']) && $_POST['confirm'] === 'SIM' && $typed === 'EXCLUIR') {
         $del = $pdo->prepare('DELETE FROM insumos_jnj WHERE id=?');
         $del->execute([$id]);
@@ -59,6 +86,11 @@ include __DIR__ . '/includes/header.php';
                     <label for="confirm_text" class="form-label fw-semibold">Digite EXCLUIR para continuar</label>
                     <input type="text" name="confirm_text" id="confirm_text" class="form-control" placeholder="EXCLUIR" autocomplete="off" maxlength="20">
 
+                    <div class="mt-3">
+                        <label for="senha_confirmacao" class="form-label fw-semibold">Senha do administrador</label>
+                        <input type="password" name="senha_confirmacao" id="senha_confirmacao" class="form-control" autocomplete="current-password" required>
+                    </div>
+
                     <div class="form-check mt-3">
                         <input class="form-check-input" type="checkbox" value="1" id="ack_delete">
                         <label class="form-check-label" for="ack_delete">
@@ -78,12 +110,12 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     const modalEl = document.getElementById('deleteConfirmModal');
     if (modalEl && window.bootstrap) {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
-})();
+});
 </script>
 <script src="assets/js/delete-confirmation.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

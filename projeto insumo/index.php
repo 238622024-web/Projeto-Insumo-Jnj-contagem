@@ -74,6 +74,27 @@ $total = count($insumos);
 $exportQuery = http_build_query($exportParams);
 $exportPdfHref = 'export_pdf.php' . ($exportQuery !== '' ? '?' . $exportQuery : '');
 $exportExcelHref = 'export_excel.php' . ($exportQuery !== '' ? '?' . $exportQuery : '');
+function buildIndexStatsLink(array $extra = []): string {
+  $params = [];
+
+  foreach (['start_date', 'end_date', 'count_start_date', 'count_end_date', 'status_validade', 'unidade_filter', 'sem_contagem'] as $key) {
+    $value = trim($_GET[$key] ?? '');
+    if ($value !== '') {
+      $params[$key] = $value;
+    }
+  }
+
+  foreach ($extra as $key => $value) {
+    if ($value === null || $value === '') {
+      unset($params[$key]);
+    } else {
+      $params[$key] = $value;
+    }
+  }
+
+  $query = http_build_query($params);
+  return 'index.php' . ($query !== '' ? '?' . $query : '');
+}
 function diasPara($data) {
   $hoje = new DateTime();
   $d = DateTime::createFromFormat('Y-m-d', $data);
@@ -118,7 +139,8 @@ include __DIR__ . '/includes/header.php';
 <!-- Cards de Estatísticas -->
 <div class="row g-3 mb-4">
   <div class="col-12 col-md-3">
-    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <a class="dashboard-stat-card text-decoration-none d-block h-100" href="<?= h(buildIndexStatsLink()) ?>" aria-label="Abrir a lista completa de materiais">
+      <div class="card border-0 shadow-sm h-100 dashboard-stat-card-inner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
       <div class="card-body text-white">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -127,11 +149,14 @@ include __DIR__ . '/includes/header.php';
           </div>
           <div class="fs-1 opacity-50"><i class="fa fa-boxes"></i></div>
         </div>
+        <div class="mt-2 small text-white-50">Abrir lista completa</div>
       </div>
-    </div>
+      </div>
+    </a>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+    <a class="dashboard-stat-card text-decoration-none d-block h-100" href="<?= h(buildIndexStatsLink(['status_validade' => 'expirado'])) ?>" aria-label="Ver materiais expirados">
+      <div class="card border-0 shadow-sm h-100 dashboard-stat-card-inner" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
       <div class="card-body text-white">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -140,11 +165,14 @@ include __DIR__ . '/includes/header.php';
           </div>
           <div class="fs-1 opacity-50"><i class="fa fa-times-circle"></i></div>
         </div>
+        <div class="mt-2 small text-white-50">Clique para abrir os itens vencidos</div>
       </div>
-    </div>
+      </div>
+    </a>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+    <a class="dashboard-stat-card text-decoration-none d-block h-100" href="<?= h(buildIndexStatsLink(['status_validade' => 'v7'])) ?>" aria-label="Ver materiais vencendo em 7 dias">
+      <div class="card border-0 shadow-sm h-100 dashboard-stat-card-inner" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
       <div class="card-body text-white">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -153,11 +181,14 @@ include __DIR__ . '/includes/header.php';
           </div>
           <div class="fs-1 opacity-50"><i class="fa fa-exclamation-triangle"></i></div>
         </div>
+        <div class="mt-2 small text-white-50">Clique para planejar a reposição</div>
       </div>
-    </div>
+      </div>
+    </a>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+    <a class="dashboard-stat-card text-decoration-none d-block h-100" href="<?= h(buildIndexStatsLink(['status_validade' => 'v30'])) ?>" aria-label="Ver materiais vencendo em 30 dias">
+      <div class="card border-0 shadow-sm h-100 dashboard-stat-card-inner" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
       <div class="card-body text-white">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -166,8 +197,10 @@ include __DIR__ . '/includes/header.php';
           </div>
           <div class="fs-1 opacity-50"><i class="fa fa-clock"></i></div>
         </div>
+        <div class="mt-2 small text-white-50">Clique para ver a faixa de atenção</div>
       </div>
-    </div>
+      </div>
+    </a>
   </div>
 </div>
 
@@ -180,9 +213,11 @@ include __DIR__ . '/includes/header.php';
         <a class="btn btn-success" href="cadastrar.php"><i class="fa-solid fa-circle-plus me-2"></i><?= h(t('list.add')) ?></a>
         <a class="btn btn-outline-success" href="<?= h($exportExcelHref) ?>"><i class="fa-solid fa-file-excel me-2"></i><?= h(t('list.export.excel')) ?></a>
         <a class="btn btn-outline-danger" href="<?= h($exportPdfHref) ?>"><i class="fa-solid fa-file-pdf me-2"></i><?= h(t('list.export.pdf')) ?></a>
-        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
-          <i class="fa-solid fa-trash-can me-2"></i>Apagar Todos
-        </button>
+        <?php if (isAdmin()): ?>
+          <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
+            <i class="fa-solid fa-trash-can me-2"></i>Apagar Todos
+          </button>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -258,10 +293,12 @@ include __DIR__ . '/includes/header.php';
                 <i class="fa-solid fa-pen-to-square"></i>
                 <span>Editar</span>
               </a>
-              <a class="btn btn-sm materials-action-btn materials-action-delete" href="excluir.php?id=<?= h($row['id']) ?>" title="Excluir item #<?= h($row['id']) ?>" aria-label="Excluir item #<?= h($row['id']) ?>">
-                <i class="fa-solid fa-trash-can"></i>
-                <span>Excluir</span>
-              </a>
+              <?php if (isAdmin()): ?>
+                <a class="btn btn-sm materials-action-btn materials-action-delete" href="excluir.php?id=<?= h($row['id']) ?>" title="Excluir item #<?= h($row['id']) ?>" aria-label="Excluir item #<?= h($row['id']) ?>">
+                  <i class="fa-solid fa-trash-can"></i>
+                  <span>Excluir</span>
+                </a>
+              <?php endif; ?>
             </div>
           </td>
         </tr>
@@ -281,29 +318,38 @@ include __DIR__ . '/includes/header.php';
     </table>
   </div>
 </div>
-<!-- Modal de confirmação: Apagar Todos na listagem -->
-<div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="modalApagarTodosLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Todos os Materiais</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Tem certeza que deseja apagar TODOS os materiais desta lista?</strong></p>
-        <p>Esta ação irá remover permanentemente todos os registros da tabela <code>insumos_jnj</code> e reiniciar a numeração.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <form method="post" action="limpar_historico.php" style="display: inline;">
-          <input type="hidden" name="confirmar" value="sim">
-          <input type="hidden" name="tipo" value="todos">
-          <button type="submit" class="btn btn-danger">
-            <i class="fa-solid fa-trash-can me-1"></i>Sim, apagar tudo
-          </button>
-        </form>
+<?php if (isAdmin()): ?>
+  <!-- Modal de confirmação: Apagar Todos na listagem -->
+  <div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="modalApagarTodosLabel"><i class="fa fa-exclamation-triangle me-2"></i>Apagar Todos os Materiais</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Tem certeza que deseja apagar TODOS os materiais desta lista?</strong></p>
+          <p>Esta ação irá remover permanentemente todos os registros da tabela <code>insumos_jnj</code> e reiniciar a numeração.</p>
+          <div class="alert alert-warning border-0 mb-0">
+            <i class="fa-solid fa-lock me-2"></i>Para confirmar, digite sua senha de administrador.
+          </div>
+          <div class="mt-3">
+            <label class="form-label fw-semibold" for="senhaApagarTodos">Senha</label>
+            <input type="password" class="form-control" id="senhaApagarTodos" name="senha_confirmacao" form="formApagarTodos" autocomplete="current-password" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form id="formApagarTodos" method="post" action="limpar_historico.php" style="display: inline;">
+            <input type="hidden" name="confirmar" value="sim">
+            <input type="hidden" name="tipo" value="todos">
+            <button type="submit" class="btn btn-danger">
+              <i class="fa-solid fa-trash-can me-1"></i>Sim, apagar tudo
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>

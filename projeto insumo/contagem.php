@@ -11,6 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $incrementoRaw = trim((string)($_POST['incremento'] ?? '1'));
   $incrementoDigits = preg_replace('/\D+/', '', $incrementoRaw);
   $incremento = ($incrementoDigits === '') ? 1 : (int)$incrementoDigits;
+  $ajusteTipo = trim((string)($_POST['ajuste_tipo'] ?? 'somar'));
+
+  if (!in_array($ajusteTipo, ['somar', 'subtrair'], true)) {
+    $ajusteTipo = 'somar';
+  }
 
     if ($incremento <= 0) {
         $incremento = 1;
@@ -57,15 +62,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = currentUser();
     $contadorId = (int)($user['id'] ?? 0);
     $contadorNome = (string)($user['nome'] ?? $user['email'] ?? 'Usuario');
+    $ajusteQuantidade = $ajusteTipo === 'subtrair' ? -$incremento : $incremento;
+    $quantidadeAtual = (int)($item['quantidade'] ?? 0);
+    $quantidadeFinal = $quantidadeAtual + $ajusteQuantidade;
+
+    if ($quantidadeFinal < 0) {
+      flash('error', 'Ajuste inválido: a quantidade final nao pode ficar negativa.');
+      header('Location: contagem.php');
+      exit;
+    }
 
     $update = $pdo->prepare('UPDATE insumos_jnj SET quantidade = quantidade + ?, data_contagem = CURDATE(), contagem_por_id = ?, contagem_por_nome = ?, contagem_em = NOW() WHERE id = ?');
-    $update->execute([$incremento, $contadorId > 0 ? $contadorId : null, $contadorNome, (int)$item['id']]);
+    $update->execute([$ajusteQuantidade, $contadorId > 0 ? $contadorId : null, $contadorNome, (int)$item['id']]);
 
     $refresh = $pdo->prepare('SELECT * FROM insumos_jnj WHERE id = ?');
     $refresh->execute([(int)$item['id']]);
     $updatedItem = $refresh->fetch();
 
-    flash('success', 'Contagem registrada: ' . $updatedItem['nome'] . ' (+' . number_format($incremento, 0, ',', '.') . '). Quantidade atual: ' . number_format((int)$updatedItem['quantidade'], 0, ',', '.'));
+    $operador = $ajusteTipo === 'subtrair' ? '-' : '+';
+    $acaoTexto = $ajusteTipo === 'subtrair' ? 'ajuste' : 'contagem';
+    flash('success', 'Contagem registrada: ' . $updatedItem['nome'] . ' (' . $operador . number_format($incremento, 0, ',', '.') . '). Quantidade atual: ' . number_format((int)$updatedItem['quantidade'], 0, ',', '.'));
     header('Location: contagem.php');
     exit;
 }
@@ -97,6 +113,13 @@ include __DIR__ . '/includes/header.php';
       <div class="col-12 col-md-2">
         <label class="form-label fw-600">Somar</label>
         <input type="text" name="incremento" class="form-control form-control-lg" inputmode="numeric" pattern="[0-9. ]+" value="1" placeholder="Ex.: 1.200" required>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label fw-600">Ajuste</label>
+        <select name="ajuste_tipo" class="form-select form-select-lg">
+          <option value="somar">Somar</option>
+          <option value="subtrair">Subtrair</option>
+        </select>
       </div>
       <div class="col-12 col-md-2 d-grid">
         <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-check me-1"></i>Registrar</button>

@@ -9,9 +9,10 @@ $current = currentUser() ?: [];
 $nomesInsumos = require __DIR__ . '/materiais-lista.php';
 sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
 $setoresDisponiveis = [
-  'Inbound',
-  'Outbound',
+  'Saidas',
+  'Recebimento',
   'AdequaçãoAdm',
+  'Adequação',
   'DPS/VLM',
   'KIT-DPS',
   'FATURAMENTO',

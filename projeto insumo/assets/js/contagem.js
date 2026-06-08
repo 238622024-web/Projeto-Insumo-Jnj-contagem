@@ -20,6 +20,47 @@
     }, 1500);
   }
 
+  function playFoundBeep() {
+    if (!window.AudioContext && !window.webkitAudioContext) return;
+
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new Ctx();
+
+      const beep = function (frequency, startOffset, duration, peak) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const now = audioCtx.currentTime + startOffset;
+
+        osc.type = 'sine';
+        osc.frequency.value = frequency;
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(peak, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      };
+
+      const playPattern = function () {
+        beep(1040, 0, 0.08, 0.06);
+        beep(1320, 0.1, 0.08, 0.06);
+      };
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(playPattern).catch(function () {});
+      } else {
+        playPattern();
+      }
+    } catch (error) {
+      console.warn('Nao foi possivel tocar beep de leitura:', error);
+    }
+  }
+
   function initAlertBeeps() {
     const successAlert = document.querySelector('.alert.alert-success');
     const errorAlert = document.querySelector('.alert.alert-danger');
@@ -96,6 +137,8 @@
       const value = (barcodeInput.value || '').trim();
       if (!value) return;
 
+      playFoundBeep();
+
       if (feedbackEl && feedbackTextEl) {
         feedbackTextEl.textContent = 'Codigo lido: ' + value;
         feedbackEl.style.display = 'block';
@@ -112,6 +155,8 @@
 
       barcodeInput.value = decodedText.trim();
       barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+      playFoundBeep();
 
       if (feedbackEl && feedbackTextEl) {
         feedbackTextEl.textContent = 'Codigo lido: ' + decodedText.trim();

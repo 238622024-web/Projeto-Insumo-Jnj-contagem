@@ -47,35 +47,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   if ($erros) { flash('error', implode(' ', $erros)); }
 }
-// Esconder botões de login/registrar do header nesta página
-$hideAuthButtons = true;
 ?>
-<?php require_once __DIR__ . '/includes/header.php'; ?>
-
-<div class="d-flex align-items-center justify-content-center" style="min-height:70vh;">
-  <div class="w-100" style="max-width:420px;">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h4 text-center mb-3">Solicitar Acesso</h2>
-        <form method="post">
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solicitar Acesso</title>
+  <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/create-account.css" />
+</head>
+<body class="create-account-page">
+  <div class="min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="create-account-shell">
+      <div class="card create-account-card shadow-sm">
+      <div class="card-body p-4 p-md-4">
+        <h2 class="h4 text-center mb-2">Solicitar Acesso</h2>
+        <form method="post" autocomplete="off" novalidate>
           <div class="mb-3">
-            <label class="form-label">Nome</label>
-            <input type="text" name="nome" required value="<?= h($_POST['nome'] ?? '') ?>" class="form-control" />
+            <label class="form-label small" for="nome">Nome</label>
+            <input id="nome" type="text" name="nome" required value="<?= h($_POST['nome'] ?? '') ?>" class="form-control" placeholder="Seu nome" />
           </div>
           <div class="mb-3">
-            <label class="form-label">E-mail</label>
-            <input type="email" name="email" required value="<?= h($_POST['email'] ?? '') ?>" class="form-control" />
+            <label class="form-label small" for="email">E-mail</label>
+            <input id="email" type="email" name="email" required value="<?= h($_POST['email'] ?? '') ?>" class="form-control" placeholder="Seu e-mail" />
           </div>
           <div class="mb-3">
-            <label class="form-label">Tipo de conta</label>
-            <select name="tipo_conta" class="form-select" required>
+            <label class="form-label small" for="tipo_conta">Tipo de conta</label>
+            <select id="tipo_conta" name="tipo_conta" class="form-select" required>
               <option value="user" <?= (($_POST['tipo_conta'] ?? 'user') === 'user') ? 'selected' : '' ?>>Conta normal</option>
               <option value="admin" <?= (($_POST['tipo_conta'] ?? '') === 'admin') ? 'selected' : '' ?>>Administrador</option>
             </select>
-            <small class="text-muted">Solicitações de administrador precisam de aprovação do administrador principal.</small>
           </div>
           <div class="mb-3">
-            <label class="form-label">Senha</label>
+            <label class="form-label small" for="password">Senha</label>
             <div class="input-group">
               <span class="input-group-text" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -83,7 +88,7 @@ $hideAuthButtons = true;
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </span>
-              <input id="password" type="password" name="password" required class="form-control" />
+              <input id="password" type="password" name="password" required class="form-control" placeholder="Crie sua senha" />
               <button type="button" class="btn btn-outline-secondary" id="togglePasswordCA" tabindex="-1" aria-label="Mostrar senha" title="Mostrar/ocultar senha">
                 <svg id="eyeOpenCA" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
@@ -97,7 +102,7 @@ $hideAuthButtons = true;
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Confirmar Senha</label>
+            <label class="form-label small" for="confirm_password">Confirmar Senha</label>
             <div class="input-group">
               <span class="input-group-text" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,7 +110,7 @@ $hideAuthButtons = true;
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </span>
-              <input id="confirm_password" type="password" name="confirm_password" required class="form-control" />
+              <input id="confirm_password" type="password" name="confirm_password" required class="form-control" placeholder="Repita a senha" />
               <button type="button" class="btn btn-outline-secondary" id="toggleConfirmCA" tabindex="-1" aria-label="Mostrar senha" title="Mostrar/ocultar senha">
                 <svg id="eyeOpenConfirmCA" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
@@ -118,13 +123,14 @@ $hideAuthButtons = true;
               </button>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100">Enviar solicitação</button>
+          <button type="submit" class="btn btn-primary btn-register w-100">Enviar solicitação</button>
         </form>
-        <div class="text-center mt-3"><a href="login.php">Já tenho conta</a></div>
+        <div class="text-center mt-3 small text-muted"><a href="login.php">Já tenho conta</a></div>
       </div>
     </div>
+    </div>
   </div>
-</div>
 
-<script src="assets/js/create-account.js"></script>
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+  <script src="assets/js/create-account.js"></script>
+</body>
+</html>

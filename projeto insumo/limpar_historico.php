@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
-requireLogin();
+requireAdmin();
 $pdo = getPDO();
 require_once __DIR__ . '/i18n.php';
 
@@ -12,25 +12,51 @@ require_once __DIR__ . '/i18n.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['confirmar']) || $_POST['confirmar'] !== 'sim') {
         flash('error', 'Confirmação necessária para executar a ação.');
-        header('Location: configuracoes.php');
+        header('Location: index.php');
         exit;
     }
 
     $tipo = $_POST['tipo'] ?? 'historico';
 
     if ($tipo === 'todos') {
+        $senhaConfirmacao = (string)($_POST['senha_confirmacao'] ?? '');
+        if ($senhaConfirmacao === '') {
+            flash('error', 'Digite sua senha para confirmar a exclusão total.');
+            header('Location: index.php');
+            exit;
+        }
+
+        $user = currentUser();
+        $userId = (int)($user['id'] ?? 0);
+        if ($userId <= 0) {
+            flash('error', 'Nao foi possivel validar o usuario logado.');
+            header('Location: index.php');
+            exit;
+        }
+
+        $stmtUser = $pdo->prepare('SELECT senha_hash FROM usuarios WHERE id = ? LIMIT 1');
+        $stmtUser->execute([$userId]);
+        $userRow = $stmtUser->fetch();
+        $senhaHash = (string)($userRow['senha_hash'] ?? '');
+
+        if ($senhaHash === '' || !password_verify($senhaConfirmacao, $senhaHash)) {
+            flash('error', 'Senha incorreta. A exclusão total não foi executada.');
+            header('Location: index.php');
+            exit;
+        }
+
         try {
             $pdo->beginTransaction();
             $deleted = $pdo->exec('DELETE FROM insumos_jnj');
             $pdo->commit();
             $pdo->exec('ALTER TABLE insumos_jnj AUTO_INCREMENT = 1');
             flash('success', 'Todos os materiais foram apagados (' . (int)$deleted . ' registros).');
-            header('Location: configuracoes.php');
+            header('Location: index.php');
             exit;
         } catch (Exception $e) {
             if ($pdo && $pdo->inTransaction()) { $pdo->rollBack(); }
             flash('error', 'Erro ao apagar todos os materiais: ' . $e->getMessage());
-            header('Location: configuracoes.php');
+            header('Location: index.php');
             exit;
         }
     } elseif ($tipo === 'banco') {

@@ -2,113 +2,119 @@
    CREATE ACCOUNT PAGE - ESTILOS
    =========================== */
 
-/* Background wallpaper para página de criar conta */
-body {
-  background: 
+body.create-account-page {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background:
     linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.3) 100%),
     url('../wallpaper.jpg') center/cover no-repeat fixed;
-  min-height: 100vh;
 }
 
-/* Fallback local: garantir laranja #ff460a nos botões */
-.btn-primary {
-  background: #ff460a !important;
-  border-color: #ff460a !important;
-  color: #fff !important;
+.create-account-shell {
+  width: 100%;
+  max-width: 360px;
 }
 
-.btn-primary:hover {
-  filter: brightness(0.95);
+.create-account-card {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
 }
 
-/* Fallback essencial quando Bootstrap não carrega */
-.d-none {
-  display: none !important;
-}
-
-/* Card styling */
-.card {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  border-radius: 0.5rem;
-}
-
-.card-body {
+.create-account-card .card-body {
   padding: 1rem;
 }
 
-.shadow-sm {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-/* Form controls */
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
+.create-account-subtitle {
+  color: #6c757d;
+  font-size: 0.875rem;
   line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 0.375rem;
 }
 
-.input-group {
-  display: flex;
-  width: 100%;
+.create-account-card .form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.input-group-text {
-  display: flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
-  border-radius: 0.375rem 0 0 0.375rem;
+.create-account-card .form-control,
+.create-account-card .form-select,
+.create-account-card .input-group-text,
+.create-account-card .btn {
+  min-height: 42px;
 }
 
-.input-group .form-control {
-  border-left: 0;
-  border-radius: 0 0.375rem 0.375rem 0;
-  flex: 1 1 auto;
+.create-account-card .mb-3 {
+  margin-bottom: 1rem !important;
 }
 
-.btn-outline-secondary {
-  border: 1px solid #ff460a;
-  color: #ff460a;
-  background: transparent;
-  border-radius: 0.375rem;
+.create-account-card .input-group-text {
+  background: #eef2f7;
+  border-color: #d7dee8;
 }
 
-.btn-outline-secondary:hover {
+.create-account-card .form-control:focus,
+.create-account-card .form-select:focus {
+  border-color: #ff460a;
+  box-shadow: 0 0 0 0.2rem rgba(255, 70, 10, 0.16);
+}
+
+.create-account-card .btn-primary {
   background: #ff460a;
+  border-color: #ff460a;
   color: #fff;
+}
+
+.create-account-card .btn-primary:hover {
+  background: #e33e08;
+  border-color: #e33e08;
+}
+
+.create-account-card .btn-outline-secondary {
+  color: #ff460a;
   border-color: #ff460a;
 }
 
-/* Alerts */
-.alert {
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid transparent;
-  border-radius: 0.375rem;
+.create-account-card .btn-outline-secondary:hover {
+  background: #ff460a;
+  color: #fff;
 }
 
-.alert-danger {
-  background-color: #f8d7da;
-  border-color: #f5c6cb;
-  color: #721c24;
+.create-account-card .text-muted,
+.create-account-card small {
+  color: #6c757d !important;
 }
 
-.alert-success {
-  background-color: #d4edda;
-  border-color: #c3e6cb;
-  color: #155724;
+.create-account-card a {
+  color: #ff460a;
+  text-decoration: none;
+}
+
+.create-account-card a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 575.98px) {
+  body.create-account-page {
+    padding: 10px;
+  }
+
+  .create-account-shell {
+    max-width: 100%;
+  }
+
+  .create-account-card {
+    border-radius: 12px;
+  }
+
+  .create-account-card .card-body {
+    padding: 1rem;
+  }
 }
