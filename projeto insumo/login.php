@@ -61,7 +61,8 @@ if ($loginLogo === '') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['password'] ?? '';
-    if (login($email, $senha)) {
+    $rememberMe = !empty($_POST['remember-me']);
+    if (login($email, $senha, $rememberMe)) {
         flash('success', 'Login efetuado com sucesso.');
         if (mustChangePassword()) {
           header('Location: perfil.php?force_password_change=1');
@@ -141,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="form-check">
-              <input id="remember-me" name="remember-me" type="checkbox" class="form-check-input" />
+              <input id="remember-me" name="remember-me" type="checkbox" class="form-check-input" <?= !empty($_POST['remember-me']) ? 'checked' : '' ?> />
               <label for="remember-me" class="form-check-label small">Lembrar-me</label>
             </div>
             <a href="forgot-password.php" class="small">Esqueceu a senha?</a>

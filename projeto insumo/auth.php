@@ -17,6 +17,8 @@ function ensureUserAuthSchema(): void {
         aprovado TINYINT(1) NOT NULL DEFAULT 0,
         aprovado_em DATETIME NULL,
         aprovado_por INT NULL,
+        remember_token_hash CHAR(64) NULL,
+        remember_token_expires_at DATETIME NULL,
         avatar VARCHAR(255) NULL,
         preferred_theme VARCHAR(20) NOT NULL DEFAULT 'claro',
         preferred_language VARCHAR(10) NOT NULL DEFAULT 'pt-br',
@@ -46,8 +48,14 @@ function ensureUserAuthSchema(): void {
     if (empty($existing['aprovado_por'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN aprovado_por INT NULL AFTER aprovado_em');
     }
+    if (empty($existing['remember_token_hash'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN remember_token_hash CHAR(64) NULL AFTER aprovado_por');
+    }
+    if (empty($existing['remember_token_expires_at'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN remember_token_expires_at DATETIME NULL AFTER remember_token_hash');
+    }
     if (empty($existing['must_change_password'])) {
-        $pdo->exec('ALTER TABLE usuarios ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER aprovado_por');
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER remember_token_expires_at');
         $pdo->exec('ALTER TABLE usuarios ADD INDEX idx_usuarios_must_change_password (must_change_password)');
     }
     if (empty($existing['temp_password_expires_at'])) {
@@ -307,7 +315,103 @@ function getLastAuthError(): ?string {
     return null;
 }
 
-function login(string $email, string $senha): bool {
+function rememberMeCookieName(): string {
+    return 'remember_me_token';
+}
+
+function rememberMeCookiePath(): string {
+    $scriptName = (string)($_SERVER['SCRIPT_NAME'] ?? '/');
+    $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+    return $dir === '' ? '/' : $dir . '/';
+}
+
+function rememberMeCookieSecure(): bool {
+    return !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+}
+
+function setRememberMeCookie(string $token, int $expiresAt): void {
+    setcookie(rememberMeCookieName(), $token, [
+        'expires' => $expiresAt,
+        'path' => rememberMeCookiePath(),
+        'secure' => rememberMeCookieSecure(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function clearRememberMeCookie(): void {
+    setcookie(rememberMeCookieName(), '', [
+        'expires' => time() - 3600,
+        'path' => rememberMeCookiePath(),
+        'secure' => rememberMeCookieSecure(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function createRememberMeToken(int $userId): void {
+    ensureUserAuthSchema();
+    $pdo = getPDO();
+
+    $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    $tokenHash = hash('sha256', $token);
+    $expiresAt = time() + (60 * 60 * 24 * 30);
+
+    $stmt = $pdo->prepare('UPDATE usuarios SET remember_token_hash = ?, remember_token_expires_at = FROM_UNIXTIME(?) WHERE id = ?');
+    $stmt->execute([$tokenHash, $expiresAt, $userId]);
+
+    setRememberMeCookie($token, $expiresAt);
+}
+
+function clearRememberMeToken(?int $userId = null): void {
+    try {
+        ensureUserAuthSchema();
+        if ($userId !== null) {
+            $pdo = getPDO();
+            $stmt = $pdo->prepare('UPDATE usuarios SET remember_token_hash = NULL, remember_token_expires_at = NULL WHERE id = ?');
+            $stmt->execute([$userId]);
+        }
+    } catch (Throwable $e) {
+        // ignore
+    }
+    clearRememberMeCookie();
+}
+
+function authenticateRememberMe(): ?array {
+    $token = (string)($_COOKIE[rememberMeCookieName()] ?? '');
+    if ($token === '') {
+        return null;
+    }
+
+    try {
+        ensureUserAuthSchema();
+        $pdo = getPDO();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare('SELECT id,nome,email,role,aprovado,must_change_password FROM usuarios WHERE remember_token_hash = ? AND remember_token_expires_at IS NOT NULL AND remember_token_expires_at > NOW() LIMIT 1');
+        $stmt->execute([$tokenHash]);
+        $user = $stmt->fetch();
+        if (!$user || (int)($user['aprovado'] ?? 0) !== 1) {
+            clearRememberMeCookie();
+            return null;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+
+        $_SESSION['usuario_id'] = $user['id'];
+        $_SESSION['usuario_email'] = $user['email'];
+        $_SESSION['usuario_nome'] = $user['nome'];
+        $_SESSION['usuario_role'] = $user['role'] ?? 'user';
+        $_SESSION['usuario_must_change_password'] = (int)($user['must_change_password'] ?? 0);
+
+        return currentUser();
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function login(string $email, string $senha, bool $rememberMe = false): bool {
     ensureUserAuthSchema();
     $pdo = getPDO();
     $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip FROM usuarios WHERE email = ? LIMIT 1');
@@ -334,6 +438,12 @@ function login(string $email, string $senha): bool {
             $_SESSION['usuario_must_change_password'] = $mustChangePassword ? 1 : 0;
             unset($_SESSION['last_auth_error']);
 
+            if ($rememberMe) {
+                createRememberMeToken((int)$user['id']);
+            } else {
+                clearRememberMeToken((int)$user['id']);
+            }
+
             try {
                 $stmt = $pdo->prepare('UPDATE usuarios SET last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
                 $stmt->execute([
@@ -355,6 +465,16 @@ function login(string $email, string $senha): bool {
 }
 
 function logout(): void {
+    try {
+        if (!empty($_SESSION['usuario_id'])) {
+            clearRememberMeToken((int)$_SESSION['usuario_id']);
+        } else {
+            clearRememberMeCookie();
+        }
+    } catch (Throwable $e) {
+        clearRememberMeCookie();
+    }
+
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
@@ -387,6 +507,12 @@ function currentUser(): ?array {
             ];
         }
     }
+
+    $remembered = authenticateRememberMe();
+    if ($remembered) {
+        return $remembered;
+    }
+
     return null;
 }
 

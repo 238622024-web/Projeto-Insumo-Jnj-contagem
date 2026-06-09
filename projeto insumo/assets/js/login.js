@@ -71,7 +71,6 @@
   function clearAutofilledCredentials() {
     const email = document.getElementById('email');
     const password = document.getElementById('password');
-    const remember = document.getElementById('remember-me');
 
     if (email) {
       email.value = '';
@@ -81,10 +80,6 @@
     if (password) {
       password.value = '';
       password.setAttribute('autocomplete', 'off');
-    }
-
-    if (remember) {
-      remember.checked = false;
     }
   }
 
