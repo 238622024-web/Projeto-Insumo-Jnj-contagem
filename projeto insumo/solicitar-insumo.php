@@ -8,6 +8,20 @@ ensureInsumoRequestsSchema($pdo);
 $current = currentUser() ?: [];
 $nomesInsumos = require __DIR__ . '/materiais-lista.php';
 sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
+$units = [
+  'UN' => 'Unidade',
+  'CX' => 'Caixa',
+  'PCT' => 'Pacote',
+  'KG' => 'Quilograma',
+  'G' => 'Grama',
+  'L' => 'Litro',
+  'ML' => 'Mililitro',
+  'M' => 'Metro',
+  'CM' => 'Centímetro',
+  'PAR' => 'Par',
+  'FD' => 'Fardo',
+  'RO' => 'Rolo',
+];
 $setoresDisponiveis = [
   'Saidas',
   'Recebimento',
@@ -21,6 +35,13 @@ $setoresDisponiveis = [
   'EXPORTACÃO',
   'REVERSA',
 ];
+
+if (!function_exists('appDateTimeNow')) {
+  function appDateTimeNow(): string {
+    $timezone = new DateTimeZone('America/Sao_Paulo');
+    return (new DateTimeImmutable('now', $timezone))->format('Y-m-d H:i:s');
+  }
+}
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
   session_start();
@@ -43,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $dataEntrega = trim((string)($_POST['data_solicitada_entrega'] ?? ''));
   $insumoNomes = $_POST['insumo_nome'] ?? [];
   $quantidadesRaw = $_POST['quantidade'] ?? [];
+  $unidadesRaw = $_POST['unidade'] ?? [];
   $motivo = trim((string)($_POST['motivo_usuario'] ?? ''));
 
   $errors = [];
@@ -59,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $insumoNome = trim((string)$insumoNomeRaw);
     $quantidadeRaw = str_replace(',', '.', trim((string)($quantidadesRaw[$index] ?? '')));
     $quantidade = (float)$quantidadeRaw;
+    $unidade = strtoupper(trim((string)($unidadesRaw[$index] ?? 'UN')));
 
     if ($insumoNome === '' && $quantidadeRaw === '') {
       continue;
@@ -76,10 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $errors[] = 'Preencha uma quantidade válida na linha ' . ((int)$index + 1) . '.';
       continue;
     }
+    if (!array_key_exists($unidade, $units)) {
+      $unidade = 'UN';
+    }
 
     $items[] = [
       'insumo_nome' => mb_substr($insumoNome, 0, 190),
       'quantidade' => number_format($quantidade, 2, '.', ''),
+      'unidade' => $unidade,
     ];
   }
 
@@ -104,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $dataEntrega !== '' ? $dataEntrega : null,
         $item['insumo_nome'],
         $item['quantidade'],
-        'UN',
+        $item['unidade'],
         $motivo,
         'pending',
         $requestedAt,
@@ -200,6 +227,7 @@ require_once __DIR__ . '/includes/header.php';
                 <tr>
                   <th style="width: 32%;">Tipo de insumo</th>
                   <th style="width: 18%;">Quantidade solicitada</th>
+                  <th style="width: 12%;">Unidade</th>
                   <th style="width: 18%;">Quantidade entregue</th>
                   <th style="width: 12%;">Lote</th>
                   <th style="width: 10%;">Fabricação</th>
@@ -218,6 +246,14 @@ require_once __DIR__ . '/includes/header.php';
                       </select>
                     </td>
                     <td><input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0"></td>
+                    <td>
+                      <select class="form-select" name="unidade[]">
+                        <?php $currentUnit = strtoupper((string)($_POST['unidade'][$i] ?? 'UN')); ?>
+                        <?php foreach ($units as $unitCode => $unitLabel): ?>
+                          <option value="<?= h($unitCode) ?>" <?= $currentUnit === $unitCode ? 'selected' : '' ?>><?= h($unitCode) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    </td>
                     <td class="text-muted small">Preenchimento do departamento responsável</td>
                     <td class="text-muted small">Preenchimento do departamento responsável</td>
                     <td class="text-muted small">Preenchimento do departamento responsável</td>

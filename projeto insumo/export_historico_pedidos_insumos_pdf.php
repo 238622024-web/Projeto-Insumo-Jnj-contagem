@@ -61,6 +61,7 @@ $sql = 'SELECT
     ir.insumo_nome,
     ir.quantidade,
     ir.unidade,
+    ir.unidade_entregue,
     ir.quantidade_entregue,
     ir.lote,
     ir.fabricacao,
@@ -151,14 +152,16 @@ if (!empty($groups)) {
     $html .= '<div class="meta"><strong>Solicitante:</strong> ' . escHistory((string)$group['user_nome']) . ' | <strong>E-mail:</strong> ' . escHistory((string)$group['user_email']) . ' | <strong>Solicitado em:</strong> ' . escHistory(formatHistoryPdfDate($group['requested_at'] ?? null)) . ' | <strong>Aprovado em:</strong> ' . escHistory(formatHistoryPdfDate($group['processed_at'] ?? null)) . '</div>';
     $html .= '<div class="meta"><strong>Aprovado por:</strong> ' . escHistory((string)($group['processed_by_nome'] !== '' ? $group['processed_by_nome'] : 'Administrador')) . ' | <strong>Origem:</strong> ' . escHistory($group['batch_id'] !== '' ? 'Documento em lote' : 'Documento avulso') . '</div>';
     $html .= '<table>';
-    $html .= '<tr><th>ID</th><th>Insumo</th><th class="num">Qtd. solicitada</th><th class="num">Qtd. entregue</th><th>Lote</th><th>Fabricação</th><th>Validade</th></tr>';
+    $html .= '<tr><th>ID</th><th>Insumo</th><th class="num">Qtd. solicitada</th><th>Unid. solicitada</th><th class="num">Qtd. entregue</th><th>Unid. entregue</th><th>Lote</th><th>Fabricação</th><th>Validade</th></tr>';
 
     foreach ($group['items'] as $item) {
       $html .= '<tr>'
         . '<td>' . (int)$item['id'] . '</td>'
         . '<td>' . escHistory((string)($item['insumo_nome'] ?? '-')) . '</td>'
-        . '<td class="num">' . escHistory(number_format((float)($item['quantidade'] ?? 0), 2, ',', '.')) . ' ' . escHistory((string)($item['unidade'] ?? '')) . '</td>'
-        . '<td class="num">' . escHistory(number_format((float)($item['quantidade_entregue'] ?? $item['quantidade'] ?? 0), 2, ',', '.')) . ' ' . escHistory((string)($item['unidade'] ?? '')) . '</td>'
+        . '<td class="num">' . escHistory(number_format((float)($item['quantidade'] ?? 0), 2, ',', '.')) . '</td>'
+        . '<td>' . escHistory((string)($item['unidade'] ?? '')) . '</td>'
+        . '<td class="num">' . escHistory(number_format((float)($item['quantidade_entregue'] ?? $item['quantidade'] ?? 0), 2, ',', '.')) . '</td>'
+        . '<td>' . escHistory((string)($item['unidade_entregue'] ?? $item['unidade'] ?? '')) . '</td>'
         . '<td>' . escHistory((string)($item['lote'] ?? '-')) . '</td>'
         . '<td>' . escHistory(formatHistoryPdfDate($item['fabricacao'] ?? null, 'd/m/Y')) . '</td>'
         . '<td>' . escHistory(formatHistoryPdfDate($item['validade'] ?? null, 'd/m/Y')) . '</td>'

@@ -1,189 +1,210 @@
-# Projeto-Insumo-Jnj-contagem
+# Projeto Insumo JNJ Contagem
 
-Sistema de controle de insumos com foco em operacao de inventario fisico, incluindo cadastro, listagem, filtros, edicao, exportacoes e fluxo rapido de contagem com scanner.
+Sistema de controle de insumos para operacao diaria, contagem fisica, entradas, saidas, pedidos e relatórios de consumo. O projeto esta organizado para uso local em PHP/MySQL, com um trilho de migracao em Node.js + Angular mantido no repositorio.
 
 ## Visao geral
 
-Este repositorio possui dois trilhos de aplicacao:
+O sistema possui tres pilares de uso:
 
-1. `projeto insumo/`:
-Aplicacao principal em PHP (uso atual recomendado).
+1. Controle de estoque e contagem fisica.
+2. Fluxo de solicitacao, aprovacao e consumo de insumos.
+3. Relatorios, exportacoes e auditoria operacional.
 
-2. `backend/` + `frontend/`:
-Migracao para Node.js (API) e Angular (frontend).
+O banco principal e o MySQL `controle_insumos_jnj`.
 
-Banco de dados utilizado em ambos os trilhos: MySQL (`controle_insumos_jnj`).
+## Estrutura do repositorio
 
-## Arquitetura
+1. [projeto insumo/](projeto%20insumo/) - aplicacao principal em PHP.
+2. [backend/](backend/) - API Node.js + Express da migracao.
+3. [frontend/](frontend/) - frontend Angular da migracao.
 
-1. `projeto insumo/`:
-PHP, Bootstrap, JavaScript e MySQL.
+## O que o sistema faz hoje
 
-2. `projeto insumo/database/`:
-Schema, seed e scripts utilitarios de banco.
+### Autenticacao e usuarios
 
-3. `backend/`:
-API REST em Node.js + Express para CRUD de insumos.
+1. Login e logout.
+2. Criacao de conta e solicitacao de aprovacao.
+3. Alteracao de perfil, senha e avatar.
+4. Controle de permissao por papel de usuario.
 
-4. `frontend/`:
-SPA Angular consumindo API do backend Node.
+### Estoque e materiais
 
-## Funcionalidades
+1. Cadastro de insumos com nome, posicao, lote, quantidade, unidade, datas e observacoes.
+2. Edicao e exclusao de materiais.
+3. Listagem de estoque com filtros por data, unidade e validade.
+4. Indicadores de validade: expirado, vencendo em 7 dias e vencendo em 30 dias.
+5. Exportacao da lista do estoque para Excel e PDF.
 
-1. Autenticacao de usuarios.
-2. Cadastro, edicao e exclusao de materiais.
-3. Listagem com filtros por data de entrada.
-4. Indicadores de validade (expirado, vencendo em 7 dias e 30 dias).
-5. Exportacao para Excel e PDF.
-6. Contagem fisica com busca por codigo de barras ou nome.
-7. Suporte a scanner fisico (HID, ex: Honeywell).
-8. Scanner por camera na tela de cadastro e contagem.
-9. Alertas e feedback sonoro na operacao de contagem.
+### Contagem fisica
 
-## Como o sistema funciona no dia a dia
+1. Contagem por busca de codigo de barras ou nome.
+2. Suporte a scanner fisico em modo HID.
+3. Leitura por camera no navegador.
+4. Feedback visual e sonoro durante a contagem.
+5. Atualizacao de quantidade e data de contagem no cadastro do material.
+
+### Saida e consumo
+
+1. Registro de baixa manual de material.
+2. Registro de consumo por setor.
+3. Consumo por picking/QR Code.
+4. Movimentacao de saida alimentando relatorios de consumo.
+
+### Pedidos de insumo
+
+1. Usuario solicita insumo com setor, unidade, quantidade e motivo.
+2. Admin aprova ou rejeita pedidos pendentes.
+3. Pedido aprovado gera registro de consumo.
+4. Historico consolidado por status do pedido.
+5. Exportacao do historico em PDF.
+
+### Relatorios
+
+1. Consumo por setor.
+2. Consumo por produto e setor.
+3. Historico de pedidos de insumo.
+4. Historico geral de insumos.
+5. Estoque baixo.
+
+### Atualizacao de estoque pela contagem
+
+1. O admin baixa a planilha exportada do sistema.
+2. Revise os dados no Excel.
+3. Suba o arquivo pela area administrativa.
+4. O sistema mostra uma pre-visualizacao antes de aplicar.
+5. Ao aplicar, o estoque e atualizado com base na contagem aprovada.
+
+## Fluxos principais
 
 ### Fluxo de cadastro
 
-1. Usuario acessa `cadastrar.php`.
-2. Informa dados do material (nome, posicao, lote, quantidade, datas, observacoes).
-3. Pode preencher codigo de barras manualmente ou via camera.
-4. Sistema grava no MySQL em `insumos_jnj`.
+1. Abrir [cadastrar.php](projeto%20insumo/cadastrar.php).
+2. Informar dados do material.
+3. Salvar no MySQL em `insumos_jnj`.
 
-### Fluxo de contagem fisica
+### Fluxo de contagem
 
-1. Usuario acessa `contagem.php`.
-2. Campo de leitura recebe foco automaticamente.
-3. Operador pode:
-  1. Bipar com scanner fisico (HID) e registrar por `Enter`.
-  2. Escanear por camera.
-  3. Digitar nome/codigo manualmente.
-4. Sistema busca nesta ordem:
-  1. `codigo_barra` exato.
-  2. `nome` exato.
-  3. `nome` aproximado (`LIKE`) com validacao de ambiguidade.
-5. Quantidade e atualizada e `data_contagem` recebe data atual.
-6. Sistema retorna feedback visual e sonoro:
-  1. Sucesso: beep simples.
-  2. Erro: beep duplo.
+1. Abrir [contagem.php](projeto%20insumo/contagem.php).
+2. Buscar o item por codigo, nome ou camera.
+3. Registrar a contagem e atualizar a quantidade.
+
+### Fluxo de exportacao e aplicacao de contagem
+
+1. Abrir [index.php](projeto%20insumo/index.php).
+2. Exportar a lista para Excel.
+3. Conferir a planilha.
+4. Abrir [Atualizar estoque pela contagem](projeto%20insumo/atualizar_estoque_pela_contagem.php).
+5. Enviar o arquivo e revisar a pre-visualizacao.
+6. Aplicar a importacao no estoque.
+
+### Fluxo de pedidos de insumo
+
+1. Usuario cria o pedido.
+2. Admin acompanha a fila em [pedidos-insumos-pendentes.php](projeto%20insumo/pedidos-insumos-pendentes.php).
+3. Admin seleciona a unidade entregue e a quantidade.
+4. O sistema registra o consumo e atualiza o historico.
+
+### Fluxo de consumo por tablet
+
+1. Abrir [picking_qrcode.php](projeto%20insumo/picking_qrcode.php) ou [saida_consumo.php](projeto%20insumo/saida_consumo.php).
+2. Ler o item pelo tablet ou camera.
+3. Dar baixa no estoque.
+4. O consumo entra nos relatorios.
+
+## Menus principais da aplicacao
+
+1. Administração.
+2. Estoque.
+3. Relatorio de Insumos.
+4. Perfil e configuracoes.
+
+## Telas mais importantes
+
+1. [index.php](projeto%20insumo/index.php) - painel/listagem do estoque.
+2. [cadastrar.php](projeto%20insumo/cadastrar.php) - cadastro de materiais.
+3. [contagem.php](projeto%20insumo/contagem.php) - contagem fisica.
+4. [saida_consumo.php](projeto%20insumo/saida_consumo.php) - saida manual/consumo.
+5. [picking_qrcode.php](projeto%20insumo/picking_qrcode.php) - baixa por QR.
+6. [pedidos-insumos-pendentes.php](projeto%20insumo/pedidos-insumos-pendentes.php) - aprovacao de pedidos.
+7. [historico-pedidos-insumos.php](projeto%20insumo/historico-pedidos-insumos.php) - historico consolidado.
+8. [relatorio_consumo_setor.php](projeto%20insumo/relatorio_consumo_setor.php) - consumo por setor.
+9. [relatorio_consumo_produto.php](projeto%20insumo/relatorio_consumo_produto.php) - consumo por produto e setor.
+10. [atualizar_estoque_pela_contagem.php](projeto%20insumo/atualizar_estoque_pela_contagem.php) - importacao administrativa da contagem.
 
 ## Requisitos
 
-1. PHP 8.x (XAMPP ou Laragon).
+1. PHP 8.x.
 2. MySQL 5.7+ ou 8.x.
-3. Node.js 20+ (apenas para trilho de migracao Node/Angular).
-4. Navegador moderno (Chrome/Edge recomendado para scanner por camera).
+3. Apache via XAMPP, Laragon ou similar.
+4. Navegador moderno para camera e leitura por QR.
 
-## Setup rapido do modo principal (PHP)
+## Instalacao rapida no modo PHP
 
-1. Inicie Apache e MySQL no XAMPP/Laragon.
-2. Abra a raiz do projeto em:
-`http://localhost/Projeto-Insumo-Jnj-contagem/projeto%20insumo/`
+1. Inicie Apache e MySQL.
+2. Abra o projeto dentro do `htdocs` ou `www`.
+3. Execute a inicializacao do banco em [database/init_db.php](projeto%20insumo/database/init_db.php).
+4. Abra a aplicacao principal em [projeto insumo/](projeto%20insumo/).
 
-3. Inicialize banco e dados base:
-`http://localhost/Projeto-Insumo-Jnj-contagem/projeto%20insumo/database/init_db.php`
+## Credenciais de teste
 
-4. Login padrao de teste (seed):
-Email: `usuario@jnj.com`
-Senha: `senha123`
+O projeto pode vir com seed de teste no banco. Confira os dados criados pelo script de inicializacao do seu ambiente.
 
-## Setup da migracao (Node + Angular)
+## Trilho de migracao
 
-### Backend
+O repositorio tambem mantem uma arquitetura alternativa em:
 
-Se voce estiver usando Laragon, abra o projeto no workspace do Laragon ou use o terminal integrado apontando para a pasta `backend/` e confirme que o MySQL do Laragon esta ativo.
+1. [backend/](backend/) - API Node.js.
+2. [frontend/](frontend/) - frontend Angular.
 
-```powershell
-Set-Location "c:\Users\weder\Downloads\projeto_insumo\Projeto-Insumo-Jnj-contagem\backend"
-npm install
-Copy-Item .env.example .env
-```
+Esses modulos podem ser usados como base de migracao, mas o fluxo operacional atual esta em PHP.
 
-Preencha o `.env`:
+## Arquitetura tecnica
 
-```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=controle_insumos_jnj
-```
+### PHP principal
 
-Executar:
+1. Bootstrap, Font Awesome, jQuery e DataTables.
+2. Sessao de usuario com permissao por papel.
+3. `includes/header.php` e `includes/footer.php` padronizando layout.
+4. `style.css` como base visual principal.
 
-```powershell
-npm run dev
-```
+### Banco de dados
 
-Se preferir testar no navegador dentro do fluxo do Laragon, mantenha a API em `http://localhost:3000` e use o proxy do frontend para `/api`.
+1. Tabela `insumos_jnj` para materiais e contagem.
+2. Tabela `insumo_requests` para pedidos de insumo.
+3. Tabela `saida_consumo` para consumos e saidas.
+4. Tabela `usuarios` para login e permissao.
 
-Health check:
+## Boas praticas adotadas
 
-`http://localhost:3000/health`
+1. Atualizacao de estoque com validacao antes de aplicar.
+2. Pre-visualizacao da importacao para evitar erro operacional.
+3. Registro de consumo separado por setor e produto.
+4. Menus e telas responsivos para uso em tablet e celular.
+5. Historico consolidado para rastreabilidade.
 
-### Frontend
+## Problemas comuns
 
-```powershell
-Set-Location "c:\xampp\htdocs\Projeto-Insumo-Jnj-contagem\frontend"
-npm install
-npm start
-```
-
-Aplicacao:
-
-`http://localhost:4200`
-
-Observacao: o frontend usa proxy `/api` para `http://localhost:3000`.
-
-## Endpoints da API Node
-
-1. `GET /health`
-2. `GET /api/insumos`
-3. `GET /api/insumos/:id`
-4. `POST /api/insumos`
-5. `PUT /api/insumos/:id`
-6. `DELETE /api/insumos/:id`
-
-## Scanner fisico (Honeywell e similares)
-
-Para melhor desempenho na contagem:
-
-1. Configurar scanner em modo `USB Keyboard (HID)`.
-2. Configurar sufixo de leitura para `Enter/CR`.
-3. Manter foco no campo de leitura da tela `contagem.php`.
-
-## Seguranca e boas praticas
-
-1. Nao versionar `.env` com credenciais reais.
-2. Nao manter scripts administrativos acessiveis por navegador em producao.
-3. Usar usuario de banco dedicado para aplicacao.
-4. Revisar backups antes de versionar para evitar dados sensiveis.
-
-## Estrutura resumida
-
-1. `projeto insumo/`: aplicacao PHP principal.
-2. `projeto insumo/assets/js/`: scripts de UI e scanner.
-3. `projeto insumo/database/`: schema, seed e utilitarios de banco.
-4. `backend/`: API Node/Express da migracao.
-5. `frontend/`: app Angular da migracao.
-
-## Solucao de problemas
-
-1. Erro de conexao MySQL:
-verifique servico ativo, host, porta e credenciais.
-
-2. Scanner fisico nao registra:
-confirmar modo HID e sufixo `Enter`.
-
-3. Scanner de camera nao abre:
-verificar permissao de camera no navegador.
-
-4. Layout estranho em notebook:
-limpar cache do navegador e recarregar (`Ctrl + F5`).
+1. Erro de conexao com o banco: verifique Apache, MySQL e credenciais.
+2. Camera ou QR nao funcionando: libere permissao do navegador.
+3. Importacao da contagem falhando: confirme se a planilha foi exportada pelo proprio sistema.
+4. Tela apertada no celular: o layout foi ajustado para responsividade, mas use navegador atualizado.
 
 ## Documentacao complementar
 
-1. `backend/README.md`
-2. `frontend/README.md`
-3. `projeto insumo/database/README-database.md`
-4. `projeto insumo/README-SETUP.txt`
+1. [projeto insumo/README-SETUP.txt](projeto%20insumo/README-SETUP.txt)
+2. [projeto insumo/ESTRUTURA_PROJETO.md](projeto%20insumo/ESTRUTURA_PROJETO.md)
+3. [projeto insumo/database/README-database.md](projeto%20insumo/database/README-database.md)
+4. [backend/README.md](backend/README.md)
+5. [frontend/README.md](frontend/README.md)
+
+## Resumo rapido
+
+Este sistema hoje cobre:
+
+1. Cadastro e manutencao de materiais.
+2. Contagem fisica com scanner e camera.
+3. Exportacao para Excel e PDF.
+4. Importacao administrativa da contagem para atualizar o estoque.
+5. Saida, consumo e picking por tablet.
+6. Pedidos de insumo, aprovacao e historico.
+7. Relatorios por produto, setor e historico geral.

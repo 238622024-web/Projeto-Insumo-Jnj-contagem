@@ -20,6 +20,33 @@ $scriptDir = '/' . trim(dirname($scriptName), '/');
 // Se scriptDir for apenas '/', não prefixar
 $projectBase = $scriptDir === '/' ? '' : $scriptDir;
 $currentPage = basename($scriptName ?: ($_SERVER['PHP_SELF'] ?? ''));
+$adminMenuPages = [
+  'usuarios_pendentes.php',
+  'usuarios_aprovados.php',
+  'solicitacoes_senha.php',
+  'perfis.php',
+  'permissoes.php',
+  'setores.php',
+];
+$adminMenuOpen = in_array($currentPage, $adminMenuPages, true);
+$stockMenuPages = [
+  'produtos.php',
+  'entrada_nota_fiscal.php',
+  'saida_consumo.php',
+  'estoque_atual.php',
+  'atualizar_estoque_pela_contagem.php',
+  'picking_qrcode.php',
+];
+$stockMenuOpen = in_array($currentPage, $stockMenuPages, true);
+$reportMenuPages = [
+  'relatorio_consumo_setor.php',
+  'relatorio_consumo_produto.php',
+  'pedidos_insumos_pendentes.php',
+  'historico_insumos.php',
+  'historico-pedidos-insumos.php',
+  'estoque_baixo.php',
+];
+$reportMenuOpen = in_array($currentPage, $reportMenuPages, true);
 
 $pendingInsumoSolicitationsCount = 0;
 $pendingInsumoNotifications = [];
@@ -217,18 +244,69 @@ if ($logoUrl === '') {
       <a class="sidebar-link <?= $currentPage === 'index.php' ? 'active' : '' ?>" href="index.php"><i class="fa-solid fa-house"></i><span><?= h(t('nav.home')) ?></span></a>
       <?php if (isAdmin()): ?>
         <a class="sidebar-link <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>" href="dashboard.php"><i class="fa-solid fa-chart-column"></i><span><?= h(t('nav.dashboard')) ?></span></a>
-        <a class="sidebar-link <?= $currentPage === 'solicitacoes.php' ? 'active' : '' ?>" href="solicitacoes.php"><i class="fa-solid fa-clipboard-list"></i><span>Administração</span></a>
-        <a class="sidebar-link <?= in_array($currentPage, ['contagem.php', 'cadastrar.php', 'editar.php'], true) ? 'active' : '' ?>" href="contagem.php"><i class="fa-solid fa-boxes-stacked"></i><span>Contagem de insumos</span></a>
-        <a class="sidebar-link <?= $currentPage === 'pedidos-insumos-pendentes.php' ? 'active' : '' ?>" href="pedidos-insumos-pendentes.php">
-          <i class="fa-solid fa-box-open"></i>
-          <span class="sidebar-link-text">Pedidos pendentes</span>
-          <?php if ($pendingInsumoSolicitationsCount > 0): ?>
-            <span class="sidebar-link-badge" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
-              <?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?>
-            </span>
-          <?php endif; ?>
-        </a>
-        <a class="sidebar-link <?= $currentPage === 'historico-pedidos-insumos.php' ? 'active' : '' ?>" href="historico-pedidos-insumos.php"><i class="fa-solid fa-box-archive"></i><span>Histórico de insumos</span></a>
+        <div class="sidebar-admin-menu" data-admin-menu data-admin-menu-open="<?= $adminMenuOpen ? 'true' : 'false' ?>">
+          <button
+            class="sidebar-link sidebar-menu-toggle <?= $adminMenuOpen ? 'active is-open' : '' ?>"
+            type="button"
+            data-admin-menu-toggle
+            aria-expanded="<?= $adminMenuOpen ? 'true' : 'false' ?>"
+            aria-controls="admin-submenu"
+          >
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span class="sidebar-link-text">Administração</span>
+            <i class="fa-solid fa-chevron-down sidebar-menu-caret" aria-hidden="true"></i>
+          </button>
+          <div class="sidebar-submenu <?= $adminMenuOpen ? 'is-open' : '' ?>" id="admin-submenu" data-admin-submenu>
+            <a class="sidebar-submenu-link <?= $currentPage === 'usuarios_pendentes.php' ? 'active' : '' ?>" href="usuarios_pendentes.php">Usuários Pendentes</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'usuarios_aprovados.php' ? 'active' : '' ?>" href="usuarios_aprovados.php">Usuários Aprovados</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'solicitacoes_senha.php' ? 'active' : '' ?>" href="solicitacoes_senha.php">Solicitações de Senha</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'perfis.php' ? 'active' : '' ?>" href="perfis.php">Perfis</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'permissoes.php' ? 'active' : '' ?>" href="permissoes.php">Permissões</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'setores.php' ? 'active' : '' ?>" href="setores.php">Setores</a>
+          </div>
+        </div>
+        <div class="sidebar-stock-menu" data-stock-menu data-stock-menu-open="<?= $stockMenuOpen ? 'true' : 'false' ?>">
+          <button
+            class="sidebar-link sidebar-menu-toggle <?= $stockMenuOpen ? 'active is-open' : '' ?>"
+            type="button"
+            data-stock-menu-toggle
+            aria-expanded="<?= $stockMenuOpen ? 'true' : 'false' ?>"
+            aria-controls="stock-submenu"
+          >
+            <i class="fa-solid fa-warehouse"></i>
+            <span class="sidebar-link-text">Estoque</span>
+            <i class="fa-solid fa-chevron-down sidebar-menu-caret" aria-hidden="true"></i>
+          </button>
+          <div class="sidebar-submenu <?= $stockMenuOpen ? 'is-open' : '' ?>" id="stock-submenu" data-stock-submenu>
+            <a class="sidebar-submenu-link <?= $currentPage === 'produtos.php' ? 'active' : '' ?>" href="produtos.php"><i class="fa-solid fa-box me-2"></i>Produtos</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'entrada_nota_fiscal.php' ? 'active' : '' ?>" href="entrada_nota_fiscal.php"><i class="fa-solid fa-file-invoice me-2"></i>Entrada por Nota Fiscal</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'saida_consumo.php' ? 'active' : '' ?>" href="saida_consumo.php"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Saída / Consumo</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'estoque_atual.php' ? 'active' : '' ?>" href="estoque_atual.php"><i class="fa-solid fa-clipboard-list me-2"></i>Estoque Atual</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'atualizar_estoque_pela_contagem.php' ? 'active' : '' ?>" href="atualizar_estoque_pela_contagem.php"><i class="fa-solid fa-file-arrow-up me-2"></i>Atualizar estoque pela contagem</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'picking_qrcode.php' ? 'active' : '' ?>" href="picking_qrcode.php"><i class="fa-solid fa-qrcode me-2"></i>Baixa por QR</a>
+          </div>
+        </div>
+        <div class="sidebar-report-menu" data-report-menu data-report-menu-open="<?= $reportMenuOpen ? 'true' : 'false' ?>">
+          <button
+            class="sidebar-link sidebar-menu-toggle <?= $reportMenuOpen ? 'active is-open' : '' ?>"
+            type="button"
+            data-report-menu-toggle
+            aria-expanded="<?= $reportMenuOpen ? 'true' : 'false' ?>"
+            aria-controls="report-submenu"
+          >
+            <i class="fa-solid fa-chart-line"></i>
+            <span class="sidebar-link-text">Relatório de Insumos</span>
+            <i class="fa-solid fa-chevron-down sidebar-menu-caret" aria-hidden="true"></i>
+          </button>
+          <div class="sidebar-submenu <?= $reportMenuOpen ? 'is-open' : '' ?>" id="report-submenu" data-report-submenu>
+            <a class="sidebar-submenu-link <?= $currentPage === 'relatorio_consumo_setor.php' ? 'active' : '' ?>" href="relatorio_consumo_setor.php"><i class="fa-solid fa-people-group me-2"></i>Consumo por Setor</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'relatorio_consumo_produto.php' ? 'active' : '' ?>" href="relatorio_consumo_produto.php"><i class="fa-solid fa-boxes-stacked me-2"></i>Consumo por Produto</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'pedidos_insumos_pendentes.php' ? 'active' : '' ?>" href="pedidos_insumos_pendentes.php"><i class="fa-solid fa-hourglass-half me-2"></i>Pedidos de Insumos Pendentes</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'historico-pedidos-insumos.php' ? 'active' : '' ?>" href="historico-pedidos-insumos.php"><i class="fa-solid fa-box-archive me-2"></i>Histórico de Pedidos de Insumos</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'historico_insumos.php' ? 'active' : '' ?>" href="historico_insumos.php"><i class="fa-solid fa-clock-rotate-left me-2"></i>Histórico de Insumos</a>
+            <a class="sidebar-submenu-link <?= $currentPage === 'estoque_baixo.php' ? 'active' : '' ?>" href="estoque_baixo.php"><i class="fa-solid fa-triangle-exclamation me-2"></i>Estoque Baixo</a>
+          </div>
+        </div>
       <?php endif; ?>
       <?php if (!isAdmin()): ?>
         <a class="sidebar-link <?= $currentPage === 'solicitar-insumo.php' ? 'active' : '' ?>" href="solicitar-insumo.php"><i class="fa-solid fa-box-open"></i><span>Solicitar insumo</span></a>

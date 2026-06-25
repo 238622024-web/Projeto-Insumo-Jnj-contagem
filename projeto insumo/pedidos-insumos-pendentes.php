@@ -18,6 +18,73 @@ if (empty($_SESSION['csrf_token'])) {
 $csrfToken = (string)$_SESSION['csrf_token'];
 $current = currentUser();
 $adminId = (int)($current['id'] ?? 0);
+$adminNome = trim((string)($current['nome'] ?? ''));
+
+function getPendingInsumoUnitOptions(): array {
+  return [
+    'CM' => 'Centímetro',
+    'CX' => 'Caixa',
+    'FD' => 'Fardo',
+    'G' => 'Grama',
+    'KG' => 'Quilograma',
+    'L' => 'Litro',
+    'M' => 'Metro',
+    'ML' => 'Mililitro',
+    'PAR' => 'Par',
+    'PCT' => 'Pacote',
+    'RO' => 'Rolo',
+    'UN' => 'Unidade',
+  ];
+}
+
+$unitOptions = getPendingInsumoUnitOptions();
+
+function ensureSaidaConsumoSchemaFromPending(PDO $pdo): void {
+  $pdo->exec(
+    "CREATE TABLE IF NOT EXISTS saida_consumo (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      setor VARCHAR(120) NOT NULL,
+      produto_nome VARCHAR(190) NOT NULL,
+      quantidade DECIMAL(12,2) NOT NULL,
+      unidade VARCHAR(20) NOT NULL DEFAULT 'UN',
+      responsavel VARCHAR(190) NOT NULL,
+      data_consumo DATE NOT NULL,
+      observacao TEXT NULL,
+      insumo_id INT NULL,
+      estoque_atualizado TINYINT(1) NOT NULL DEFAULT 0,
+      created_by INT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_sc_setor (setor),
+      INDEX idx_sc_produto (produto_nome),
+      INDEX idx_sc_data (data_consumo)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+  );
+}
+
+function insertApprovedRequestConsumption(PDO $pdo, array $request, int $adminId, string $adminNome, string $processedAt): void {
+  ensureSaidaConsumoSchemaFromPending($pdo);
+
+  $deliveredUnit = strtoupper(trim((string)($request['unidade_entregue'] ?? $request['unidade'] ?? 'UN')));
+
+  $insert = $pdo->prepare(
+    'INSERT INTO saida_consumo
+      (setor, produto_nome, quantidade, unidade, responsavel, data_consumo, observacao, insumo_id, estoque_atualizado, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+
+  $insert->execute([
+    mb_substr(trim((string)($request['setor'] ?? '')), 0, 120),
+    mb_substr(trim((string)($request['insumo_nome'] ?? '')), 0, 190),
+    number_format((float)($request['quantidade_entregue'] ?? $request['quantidade'] ?? 0), 2, '.', ''),
+    mb_substr($deliveredUnit !== '' ? $deliveredUnit : 'UN', 0, 20),
+    mb_substr($adminNome !== '' ? $adminNome : 'Administrador', 0, 190),
+    substr($processedAt, 0, 10),
+    trim((string)($request['admin_note'] ?? '')) !== '' ? mb_substr((string)$request['admin_note'], 0, 5000) : null,
+    !empty($request['insumo_id']) ? (int)$request['insumo_id'] : null,
+    1,
+    $adminId > 0 ? $adminId : null,
+  ]);
+}
 
 function buildInsumoRequestGroupKey(array $request): string {
   $batchId = trim((string)($request['batch_id'] ?? ''));
@@ -82,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $quantidadeEntregueMap = (array)($_POST['quantidade_entregue'] ?? []);
+        $unidadeEntregueMap = (array)($_POST['unidade_entregue'] ?? []);
         $loteMap = (array)($_POST['lote'] ?? []);
         $fabricacaoMap = (array)($_POST['fabricacao'] ?? []);
         $validadeMap = (array)($_POST['validade'] ?? []);
@@ -89,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $updateStmt = $pdo->prepare(
           'UPDATE insumo_requests
-          SET quantidade_entregue = ?, lote = ?, fabricacao = ?, validade = ?, status = \'approved\', admin_note = ?, processed_at = ?, processed_by = ?
+          SET quantidade_entregue = ?, unidade_entregue = ?, lote = ?, fabricacao = ?, validade = ?, status = \'approved\', admin_note = ?, processed_at = ?, processed_by = ?
            WHERE id = ? AND status = \'pending\''
         );
 
@@ -98,6 +166,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $rawQuantidade = trim((string)($quantidadeEntregueMap[$requestId] ?? $quantidadeEntregueMap[(string)$requestId] ?? ''));
           if ($rawQuantidade === '') {
             flash('error', 'Informe a quantidade entregue para todos os itens antes de atender a solicitação.');
+            header('Location: pedidos-insumos-pendentes.php');
+            exit;
+          }
+
+          $requestStmt = $pdo->prepare('SELECT * FROM insumo_requests WHERE id = ? LIMIT 1');
+          $requestStmt->execute([$requestId]);
+          $pendingRequest = $requestStmt->fetch() ?: null;
+          if (!$pendingRequest) {
+            flash('error', 'Solicitação não encontrada para o item #' . $requestId . '.');
             header('Location: pedidos-insumos-pendentes.php');
             exit;
           }
@@ -111,6 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           $updateStmt->execute([
             (float)$normalizedQuantidade,
+            mb_substr(strtoupper(trim((string)($unidadeEntregueMap[$requestId] ?? $unidadeEntregueMap[(string)$requestId] ?? ($pendingRequest['unidade'] ?? 'UN')))), 0, 20),
             trim((string)($loteMap[$requestId] ?? $loteMap[(string)$requestId] ?? '')),
             normalizeNullableDate((string)($fabricacaoMap[$requestId] ?? $fabricacaoMap[(string)$requestId] ?? '')),
             normalizeNullableDate((string)($validadeMap[$requestId] ?? $validadeMap[(string)$requestId] ?? '')),
@@ -120,7 +198,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $requestId,
           ]);
 
-          $updatedCount += $updateStmt->rowCount() > 0 ? 1 : 0;
+          if ($updateStmt->rowCount() > 0) {
+            $approvedRequest = $pendingRequest;
+            $approvedRequest['quantidade_entregue'] = (float)$normalizedQuantidade;
+            $approvedRequest['unidade_entregue'] = strtoupper(trim((string)($unidadeEntregueMap[$requestId] ?? $unidadeEntregueMap[(string)$requestId] ?? ($pendingRequest['unidade'] ?? 'UN'))));
+            if ($approvedRequest['unidade_entregue'] === '') {
+              $approvedRequest['unidade_entregue'] = (string)($pendingRequest['unidade'] ?? 'UN');
+            }
+            insertApprovedRequestConsumption($pdo, $approvedRequest, $adminId, $adminNome, $processedAt);
+              $updatedCount += 1;
+          }
         }
 
         if ($updatedCount > 0) {
@@ -345,14 +432,27 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
               </div>
 
+              <div class="mb-3">
+                <div class="small text-muted mb-2">Unidades disponíveis para atendimento</div>
+                <div class="d-flex flex-wrap gap-2">
+                  <?php foreach ($unitOptions as $unitCode => $unitLabel): ?>
+                    <span class="badge rounded-pill bg-light text-dark border pending-insumos-unit-badge">
+                      <?= h($unitCode) ?> - <?= h($unitLabel) ?>
+                    </span>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+
               <div class="table-responsive request-table-wrap mb-4">
                 <table class="table table-hover align-middle mb-0 request-table pending-insumos-table">
                   <thead>
                     <tr>
                       <th style="width: 18%;">ID</th>
                       <th>Insumo</th>
-                      <th style="width: 18%;">Quantidade solicitada</th>
-                      <th style="width: 18%;">Quantidade entregue</th>
+                      <th style="width: 16%;">Quantidade solicitada</th>
+                      <th style="width: 10%;">Unidade solicitada</th>
+                      <th style="width: 16%;">Quantidade entregue</th>
+                      <th style="width: 10%;">Unidade entregue</th>
                       <th style="width: 12%;">Lote</th>
                       <th style="width: 10%;">Fabricação</th>
                       <th style="width: 10%;">Validade</th>
@@ -368,7 +468,11 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="badge bg-warning text-dark ms-1">Administrador</span>
                           <?php endif; ?>
                         </td>
-                        <td data-label="Quantidade solicitada"><?= h(number_format((float)$item['quantidade'], 2, ',', '.')) ?> <?= h((string)$item['unidade']) ?></td>
+                        <td data-label="Quantidade solicitada"><?= h(number_format((float)$item['quantidade'], 2, ',', '.')) ?></td>
+                        <td data-label="Unidade solicitada">
+                          <div class="fw-semibold"><?= h((string)($item['unidade'] ?? 'UN')) ?></div>
+                          <div class="text-muted small">Escolhida pelo usuário</div>
+                        </td>
                         <td data-label="Quantidade entregue">
                           <div class="pending-insumos-field">
                             <span class="pending-insumos-field-label">Qtd. entregue</span>
@@ -384,6 +488,22 @@ require_once __DIR__ . '/includes/header.php';
                               required
                               value="<?= h((string)($item['quantidade_entregue'] ?? '')) ?>"
                             >
+                          </div>
+                        </td>
+                        <td data-label="Unidade entregue">
+                          <div class="pending-insumos-field">
+                            <span class="pending-insumos-field-label">Unidade entregue</span>
+                            <select
+                              name="unidade_entregue[<?= (int)$item['id'] ?>]"
+                              form="<?= h($rowFormId) ?>"
+                              class="form-select form-select-sm pending-insumos-input"
+                              required
+                            >
+                              <?php $selectedDeliveredUnit = strtoupper(trim((string)($item['unidade_entregue'] ?? $item['unidade'] ?? 'UN'))); ?>
+                              <?php foreach ($unitOptions as $unitCode => $unitLabel): ?>
+                                <option value="<?= h($unitCode) ?>" <?= $selectedDeliveredUnit === $unitCode ? 'selected' : '' ?>><?= h($unitCode . ' - ' . $unitLabel) ?></option>
+                              <?php endforeach; ?>
+                            </select>
                           </div>
                         </td>
                         <td data-label="Lote">

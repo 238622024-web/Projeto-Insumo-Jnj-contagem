@@ -1,10 +1,11 @@
 <?php
-// Configurações de conexão ao banco da hospedagem
-define('DB_HOST', 'sql202.infinityfree.com');
-define('DB_NAME', 'if0_41860253_projeto_insumo');
-define('DB_USER', 'if0_41860253');
-define('DB_PASS', 'weder64664158');
-define('DB_PORT', 3306);
-define('APP_ENV', 'production');
+// Configurações padrão para uso local no XAMPP.
+// Variáveis de ambiente continuam tendo prioridade quando existirem.
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'controle_insumos_jnj');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
+define('APP_ENV', getenv('APP_ENV') ?: 'local');
 
 ?>

@@ -7,6 +7,9 @@
   'use strict';
 
   const SIDEBAR_COLLAPSED_STORAGE_KEY = 'insumo.sidebar.collapsed';
+  const ADMIN_MENU_OPEN_STORAGE_KEY = 'insumo.sidebar.adminMenu.open';
+  const STOCK_MENU_OPEN_STORAGE_KEY = 'insumo.sidebar.stockMenu.open';
+  const REPORT_MENU_OPEN_STORAGE_KEY = 'insumo.sidebar.reportMenu.open';
 
   function readStoredSidebarCollapsed() {
     try {
@@ -38,6 +41,88 @@
 
   function isDesktopSidebarCollapsed() {
     return document.body.classList.contains('sidebar-collapsed');
+  }
+
+  function readStoredAdminMenuOpen() {
+    try {
+      return window.localStorage.getItem(ADMIN_MENU_OPEN_STORAGE_KEY) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function writeStoredAdminMenuOpen(isOpen) {
+    try {
+      if (isOpen) {
+        window.localStorage.setItem(ADMIN_MENU_OPEN_STORAGE_KEY, '1');
+      } else {
+        window.localStorage.removeItem(ADMIN_MENU_OPEN_STORAGE_KEY);
+      }
+    } catch (error) {
+      // Ignora ambientes sem acesso a storage.
+    }
+  }
+
+  function readStoredStockMenuOpen() {
+    try {
+      return window.localStorage.getItem(STOCK_MENU_OPEN_STORAGE_KEY) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function writeStoredStockMenuOpen(isOpen) {
+    try {
+      if (isOpen) {
+        window.localStorage.setItem(STOCK_MENU_OPEN_STORAGE_KEY, '1');
+      } else {
+        window.localStorage.removeItem(STOCK_MENU_OPEN_STORAGE_KEY);
+      }
+    } catch (error) {
+      // Ignora ambientes sem acesso a storage.
+    }
+  }
+
+  function readStoredReportMenuOpen() {
+    try {
+      return window.localStorage.getItem(REPORT_MENU_OPEN_STORAGE_KEY) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function writeStoredReportMenuOpen(isOpen) {
+    try {
+      if (isOpen) {
+        window.localStorage.setItem(REPORT_MENU_OPEN_STORAGE_KEY, '1');
+      } else {
+        window.localStorage.removeItem(REPORT_MENU_OPEN_STORAGE_KEY);
+      }
+    } catch (error) {
+      // Ignora ambientes sem acesso a storage.
+    }
+  }
+
+  function setAdminMenuOpen(isOpen) {
+    const menu = document.querySelector('[data-admin-menu]');
+    if (!menu) return;
+
+    const submenu = menu.querySelector('[data-admin-submenu]');
+    const toggle = menu.querySelector('[data-admin-menu-toggle]');
+
+    menu.classList.toggle('is-open', isOpen);
+    menu.dataset.adminMenuOpen = isOpen ? 'true' : 'false';
+
+    if (submenu) {
+      submenu.classList.toggle('is-open', isOpen);
+    }
+
+    if (toggle) {
+      toggle.classList.toggle('is-open', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    writeStoredAdminMenuOpen(isOpen);
   }
 
   function setMobileSidebarOpen(isOpen) {
@@ -190,7 +275,7 @@
     }
 
     sidebar.addEventListener('click', function(event) {
-      const clickedLink = event.target.closest('a.sidebar-link');
+      const clickedLink = event.target.closest('a.sidebar-link, a.sidebar-submenu-link');
       if (!clickedLink) return;
 
       if (isMobileViewport()) {
@@ -223,6 +308,122 @@
 
     window.addEventListener('resize', function() {
       syncSidebarStateToViewport();
+    });
+  }
+
+  function initAdminMenuToggle() {
+    const menu = document.querySelector('[data-admin-menu]');
+    if (!menu) return;
+
+    const toggle = menu.querySelector('[data-admin-menu-toggle]');
+    if (!toggle) return;
+
+    const submenu = menu.querySelector('[data-admin-submenu]');
+    const initialIsOpen = menu.dataset.adminMenuOpen === 'true' || readStoredAdminMenuOpen();
+    setAdminMenuOpen(initialIsOpen);
+
+    toggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextIsOpen = !menu.classList.contains('is-open');
+      setAdminMenuOpen(nextIsOpen);
+
+      if (submenu) {
+        submenu.offsetHeight;
+      }
+    });
+  }
+
+  function setStockMenuOpen(isOpen) {
+    const menu = document.querySelector('[data-stock-menu]');
+    if (!menu) return;
+
+    const submenu = menu.querySelector('[data-stock-submenu]');
+    const toggle = menu.querySelector('[data-stock-menu-toggle]');
+
+    menu.classList.toggle('is-open', isOpen);
+    menu.dataset.stockMenuOpen = isOpen ? 'true' : 'false';
+
+    if (submenu) {
+      submenu.classList.toggle('is-open', isOpen);
+    }
+
+    if (toggle) {
+      toggle.classList.toggle('is-open', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    writeStoredStockMenuOpen(isOpen);
+  }
+
+  function initStockMenuToggle() {
+    const menu = document.querySelector('[data-stock-menu]');
+    if (!menu) return;
+
+    const toggle = menu.querySelector('[data-stock-menu-toggle]');
+    if (!toggle) return;
+
+    const submenu = menu.querySelector('[data-stock-submenu]');
+    const initialIsOpen = menu.dataset.stockMenuOpen === 'true' || readStoredStockMenuOpen();
+    setStockMenuOpen(initialIsOpen);
+
+    toggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextIsOpen = !menu.classList.contains('is-open');
+      setStockMenuOpen(nextIsOpen);
+
+      if (submenu) {
+        submenu.offsetHeight;
+      }
+    });
+  }
+
+  function setReportMenuOpen(isOpen) {
+    const menu = document.querySelector('[data-report-menu]');
+    if (!menu) return;
+
+    const submenu = menu.querySelector('[data-report-submenu]');
+    const toggle = menu.querySelector('[data-report-menu-toggle]');
+
+    menu.classList.toggle('is-open', isOpen);
+    menu.dataset.reportMenuOpen = isOpen ? 'true' : 'false';
+
+    if (submenu) {
+      submenu.classList.toggle('is-open', isOpen);
+    }
+
+    if (toggle) {
+      toggle.classList.toggle('is-open', isOpen);
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    writeStoredReportMenuOpen(isOpen);
+  }
+
+  function initReportMenuToggle() {
+    const menu = document.querySelector('[data-report-menu]');
+    if (!menu) return;
+
+    const toggle = menu.querySelector('[data-report-menu-toggle]');
+    if (!toggle) return;
+
+    const submenu = menu.querySelector('[data-report-submenu]');
+    const initialIsOpen = menu.dataset.reportMenuOpen === 'true' || readStoredReportMenuOpen();
+    setReportMenuOpen(initialIsOpen);
+
+    toggle.addEventListener('click', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextIsOpen = !menu.classList.contains('is-open');
+      setReportMenuOpen(nextIsOpen);
+
+      if (submenu) {
+        submenu.offsetHeight;
+      }
     });
   }
 
@@ -455,11 +656,17 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       initSidebarToggle();
+      initAdminMenuToggle();
+      initStockMenuToggle();
+      initReportMenuToggle();
       initDataTables();
       initAutoCloseAlerts();
     });
   } else {
     initSidebarToggle();
+    initAdminMenuToggle();
+    initStockMenuToggle();
+    initReportMenuToggle();
     initDataTables();
     initAutoCloseAlerts();
   }

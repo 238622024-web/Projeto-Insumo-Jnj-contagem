@@ -215,6 +215,7 @@ function ensureInsumoRequestsSchema(PDO $pdo): void {
               quantidade DECIMAL(10,2) NOT NULL DEFAULT 1,
               unidade VARCHAR(30) NOT NULL DEFAULT 'UN',
               quantidade_entregue DECIMAL(10,2) NULL,
+              unidade_entregue VARCHAR(30) NULL,
               lote VARCHAR(100) NULL,
               fabricacao DATE NULL,
               validade DATE NULL,
@@ -253,7 +254,8 @@ function ensureInsumoRequestsSchema(PDO $pdo): void {
         $addColumnIfMissing('processed_at', 'ALTER TABLE insumo_requests ADD COLUMN processed_at DATETIME NULL AFTER requested_at');
         $addColumnIfMissing('processed_by', 'ALTER TABLE insumo_requests ADD COLUMN processed_by INT NULL AFTER processed_at');
         $addColumnIfMissing('quantidade_entregue', 'ALTER TABLE insumo_requests ADD COLUMN quantidade_entregue DECIMAL(10,2) NULL AFTER unidade');
-        $addColumnIfMissing('lote', 'ALTER TABLE insumo_requests ADD COLUMN lote VARCHAR(100) NULL AFTER quantidade_entregue');
+        $addColumnIfMissing('unidade_entregue', 'ALTER TABLE insumo_requests ADD COLUMN unidade_entregue VARCHAR(30) NULL AFTER quantidade_entregue');
+        $addColumnIfMissing('lote', 'ALTER TABLE insumo_requests ADD COLUMN lote VARCHAR(100) NULL AFTER unidade_entregue');
         $addColumnIfMissing('fabricacao', 'ALTER TABLE insumo_requests ADD COLUMN fabricacao DATE NULL AFTER lote');
         $addColumnIfMissing('validade', 'ALTER TABLE insumo_requests ADD COLUMN validade DATE NULL AFTER fabricacao');
     } catch (Throwable $e) {
@@ -322,7 +324,16 @@ function rememberMeCookieName(): string {
 function rememberMeCookiePath(): string {
     $scriptName = (string)($_SERVER['SCRIPT_NAME'] ?? '/');
     $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
-    return $dir === '' ? '/' : $dir . '/';
+    if ($dir === '' || $dir === '.') {
+        return '/';
+    }
+
+    $parts = array_values(array_filter(explode('/', $dir), static fn($part) => $part !== ''));
+    if (empty($parts)) {
+        return '/';
+    }
+
+    return '/' . implode('/', array_map('rawurlencode', $parts)) . '/';
 }
 
 function rememberMeCookieSecure(): bool {

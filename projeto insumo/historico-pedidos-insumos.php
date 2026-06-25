@@ -59,6 +59,14 @@ function sumDeliveredQuantity(array $items): float {
   return $total;
 }
 
+function historyStatusBadge(string $status): array {
+  return match ($status) {
+    'approved' => ['label' => 'Aprovado', 'class' => 'bg-success-subtle text-success border border-success-subtle'],
+    'rejected' => ['label' => 'Rejeitado', 'class' => 'bg-danger-subtle text-danger border border-danger-subtle'],
+    default => ['label' => 'Pendente', 'class' => 'bg-warning-subtle text-warning border border-warning-subtle'],
+  };
+}
+
 function historyGroupMatchesQuery(array $group, string $q): bool {
   if ($q === '') {
     return true;
@@ -66,6 +74,7 @@ function historyGroupMatchesQuery(array $group, string $q): bool {
 
   $haystack = implode(' ', [
     (string)($group['sector'] ?? ''),
+    (string)($group['status'] ?? ''),
     (string)($group['user_nome'] ?? ''),
     (string)($group['user_email'] ?? ''),
     (string)($group['motivo_usuario'] ?? ''),
@@ -152,6 +161,7 @@ $historySql = 'SELECT
     ir.insumo_nome,
     ir.quantidade,
     ir.unidade,
+    ir.unidade_entregue,
     ir.quantidade_entregue,
     ir.lote,
     ir.fabricacao,
@@ -165,8 +175,6 @@ $historySql = 'SELECT
     u.nome AS processed_by_nome
   FROM insumo_requests ir
   LEFT JOIN usuarios u ON u.id = ir.processed_by';
-
-$historySql .= " WHERE ir.status = 'approved'";
 
 $historySql .= ' ORDER BY COALESCE(ir.processed_at, ir.requested_at) DESC, ir.id DESC';
 
@@ -183,6 +191,7 @@ foreach ($approvedRequests as $request) {
       'group_key' => $groupKey,
       'batch_id' => trim((string)($request['batch_id'] ?? '')),
       'sector' => trim((string)($request['setor'] ?? '')) !== '' ? trim((string)$request['setor']) : 'Sem setor',
+      'status' => (string)($request['status'] ?? 'pending'),
       'requested_at' => $request['requested_at'] ?? null,
       'processed_at' => $request['processed_at'] ?? null,
       'user_nome' => $request['user_nome'] ?? '',
@@ -223,10 +232,10 @@ require_once __DIR__ . '/includes/header.php';
         <div>
           <span class="solicitacoes-kicker">Arquivo operacional</span>
           <h1 class="display-6 fw-semibold mb-2">Histórico de pedidos de insumo</h1>
-          <p class="solicitacoes-subtitle mb-0">Os documentos aprovados ficam arquivados aqui com os dados de entrega, lote, fabricação e validade já consolidados.</p>
+          <p class="solicitacoes-subtitle mb-0">Todos os pedidos solicitados ficam arquivados aqui, com o status de cada documento e os dados de atendimento quando já processados.</p>
           <div class="insumo-historico-hero-chips mt-3">
             <span class="insumo-historico-chip"><i class="fa-solid fa-folder-tree"></i>Arquivo consolidado</span>
-            <span class="insumo-historico-chip"><i class="fa-solid fa-magnifying-glass"></i>Busca por setor, insumo ou observação</span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-magnifying-glass"></i>Busca por setor, insumo, observação ou status</span>
           </div>
         </div>
         <div class="text-lg-end d-flex flex-column gap-2 align-items-lg-end">
@@ -250,7 +259,7 @@ require_once __DIR__ . '/includes/header.php';
           <strong><?= h(number_format($historyItemsCount, 0, ',', '.')) ?></strong>
         </div>
         <div class="insumo-historico-summary-item">
-          <span>Quantidade entregue</span>
+            <span>Quantidade registrada</span>
           <strong><?= h(number_format($historyDeliveredTotal, 2, ',', '.')) ?></strong>
         </div>
       </div>
@@ -280,9 +289,9 @@ require_once __DIR__ . '/includes/header.php';
           <div class="metric-card h-100">
             <div class="metric-icon metric-icon-warning"><i class="fa-solid fa-boxes-stacked"></i></div>
             <div>
-              <div class="metric-label">Quantidade entregue</div>
+              <div class="metric-label">Quantidade registrada</div>
               <div class="metric-value"><?= h(number_format($historyDeliveredTotal, 2, ',', '.')) ?></div>
-              <div class="metric-help">Soma dos itens já aprovados no arquivo.</div>
+              <div class="metric-help">Soma dos itens já processados e registrados no arquivo.</div>
             </div>
           </div>
         </div>
@@ -320,7 +329,7 @@ require_once __DIR__ . '/includes/header.php';
       </div>
 
       <?php if (empty($historyByGroup)): ?>
-        <div class="alert alert-info mb-0">Ainda não há pedidos de insumo aprovados para exibir no histórico.</div>
+        <div class="alert alert-info mb-0">Ainda não há pedidos de insumo para exibir no histórico.</div>
       <?php else: ?>
         <?php foreach ($historyByGroup as $group): ?>
           <?php $groupExportHref = 'export_historico_pedidos_insumos_pdf.php?' . http_build_query(['ids' => $group['ids']]); ?>
@@ -331,6 +340,8 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="section-card-subtitle mb-0"><?= h(number_format(count($group['items']), 0, ',', '.')) ?> item<?= count($group['items']) === 1 ? '' : 's' ?> neste documento</div>
               </div>
               <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <?php $statusBadge = historyStatusBadge((string)($group['status'] ?? 'pending')); ?>
+                <span class="badge rounded-pill <?= h($statusBadge['class']) ?> insumo-historico-badge"><?= h($statusBadge['label']) ?></span>
                 <span class="badge bg-light text-dark border insumo-historico-badge"><?= h($group['batch_id'] !== '' ? 'Documento em lote' : 'Documento avulso') ?></span>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle insumo-historico-badge"><?= h(formatHistoryDate($group['processed_at'] ?? null, 'd/m/Y')) ?></span>
               </div>
@@ -358,7 +369,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <div class="col-12 col-lg-3">
                   <div class="insumo-historico-meta-card">
-                    <div class="small text-muted">Aprovado em</div>
+                    <div class="small text-muted">Processado em</div>
                     <div class="fw-semibold"><?= formatHistoryDate($group['processed_at'] ?? null) ?></div>
                   </div>
                 </div>
@@ -367,7 +378,7 @@ require_once __DIR__ . '/includes/header.php';
               <div class="row g-3 mb-4">
                 <div class="col-12 col-lg-6">
                   <div class="insumo-historico-meta-card">
-                    <div class="small text-muted">Aprovado por</div>
+                    <div class="small text-muted">Processado por</div>
                     <div class="fw-semibold"><?= h((string)($group['processed_by_nome'] !== '' ? $group['processed_by_nome'] : 'Administrador')) ?></div>
                   </div>
                 </div>
@@ -386,7 +397,9 @@ require_once __DIR__ . '/includes/header.php';
                       <th style="width: 10%;">ID</th>
                       <th>Insumo</th>
                       <th style="width: 16%;">Qtd. solicitada</th>
+                      <th style="width: 11%;">Unid. solicitada</th>
                       <th style="width: 16%;">Qtd. entregue</th>
+                      <th style="width: 11%;">Unid. entregue</th>
                       <th style="width: 12%;">Lote</th>
                       <th style="width: 10%;">Fabricação</th>
                       <th style="width: 10%;">Validade</th>
@@ -402,8 +415,10 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="badge bg-warning text-dark ms-1">Administrador</span>
                           <?php endif; ?>
                         </td>
-                        <td data-label="Qtd. solicitada"><?= h(number_format((float)$item['quantidade'], 2, ',', '.')) ?> <?= h((string)$item['unidade']) ?></td>
-                        <td data-label="Qtd. entregue"><?= h(number_format((float)($item['quantidade_entregue'] ?? $item['quantidade'] ?? 0), 2, ',', '.')) ?> <?= h((string)$item['unidade']) ?></td>
+                        <td data-label="Qtd. solicitada"><?= h(number_format((float)$item['quantidade'], 2, ',', '.')) ?></td>
+                        <td data-label="Unid. solicitada"><?= h((string)($item['unidade'] ?? 'UN')) ?></td>
+                        <td data-label="Qtd. entregue"><?= h(number_format((float)($item['quantidade_entregue'] ?? $item['quantidade'] ?? 0), 2, ',', '.')) ?></td>
+                        <td data-label="Unid. entregue"><?= h((string)($item['unidade_entregue'] ?? $item['unidade'] ?? 'UN')) ?></td>
                         <td data-label="Lote"><?= h((string)($item['lote'] ?? '-')) ?></td>
                         <td data-label="Fabricação"><?= formatHistoryDate($item['fabricacao'] ?? null, 'd/m/Y') ?></td>
                         <td data-label="Validade"><?= formatHistoryDate($item['validade'] ?? null, 'd/m/Y') ?></td>
@@ -427,16 +442,18 @@ require_once __DIR__ . '/includes/header.php';
                 <a href="<?= h($groupExportHref) ?>" class="btn btn-sm btn-outline-danger">
                   <i class="fa-solid fa-file-pdf me-1"></i>Exportar este documento
                 </a>
-                <form method="post" class="m-0" onsubmit="return confirm('Excluir este documento do histórico? Esta ação não pode ser desfeita.');">
-                  <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
-                  <?php foreach ($group['ids'] as $requestId): ?>
-                    <input type="hidden" name="insumo_request_ids[]" value="<?= (int)$requestId ?>">
-                  <?php endforeach; ?>
-                  <input type="hidden" name="action" value="insumo_history_delete">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
-                    <i class="fa-solid fa-trash-can me-1"></i>Excluir documento
-                  </button>
-                </form>
+                <?php if (($group['status'] ?? 'pending') === 'approved'): ?>
+                  <form method="post" class="m-0" onsubmit="return confirm('Excluir este documento do histórico? Esta ação não pode ser desfeita.');">
+                    <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                    <?php foreach ($group['ids'] as $requestId): ?>
+                      <input type="hidden" name="insumo_request_ids[]" value="<?= (int)$requestId ?>">
+                    <?php endforeach; ?>
+                    <input type="hidden" name="action" value="insumo_history_delete">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="fa-solid fa-trash-can me-1"></i>Excluir documento
+                    </button>
+                  </form>
+                <?php endif; ?>
               </div>
             </div>
           </div>
