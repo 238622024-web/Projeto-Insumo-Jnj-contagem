@@ -4,7 +4,99 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/settings.php';
 requireAdmin();
 
+function ensureEntradaNotaFiscalSchema(PDO $pdo): void {
+  $pdo->exec(
+    "CREATE TABLE IF NOT EXISTS entrada_nota_fiscal (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      numero_nf VARCHAR(80) NOT NULL,
+      fornecedor VARCHAR(190) NOT NULL,
+      produto_nome VARCHAR(190) NOT NULL,
+      quantidade DECIMAL(12,2) NOT NULL,
+      unidade VARCHAR(20) NOT NULL DEFAULT 'UN',
+      data_recebimento DATE NOT NULL,
+      observacao TEXT NULL,
+      insumo_id INT NULL,
+      estoque_atualizado TINYINT(1) NOT NULL DEFAULT 0,
+      created_by INT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_enf_nf (numero_nf),
+      INDEX idx_enf_fornecedor (fornecedor),
+      INDEX idx_enf_produto (produto_nome),
+      INDEX idx_enf_data (data_recebimento)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+  );
+
+  $columns = $pdo->query('SHOW COLUMNS FROM entrada_nota_fiscal')->fetchAll();
+  $existing = [];
+  foreach ($columns as $column) {
+    $existing[$column['Field']] = true;
+  }
+
+  if (empty($existing['unidade'])) {
+    $pdo->exec("ALTER TABLE entrada_nota_fiscal ADD COLUMN unidade VARCHAR(20) NOT NULL DEFAULT 'UN' AFTER quantidade");
+  }
+  if (empty($existing['insumo_id'])) {
+    $pdo->exec('ALTER TABLE entrada_nota_fiscal ADD COLUMN insumo_id INT NULL AFTER observacao');
+  }
+  if (empty($existing['estoque_atualizado'])) {
+    $pdo->exec('ALTER TABLE entrada_nota_fiscal ADD COLUMN estoque_atualizado TINYINT(1) NOT NULL DEFAULT 0 AFTER insumo_id');
+  }
+  if (empty($existing['created_by'])) {
+    $pdo->exec('ALTER TABLE entrada_nota_fiscal ADD COLUMN created_by INT NULL AFTER estoque_atualizado');
+  }
+  if (empty($existing['created_at'])) {
+    $pdo->exec('ALTER TABLE entrada_nota_fiscal ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER created_by');
+  }
+}
+
+function ensureSaidaConsumoSchema(PDO $pdo): void {
+  $pdo->exec(
+    "CREATE TABLE IF NOT EXISTS saida_consumo (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      setor VARCHAR(120) NOT NULL,
+      produto_nome VARCHAR(190) NOT NULL,
+      quantidade DECIMAL(12,2) NOT NULL,
+      unidade VARCHAR(20) NOT NULL DEFAULT 'UN',
+      responsavel VARCHAR(190) NOT NULL,
+      data_consumo DATE NOT NULL,
+      observacao TEXT NULL,
+      insumo_id INT NULL,
+      estoque_atualizado TINYINT(1) NOT NULL DEFAULT 0,
+      created_by INT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_sc_setor (setor),
+      INDEX idx_sc_produto (produto_nome),
+      INDEX idx_sc_data (data_consumo)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+  );
+
+  $columns = $pdo->query('SHOW COLUMNS FROM saida_consumo')->fetchAll();
+  $existing = [];
+  foreach ($columns as $column) {
+    $existing[$column['Field']] = true;
+  }
+
+  if (empty($existing['unidade'])) {
+    $pdo->exec("ALTER TABLE saida_consumo ADD COLUMN unidade VARCHAR(20) NOT NULL DEFAULT 'UN' AFTER quantidade");
+  }
+  if (empty($existing['insumo_id'])) {
+    $pdo->exec('ALTER TABLE saida_consumo ADD COLUMN insumo_id INT NULL AFTER observacao');
+  }
+  if (empty($existing['estoque_atualizado'])) {
+    $pdo->exec('ALTER TABLE saida_consumo ADD COLUMN estoque_atualizado TINYINT(1) NOT NULL DEFAULT 0 AFTER insumo_id');
+  }
+  if (empty($existing['created_by'])) {
+    $pdo->exec('ALTER TABLE saida_consumo ADD COLUMN created_by INT NULL AFTER estoque_atualizado');
+  }
+  if (empty($existing['created_at'])) {
+    $pdo->exec('ALTER TABLE saida_consumo ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER created_by');
+  }
+}
+
 $pdo = getPDO();
+ensureUserAuthSchema();
+ensureEntradaNotaFiscalSchema($pdo);
+ensureSaidaConsumoSchema($pdo);
 
 $from = trim((string)($_GET['from'] ?? ''));
 $to = trim((string)($_GET['to'] ?? ''));

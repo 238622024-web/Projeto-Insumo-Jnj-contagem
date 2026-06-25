@@ -6,6 +6,7 @@ requireAdmin();
 
 $pdo = getPDO();
 ensureUserAuthSchema();
+ensureContagemTrackingSchema($pdo);
 
 $units = [
   'UN' => 'Unidade',

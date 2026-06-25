@@ -6,14 +6,21 @@ requireAdmin();
 
 $pdo = getPDO();
 ensureUserAuthSchema();
+ensureContagemTrackingSchema($pdo);
 
 $id = (int)($_GET['id'] ?? 0);
 $item = null;
 
 if ($id > 0) {
-  $stmt = $pdo->prepare('SELECT id, nome, posicao, lote, codigo_barra, quantidade, unidade, validade FROM insumos_jnj WHERE id = ? LIMIT 1');
-  $stmt->execute([$id]);
-  $item = $stmt->fetch() ?: null;
+  try {
+    $stmt = $pdo->prepare('SELECT id, nome, posicao, lote, codigo_barra, quantidade, unidade, validade FROM insumos_jnj WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $item = $stmt->fetch() ?: null;
+  } catch (Throwable $e) {
+    flash('error', 'Não foi possível abrir o QR deste material. Verifique se a base de dados da hospedagem está atualizada.');
+    header('Location: produtos.php');
+    exit;
+  }
 }
 
 if (!$item) {
