@@ -48,15 +48,19 @@ O banco principal e o MySQL `controle_insumos_jnj`.
 1. Registro de baixa manual de material.
 2. Registro de consumo por setor.
 3. Consumo por picking/QR Code.
-4. Movimentacao de saida alimentando relatorios de consumo.
+4. Lista de recentes do picking salva no navegador, sem misturar com o historico de atendimento.
+5. Botao para zerar saídas registradas diretamente na pagina de consumo.
+6. Movimentacao de saida alimentando relatorios de consumo.
 
 ### Pedidos de insumo
 
 1. Usuario solicita insumo com setor, unidade, quantidade e motivo.
 2. Admin aprova ou rejeita pedidos pendentes.
 3. Pedido aprovado gera registro de consumo.
-4. Historico consolidado por status do pedido.
-5. Exportacao do historico em PDF.
+4. Usuario pode editar pedidos pendentes antes do atendimento.
+5. Usuario pode apagar todos os proprios pedidos quando necessario.
+6. Historico consolidado por status do pedido.
+7. Exportacao do historico em PDF.
 
 ### Relatorios
 
@@ -111,12 +115,25 @@ O banco principal e o MySQL `controle_insumos_jnj`.
 3. Dar baixa no estoque.
 4. O consumo entra nos relatorios.
 
+### Limpeza rapida de dados operacionais
+
+1. Abra [saida_consumo.php](projeto%20insumo/saida_consumo.php).
+2. Use o botao "Zerar saídas registradas" para limpar a tabela `saida_consumo`.
+3. Se quiser limpar o historico de pedidos de insumo, use [historico-pedidos-insumos.php](projeto%20insumo/historico-pedidos-insumos.php) ou [meus-pedidos-insumos.php](projeto%20insumo/meus-pedidos-insumos.php), conforme o tipo de dado.
+
 ## Menus principais da aplicacao
 
 1. Administração.
 2. Estoque.
 3. Relatorio de Insumos.
 4. Perfil e configuracoes.
+
+## Estado atual do sistema
+
+1. Relatorios de consumo por setor e por produto usam pedidos atendidos/aprovados como base principal.
+2. O picking por QR mostra os recentes lidos neste navegador, nao o historico de atendimento.
+3. A pagina de saida manual tem acao para zerar todas as baixas registradas.
+4. A sidebar e os submenus foram ajustados para uso em celular e tablet.
 
 ## Telas mais importantes
 

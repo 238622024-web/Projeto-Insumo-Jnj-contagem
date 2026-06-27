@@ -113,6 +113,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = (string)($_POST['action'] ?? '');
   $insumoRequestIds = normalizeRequestIds($_POST['insumo_request_ids'] ?? []);
 
+  if ($action === 'insumo_history_delete_all') {
+    $deleteAllStmt = $pdo->prepare("DELETE FROM insumo_requests WHERE status IN ('approved', 'rejected')");
+    $deleteAllStmt->execute();
+
+    if ($deleteAllStmt->rowCount() > 0) {
+      flash('success', 'Todos os documentos arquivados foram apagados com sucesso.');
+    } else {
+      flash('info', 'Não havia documentos arquivados para apagar.');
+    }
+
+    header('Location: historico-pedidos-insumos.php');
+    exit;
+  }
+
   if ($action === 'insumo_history_delete') {
     if (empty($insumoRequestIds)) {
       flash('error', 'Nenhum documento foi selecionado para exclusão.');
@@ -121,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $placeholders = implode(',', array_fill(0, count($insumoRequestIds), '?'));
-    $checkStmt = $pdo->prepare('SELECT id FROM insumo_requests WHERE id IN (' . $placeholders . ") AND status = 'approved'");
+    $checkStmt = $pdo->prepare('SELECT id FROM insumo_requests WHERE id IN (' . $placeholders . ") AND status IN ('approved', 'rejected')");
     $checkStmt->execute($insumoRequestIds);
     $foundIds = array_map('intval', array_column($checkStmt->fetchAll(), 'id'));
 
@@ -131,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       exit;
     }
 
-    $deleteStmt = $pdo->prepare('DELETE FROM insumo_requests WHERE id IN (' . $placeholders . ") AND status = 'approved'");
+    $deleteStmt = $pdo->prepare('DELETE FROM insumo_requests WHERE id IN (' . $placeholders . ") AND status IN ('approved', 'rejected')");
     $deleteStmt->execute($insumoRequestIds);
 
     if ($deleteStmt->rowCount() > 0) {
@@ -242,6 +256,13 @@ require_once __DIR__ . '/includes/header.php';
           <a href="export_historico_pedidos_insumos_pdf.php" class="btn btn-outline-danger">
             <i class="fa-solid fa-file-pdf me-1"></i>Exportar histórico em PDF
           </a>
+          <form method="post" class="m-0" onsubmit="return confirm('Apagar todos os documentos arquivados? Esta ação não pode ser desfeita.');">
+            <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+            <input type="hidden" name="action" value="insumo_history_delete_all">
+            <button type="submit" class="btn btn-outline-danger">
+              <i class="fa-solid fa-trash-can me-1"></i>Apagar tudo
+            </button>
+          </form>
           <a href="pedidos-insumos-pendentes.php" class="btn btn-outline-primary">
             <i class="fa-solid fa-box-open me-1"></i>Voltar às pendências
           </a>
@@ -438,11 +459,11 @@ require_once __DIR__ . '/includes/header.php';
                 <div><?= h((string)($group['admin_note'] !== '' ? $group['admin_note'] : '-')) ?></div>
               </div>
 
-              <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end insumo-historico-actions">
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-center insumo-historico-actions">
                 <a href="<?= h($groupExportHref) ?>" class="btn btn-sm btn-outline-danger">
                   <i class="fa-solid fa-file-pdf me-1"></i>Exportar este documento
                 </a>
-                <?php if (($group['status'] ?? 'pending') === 'approved'): ?>
+                <?php if (in_array((string)($group['status'] ?? 'pending'), ['approved', 'rejected'], true)): ?>
                   <form method="post" class="m-0" onsubmit="return confirm('Excluir este documento do histórico? Esta ação não pode ser desfeita.');">
                     <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
                     <?php foreach ($group['ids'] as $requestId): ?>

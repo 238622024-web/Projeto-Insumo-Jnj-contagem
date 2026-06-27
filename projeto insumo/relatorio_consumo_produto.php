@@ -5,6 +5,8 @@ require_once __DIR__ . '/settings.php';
 requireAdmin();
 
 $pdo = getPDO();
+$nomesInsumos = require __DIR__ . '/materiais-lista.php';
+sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
 
 $from = trim((string)($_GET['from'] ?? ''));
 $to = trim((string)($_GET['to'] ?? ''));
@@ -29,12 +31,14 @@ if ($from !== '' && $to === '') {
 }
 
 $productStmt = $pdo->query(
-  "SELECT DISTINCT produto_nome
-   FROM saida_consumo
-   WHERE produto_nome IS NOT NULL AND produto_nome <> ''
-   ORDER BY produto_nome ASC"
+  "SELECT DISTINCT insumo_nome AS produto_nome
+   FROM insumo_requests
+   WHERE status = 'approved' AND insumo_nome IS NOT NULL AND insumo_nome <> ''
+   ORDER BY insumo_nome ASC"
 );
-$productOptions = $productStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+$recentProductOptions = $productStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+$productOptions = array_values(array_unique(array_filter(array_merge($nomesInsumos, $recentProductOptions))));
+sort($productOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
 if ($produto !== '' && !in_array($produto, $productOptions, true)) {
   $errors[] = 'Produto inválido.';
@@ -47,36 +51,39 @@ if ($produto !== '') {
   $_SESSION['report_consumo_produto_last_produto'] = $produto;
 }
 
+$quantityExpr = 'COALESCE(ir.quantidade_entregue, ir.quantidade)';
+$unitExpr = "COALESCE(NULLIF(ir.unidade_entregue, ''), ir.unidade)";
+
 $where = ['1 = 1'];
 $params = [];
 if ($from !== '') {
-  $where[] = 'data_consumo >= ?';
+  $where[] = 'DATE(processed_at) >= ?';
   $params[] = $from;
 }
 if ($to !== '') {
-  $where[] = 'data_consumo <= ?';
+  $where[] = 'DATE(processed_at) <= ?';
   $params[] = $to;
 }
 if ($hasProductSelected) {
-  $where[] = 'produto_nome = ?';
+  $where[] = 'insumo_nome = ?';
   $params[] = $produto;
 }
 $whereSql = implode(' AND ', $where);
 
 $stmt = $pdo->prepare(
-  "SELECT setor, produto_nome, unidade, COUNT(*) AS movimentos, SUM(quantidade) AS quantidade_total
-   FROM saida_consumo
-   WHERE $whereSql
-   GROUP BY setor, produto_nome, unidade
+  "SELECT setor, insumo_nome AS produto_nome, $unitExpr AS unidade, COUNT(*) AS movimentos, SUM($quantityExpr) AS quantidade_total
+   FROM insumo_requests ir
+  WHERE ir.status = 'approved' AND ir.processed_at IS NOT NULL AND ir.processed_at <> '' AND ir.insumo_nome IS NOT NULL AND ir.insumo_nome <> '' AND $whereSql
+   GROUP BY setor, produto_nome, $unitExpr
    ORDER BY quantidade_total DESC, movimentos DESC, setor ASC, produto_nome ASC"
 );
 $stmt->execute($params);
 $rows = $stmt->fetchAll() ?: [];
 
 $summaryStmt = $pdo->prepare(
-  "SELECT COUNT(*) AS movimentos, COALESCE(SUM(quantidade), 0) AS quantidade_total
-   FROM saida_consumo
-   WHERE $whereSql"
+  "SELECT COUNT(*) AS movimentos, COALESCE(SUM($quantityExpr), 0) AS quantidade_total
+  FROM insumo_requests ir
+  WHERE ir.status = 'approved' AND ir.processed_at IS NOT NULL AND ir.processed_at <> '' AND ir.insumo_nome IS NOT NULL AND ir.insumo_nome <> '' AND $whereSql"
 );
 $summaryStmt->execute($params);
 $summary = $summaryStmt->fetch() ?: [];
@@ -89,14 +96,15 @@ include __DIR__ . '/includes/header.php';
     <div class="card-body p-4 p-lg-5">
       <span class="solicitacoes-kicker">Relatório de Insumos</span>
       <h1 class="display-6 fw-semibold mb-2">Consumo por Produto e Setor</h1>
-      <p class="solicitacoes-subtitle mb-0">Mostra quais produtos/insumos foram consumidos e em qual setor, no período selecionado.</p>
+      <p class="solicitacoes-subtitle mb-0">Mostra quais pedidos aprovados pelo admin foram atendidos, por produto e setor, no período selecionado.</p>
       <?php if ($from !== '' || $to !== ''): ?>
         <div class="insumo-historico-hero-chips mt-3">
+          <span class="insumo-historico-chip"><i class="fa-solid fa-user-check"></i>Baseado em pedidos atendidos</span>
           <?php if ($from !== ''): ?>
-            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-day"></i>Data inicial: <?= h(date('d/m/Y', strtotime($from))) ?></span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-day"></i>Atendido desde: <?= h(date('d/m/Y', strtotime($from))) ?></span>
           <?php endif; ?>
           <?php if ($to !== ''): ?>
-            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-check"></i>Data final: <?= h(date('d/m/Y', strtotime($to))) ?></span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-check"></i>Atendido até: <?= h(date('d/m/Y', strtotime($to))) ?></span>
           <?php endif; ?>
         </div>
       <?php endif; ?>
@@ -114,7 +122,7 @@ include __DIR__ . '/includes/header.php';
         <div>
           <div class="metric-label">Movimentos</div>
           <div class="metric-value"><?= h(number_format((int)($summary['movimentos'] ?? 0), 0, ',', '.')) ?></div>
-          <div class="metric-help">Saídas/consumos no período.</div>
+          <div class="metric-help">Pedidos aprovados e atendidos no período.</div>
         </div>
       </div>
     </div>
@@ -124,7 +132,7 @@ include __DIR__ . '/includes/header.php';
         <div>
           <div class="metric-label">Quantidade total</div>
           <div class="metric-value"><?= h(number_format((float)($summary['quantidade_total'] ?? 0), 2, ',', '.')) ?></div>
-          <div class="metric-help">Somatório consumido por produto.</div>
+          <div class="metric-help">Somatório atendido por produto.</div>
         </div>
       </div>
     </div>

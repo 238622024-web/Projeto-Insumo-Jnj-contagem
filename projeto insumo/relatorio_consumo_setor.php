@@ -53,6 +53,8 @@ if ($setor !== '') {
 
 $hasSectorSelected = $setor !== '';
 
+$quantityExpr = 'COALESCE(quantidade_entregue, quantidade)';
+
 if (!$hasSectorSelected) {
   $rows = [];
   $summary = [
@@ -63,11 +65,11 @@ if (!$hasSectorSelected) {
   $where = ['1 = 1'];
   $params = [];
   if ($from !== '') {
-    $where[] = 'data_consumo >= ?';
+    $where[] = 'DATE(processed_at) >= ?';
     $params[] = $from;
   }
   if ($to !== '') {
-    $where[] = 'data_consumo <= ?';
+    $where[] = 'DATE(processed_at) <= ?';
     $params[] = $to;
   }
   $where[] = 'setor = ?';
@@ -75,9 +77,9 @@ if (!$hasSectorSelected) {
   $whereSql = implode(' AND ', $where);
 
   $stmt = $pdo->prepare(
-    "SELECT setor, COUNT(*) AS movimentos, SUM(quantidade) AS quantidade_total
-     FROM saida_consumo
-     WHERE $whereSql
+    "SELECT setor, COUNT(*) AS movimentos, SUM($quantityExpr) AS quantidade_total
+     FROM insumo_requests
+     WHERE status = 'approved' AND processed_at IS NOT NULL AND processed_at <> '' AND setor IS NOT NULL AND setor <> '' AND $whereSql
      GROUP BY setor
      ORDER BY quantidade_total DESC, setor ASC"
   );
@@ -85,9 +87,9 @@ if (!$hasSectorSelected) {
   $rows = $stmt->fetchAll() ?: [];
 
   $summaryStmt = $pdo->prepare(
-    "SELECT COUNT(*) AS movimentos, COALESCE(SUM(quantidade), 0) AS quantidade_total
-     FROM saida_consumo
-     WHERE $whereSql"
+    "SELECT COUNT(*) AS movimentos, COALESCE(SUM($quantityExpr), 0) AS quantidade_total
+     FROM insumo_requests
+     WHERE status = 'approved' AND processed_at IS NOT NULL AND processed_at <> '' AND setor IS NOT NULL AND setor <> '' AND $whereSql"
   );
   $summaryStmt->execute($params);
   $summary = $summaryStmt->fetch() ?: [];
@@ -101,14 +103,15 @@ include __DIR__ . '/includes/header.php';
     <div class="card-body p-4 p-lg-5">
       <span class="solicitacoes-kicker">Relatório de Insumos</span>
       <h1 class="display-6 fw-semibold mb-2">Consumo por Setor</h1>
-      <p class="solicitacoes-subtitle mb-0">Mostra quanto cada setor consumiu no período selecionado.</p>
+      <p class="solicitacoes-subtitle mb-0">Mostra os pedidos aprovados pelo admin atendidos por setor no período selecionado.</p>
       <?php if ($from !== '' || $to !== ''): ?>
         <div class="insumo-historico-hero-chips mt-3">
+          <span class="insumo-historico-chip"><i class="fa-solid fa-user-check"></i>Baseado em pedidos atendidos</span>
           <?php if ($from !== ''): ?>
-            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-day"></i>Data inicial: <?= h(date('d/m/Y', strtotime($from))) ?></span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-day"></i>Atendido desde: <?= h(date('d/m/Y', strtotime($from))) ?></span>
           <?php endif; ?>
           <?php if ($to !== ''): ?>
-            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-check"></i>Data final: <?= h(date('d/m/Y', strtotime($to))) ?></span>
+            <span class="insumo-historico-chip"><i class="fa-solid fa-calendar-check"></i>Atendido até: <?= h(date('d/m/Y', strtotime($to))) ?></span>
           <?php endif; ?>
         </div>
       <?php endif; ?>
@@ -126,7 +129,7 @@ include __DIR__ . '/includes/header.php';
         <div>
           <div class="metric-label">Movimentos</div>
           <div class="metric-value"><?= h(number_format((int)($summary['movimentos'] ?? 0), 0, ',', '.')) ?></div>
-          <div class="metric-help">Saídas/consumos no período.</div>
+          <div class="metric-help">Pedidos aprovados e atendidos no período.</div>
         </div>
       </div>
     </div>
@@ -136,7 +139,7 @@ include __DIR__ . '/includes/header.php';
         <div>
           <div class="metric-label">Quantidade total</div>
           <div class="metric-value"><?= h(number_format((float)($summary['quantidade_total'] ?? 0), 2, ',', '.')) ?></div>
-          <div class="metric-help">Somatório consumido por setor.</div>
+          <div class="metric-help">Somatório atendido por setor.</div>
         </div>
       </div>
     </div>

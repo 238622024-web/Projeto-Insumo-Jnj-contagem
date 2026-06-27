@@ -61,6 +61,11 @@ sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
 
 $recentProductsStmt = $pdo->query("SELECT id, nome, quantidade, codigo_barra FROM insumos_jnj ORDER BY nome ASC LIMIT 200");
 $recentProducts = $recentProductsStmt->fetchAll() ?: [];
+$produtosEntrada = array_values(array_unique(array_filter(array_merge(
+  $nomesInsumos,
+  array_map(static fn(array $produto): string => trim((string)($produto['nome'] ?? '')), $recentProducts)
+), static fn(string $nome): bool => $nome !== '')));
+sort($produtosEntrada, SORT_NATURAL | SORT_FLAG_CASE);
 $units = [
   'UN' => 'Unidade',
   'CX' => 'Caixa',
@@ -265,11 +270,8 @@ include __DIR__ . '/includes/header.php';
               <label class="form-label">Produto</label>
               <input list="produtos-cadastrados" type="text" name="produto_nome" class="form-control" value="<?= h((string)($_POST['produto_nome'] ?? '')) ?>" placeholder="Digite ou selecione o produto" required>
               <datalist id="produtos-cadastrados">
-                <?php foreach ($nomesInsumos as $nomeInsumo): ?>
+                <?php foreach ($produtosEntrada as $nomeInsumo): ?>
                   <option value="<?= h($nomeInsumo) ?>"></option>
-                <?php endforeach; ?>
-                <?php foreach ($recentProducts as $produto): ?>
-                  <option value="<?= h((string)$produto['nome']) ?>"></option>
                 <?php endforeach; ?>
               </datalist>
             </div>

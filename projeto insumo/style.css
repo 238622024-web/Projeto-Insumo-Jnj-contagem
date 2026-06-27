@@ -568,6 +568,8 @@ body.sidebar-scroll-lock {
 	border: 1px solid transparent;
 	appearance: none;
 	padding-right: 0.85rem;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .sidebar-menu-toggle .sidebar-menu-caret {
@@ -627,28 +629,17 @@ body.sidebar-scroll-lock {
 	display: flex;
 	align-items: center;
 	min-height: 2.4rem;
-	padding: 0.45rem 0.85rem 0.45rem 1.05rem;
+	padding: 0.45rem 0.85rem;
+	gap: 0.55rem;
 	border-radius: 11px;
 	text-decoration: none;
 	color: rgba(226, 232, 240, 0.86);
 	font-size: 0.9rem;
 	font-weight: 500;
 	letter-spacing: 0.01em;
-	position: relative;
 	transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.sidebar-submenu-link::before {
-	content: '';
-	position: absolute;
-	left: 0.45rem;
-	top: 50%;
-	width: 0.45rem;
-	height: 0.45rem;
-	border-radius: 999px;
-	background: rgba(255, 176, 138, 0.75);
-	transform: translateY(-50%) scale(0.92);
-	transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .sidebar-submenu-link:hover,
@@ -661,12 +652,153 @@ body.sidebar-scroll-lock {
 	outline: none;
 }
 
-.sidebar-submenu-link:hover::before,
-.sidebar-submenu-link:focus-visible::before,
-.sidebar-submenu-link.active::before {
-	background: #ff8f55;
-	box-shadow: 0 0 0 4px rgba(255, 143, 85, 0.12);
-	transform: translateY(-50%) scale(1);
+.sidebar-submenu-link i {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1rem;
+	min-width: 1rem;
+	height: 1rem;
+	font-size: 0.82rem;
+	line-height: 1;
+	background: transparent;
+	border: 0;
+	color: rgba(248, 250, 252, 0.78);
+	flex: 0 0 auto;
+	transition: transform 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.sidebar-submenu-link:hover i,
+.sidebar-submenu-link:focus-visible i,
+.sidebar-submenu-link.active i {
+	background: transparent;
+	border: 0;
+	color: #ffffff;
+	opacity: 1;
+	transform: translateY(-1px) scale(1.04);
+	box-shadow: none;
+}
+
+.sidebar-submenu-link .fa-user-clock,
+.sidebar-submenu-link .fa-user-check,
+.sidebar-submenu-link .fa-key,
+.sidebar-submenu-link .fa-id-badge,
+.sidebar-submenu-link .fa-user-shield,
+.sidebar-submenu-link .fa-layer-group,
+.sidebar-submenu-link .fa-box,
+.sidebar-submenu-link .fa-file-invoice,
+.sidebar-submenu-link .fa-arrow-right-from-bracket,
+.sidebar-submenu-link .fa-clipboard-list,
+.sidebar-submenu-link .fa-file-arrow-up,
+.sidebar-submenu-link .fa-qrcode,
+.sidebar-submenu-link .fa-people-group,
+.sidebar-submenu-link .fa-boxes-stacked,
+.sidebar-submenu-link .fa-hourglass-half,
+.sidebar-submenu-link .fa-box-archive,
+.sidebar-submenu-link .fa-clock-rotate-left,
+.sidebar-submenu-link .fa-triangle-exclamation {
+	color: inherit;
+}
+
+.sidebar-submenu-link .fa-user-clock,
+.sidebar-submenu-link .fa-user-check {
+	color: #7dd3fc;
+}
+
+.sidebar-submenu-link .fa-key,
+.sidebar-submenu-link .fa-id-badge {
+	color: #c4b5fd;
+}
+
+.sidebar-submenu-link .fa-user-shield {
+	color: #93c5fd;
+}
+
+.sidebar-submenu-link .fa-layer-group,
+.sidebar-submenu-link .fa-people-group,
+.sidebar-submenu-link .fa-clipboard-list {
+	color: #60a5fa;
+}
+
+.sidebar-submenu-link .fa-box,
+.sidebar-submenu-link .fa-box-archive {
+	color: #86efac;
+}
+
+.sidebar-submenu-link .fa-file-invoice,
+.sidebar-submenu-link .fa-file-arrow-up {
+	color: #fbbf24;
+}
+
+.sidebar-submenu-link .fa-arrow-right-from-bracket,
+.sidebar-submenu-link .fa-triangle-exclamation {
+	color: #f87171;
+}
+
+.sidebar-submenu-link .fa-qrcode,
+.sidebar-submenu-link .fa-clock-rotate-left {
+	color: #67e8f9;
+}
+
+.sidebar-submenu-link .fa-boxes-stacked {
+	color: #34d399;
+}
+
+.sidebar-submenu-link:hover .fa-user-clock,
+.sidebar-submenu-link:hover .fa-user-check,
+.sidebar-submenu-link:hover .fa-key,
+.sidebar-submenu-link:hover .fa-id-badge,
+.sidebar-submenu-link:hover .fa-user-shield,
+.sidebar-submenu-link:hover .fa-layer-group,
+.sidebar-submenu-link:hover .fa-box,
+.sidebar-submenu-link:hover .fa-file-invoice,
+.sidebar-submenu-link:hover .fa-arrow-right-from-bracket,
+.sidebar-submenu-link:hover .fa-clipboard-list,
+.sidebar-submenu-link:hover .fa-file-arrow-up,
+.sidebar-submenu-link:hover .fa-qrcode,
+.sidebar-submenu-link:hover .fa-people-group,
+.sidebar-submenu-link:hover .fa-boxes-stacked,
+.sidebar-submenu-link:hover .fa-hourglass-half,
+.sidebar-submenu-link:hover .fa-box-archive,
+.sidebar-submenu-link:hover .fa-clock-rotate-left,
+.sidebar-submenu-link:hover .fa-triangle-exclamation,
+.sidebar-submenu-link:focus-visible .fa-user-clock,
+.sidebar-submenu-link:focus-visible .fa-user-check,
+.sidebar-submenu-link:focus-visible .fa-key,
+.sidebar-submenu-link:focus-visible .fa-id-badge,
+.sidebar-submenu-link:focus-visible .fa-user-shield,
+.sidebar-submenu-link:focus-visible .fa-layer-group,
+.sidebar-submenu-link:focus-visible .fa-box,
+.sidebar-submenu-link:focus-visible .fa-file-invoice,
+.sidebar-submenu-link:focus-visible .fa-arrow-right-from-bracket,
+.sidebar-submenu-link:focus-visible .fa-clipboard-list,
+.sidebar-submenu-link:focus-visible .fa-file-arrow-up,
+.sidebar-submenu-link:focus-visible .fa-qrcode,
+.sidebar-submenu-link:focus-visible .fa-people-group,
+.sidebar-submenu-link:focus-visible .fa-boxes-stacked,
+.sidebar-submenu-link:focus-visible .fa-hourglass-half,
+.sidebar-submenu-link:focus-visible .fa-box-archive,
+.sidebar-submenu-link:focus-visible .fa-clock-rotate-left,
+.sidebar-submenu-link:focus-visible .fa-triangle-exclamation,
+.sidebar-submenu-link.active .fa-user-clock,
+.sidebar-submenu-link.active .fa-user-check,
+.sidebar-submenu-link.active .fa-key,
+.sidebar-submenu-link.active .fa-id-badge,
+.sidebar-submenu-link.active .fa-user-shield,
+.sidebar-submenu-link.active .fa-layer-group,
+.sidebar-submenu-link.active .fa-box,
+.sidebar-submenu-link.active .fa-file-invoice,
+.sidebar-submenu-link.active .fa-arrow-right-from-bracket,
+.sidebar-submenu-link.active .fa-clipboard-list,
+.sidebar-submenu-link.active .fa-file-arrow-up,
+.sidebar-submenu-link.active .fa-qrcode,
+.sidebar-submenu-link.active .fa-people-group,
+.sidebar-submenu-link.active .fa-boxes-stacked,
+.sidebar-submenu-link.active .fa-hourglass-half,
+.sidebar-submenu-link.active .fa-box-archive,
+.sidebar-submenu-link.active .fa-clock-rotate-left,
+.sidebar-submenu-link.active .fa-triangle-exclamation {
+	color: #fff;
 }
 
 body.sidebar-collapsed .sidebar-submenu {
@@ -1448,9 +1580,18 @@ iframe {
 
 	body.sidebar-open-mobile .sidebar-link {
 		justify-content: flex-start;
-		width: auto;
+		width: 100%;
 		padding: 0.8rem 0.85rem;
 		gap: 0.85rem;
+	}
+
+	body.sidebar-open-mobile .sidebar-menu-toggle {
+		width: 100%;
+		min-height: 44px;
+	}
+
+	body.sidebar-open-mobile .sidebar-menu-caret {
+		pointer-events: none;
 	}
 
 	body.sidebar-open-mobile .sidebar-link span {

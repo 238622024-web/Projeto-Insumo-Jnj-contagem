@@ -185,6 +185,41 @@
     writeStoredSidebarCollapsed(isCollapsed);
   }
 
+  function handleMenuToggle(event, menu, setOpenCallback, submenu) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (event.type === 'click' && Date.now() < ignoreNextClickUntil) {
+        return;
+      }
+    }
+
+    const nextIsOpen = !menu.classList.contains('is-open');
+    setOpenCallback(nextIsOpen);
+
+    if (submenu) {
+      submenu.offsetHeight;
+    }
+  }
+
+  function handleMobileSidebarClose(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    const mobileSidebarToggle = document.querySelector('#mobile-sidebar-toggle');
+    if (mobileSidebarToggle) {
+      mobileSidebarToggle.checked = false;
+    }
+
+    setAdminMenuOpen(false);
+    setStockMenuOpen(false);
+    setReportMenuOpen(false);
+    setMobileSidebarOpen(false);
+  }
+
   function handleSidebarDoubleClick(event) {
     if (isMobileViewport()) {
       return;
@@ -280,16 +315,31 @@
 
       if (isMobileViewport()) {
         setMobileSidebarOpen(false);
+        setAdminMenuOpen(false);
+        setStockMenuOpen(false);
+        setReportMenuOpen(false);
       }
     });
 
-    const closeButton = sidebar.querySelector('.sidebar-close-mobile');
+    const closeButton = sidebar.querySelector('[data-sidebar-close-mobile]');
     if (closeButton) {
       closeButton.addEventListener('click', function() {
         if (isMobileViewport()) {
-          setMobileSidebarOpen(false);
+          handleMobileSidebarClose();
         }
       });
+
+      closeButton.addEventListener('pointerup', function(event) {
+        if (event.pointerType === 'touch' && isMobileViewport()) {
+          handleMobileSidebarClose(event);
+        }
+      }, { passive: false });
+
+      closeButton.addEventListener('touchend', function(event) {
+        if (isMobileViewport()) {
+          handleMobileSidebarClose(event);
+        }
+      }, { passive: false });
     }
 
     if (backdrop) {
@@ -323,15 +373,7 @@
     setAdminMenuOpen(initialIsOpen);
 
     toggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const nextIsOpen = !menu.classList.contains('is-open');
-      setAdminMenuOpen(nextIsOpen);
-
-      if (submenu) {
-        submenu.offsetHeight;
-      }
+      handleMenuToggle(event, menu, setAdminMenuOpen, submenu);
     });
   }
 
@@ -369,15 +411,7 @@
     setStockMenuOpen(initialIsOpen);
 
     toggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const nextIsOpen = !menu.classList.contains('is-open');
-      setStockMenuOpen(nextIsOpen);
-
-      if (submenu) {
-        submenu.offsetHeight;
-      }
+      handleMenuToggle(event, menu, setStockMenuOpen, submenu);
     });
   }
 
@@ -415,15 +449,7 @@
     setReportMenuOpen(initialIsOpen);
 
     toggle.addEventListener('click', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const nextIsOpen = !menu.classList.contains('is-open');
-      setReportMenuOpen(nextIsOpen);
-
-      if (submenu) {
-        submenu.offsetHeight;
-      }
+      handleMenuToggle(event, menu, setReportMenuOpen, submenu);
     });
   }
 

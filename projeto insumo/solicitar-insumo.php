@@ -162,7 +162,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <div class="text-lg-end">
           <div class="solicitacoes-pill">Página exclusiva de solicitação</div>
-          <small class="text-muted d-block mt-2">Até 15 linhas no mesmo pedido.</small>
+          <small class="text-muted d-block mt-2">Adicione as linhas conforme precisar.</small>
           <a href="meus-pedidos-insumos.php" class="btn btn-outline-primary btn-sm mt-3">
             <i class="fa-solid fa-box-archive me-1"></i>Ver meus pedidos
           </a>
@@ -221,43 +221,51 @@ require_once __DIR__ . '/includes/header.php';
           <input type="date" class="form-control" name="data_solicitada_entrega">
         </div>
         <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <div class="small text-muted">Adicione ou remova linhas antes de enviar.</div>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-insumo-row">
+              <i class="fa-solid fa-circle-plus me-1"></i>Adicionar linha
+            </button>
+          </div>
           <div class="table-responsive request-table-wrap">
-            <table class="table table-bordered align-middle mb-0 request-table solicitacao-document-table js-no-datatable">
+            <table class="table table-bordered align-middle mb-0 request-table solicitacao-document-table js-no-datatable" id="solicitacao-itens-table">
               <thead>
                 <tr>
                   <th style="width: 32%;">Tipo de insumo</th>
                   <th style="width: 18%;">Quantidade solicitada</th>
                   <th style="width: 12%;">Unidade</th>
-                  <th style="width: 18%;">Quantidade entregue</th>
-                  <th style="width: 12%;">Lote</th>
-                  <th style="width: 10%;">Fabricação</th>
-                  <th style="width: 10%;">Validade</th>
+                  <th style="width: 12%;">Ação</th>
                 </tr>
               </thead>
-              <tbody>
-                <?php for ($i = 0; $i < 15; $i++): ?>
-                  <tr>
+              <tbody id="solicitacao-itens-body">
+                <?php $postedInsumos = (array)($_POST['insumo_nome'] ?? ['']); ?>
+                <?php $postedQuantidades = (array)($_POST['quantidade'] ?? ['']); ?>
+                <?php $postedUnidades = (array)($_POST['unidade'] ?? ['UN']); ?>
+                <?php $initialRows = max(1, count($postedInsumos)); ?>
+                <?php for ($i = 0; $i < $initialRows; $i++): ?>
+                  <tr data-insumo-row>
                     <td>
-                      <select class="form-select" name="insumo_nome[]">
+                      <select class="form-select" name="insumo_nome[]" required>
                         <option value="">Selecione o material</option>
                         <?php foreach ($nomesInsumos as $nomeItem): ?>
-                          <option value="<?= h($nomeItem) ?>" <?= (($_POST['insumo_nome'][$i] ?? '') === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
+                          <option value="<?= h($nomeItem) ?>" <?= (($postedInsumos[$i] ?? '') === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
                         <?php endforeach; ?>
                       </select>
                     </td>
-                    <td><input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0"></td>
+                    <td><input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0" value="<?= h((string)($postedQuantidades[$i] ?? '')) ?>" required></td>
                     <td>
-                      <select class="form-select" name="unidade[]">
-                        <?php $currentUnit = strtoupper((string)($_POST['unidade'][$i] ?? 'UN')); ?>
+                      <select class="form-select" name="unidade[]" required>
+                        <?php $currentUnit = strtoupper((string)($postedUnidades[$i] ?? 'UN')); ?>
                         <?php foreach ($units as $unitCode => $unitLabel): ?>
                           <option value="<?= h($unitCode) ?>" <?= $currentUnit === $unitCode ? 'selected' : '' ?>><?= h($unitCode) ?></option>
                         <?php endforeach; ?>
                       </select>
                     </td>
-                    <td class="text-muted small">Preenchimento do departamento responsável</td>
-                    <td class="text-muted small">Preenchimento do departamento responsável</td>
-                    <td class="text-muted small">Preenchimento do departamento responsável</td>
-                    <td class="text-muted small">Preenchimento do departamento responsável</td>
+                    <td class="text-muted small align-middle">
+                      <button type="button" class="btn btn-outline-danger btn-sm w-100 btn-remove-insumo-row">
+                        <i class="fa-solid fa-trash-can me-1"></i>Remover
+                      </button>
+                    </td>
                   </tr>
                 <?php endfor; ?>
               </tbody>
@@ -275,5 +283,83 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </section>
 </div>
+
+<template id="solicitacao-insumo-row-template">
+  <tr data-insumo-row>
+    <td>
+      <select class="form-select" name="insumo_nome[]" required>
+        <option value="">Selecione o material</option>
+        <?php foreach ($nomesInsumos as $nomeItem): ?>
+          <option value="<?= h($nomeItem) ?>"><?= h($nomeItem) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </td>
+    <td><input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0" required></td>
+    <td>
+      <select class="form-select" name="unidade[]" required>
+        <?php foreach ($units as $unitCode => $unitLabel): ?>
+          <option value="<?= h($unitCode) ?>"><?= h($unitCode) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </td>
+    <td class="text-muted small align-middle">
+      <button type="button" class="btn btn-outline-danger btn-sm w-100 btn-remove-insumo-row">
+        <i class="fa-solid fa-trash-can me-1"></i>Remover
+      </button>
+    </td>
+  </tr>
+</template>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tbody = document.getElementById('solicitacao-itens-body');
+  const addButton = document.getElementById('btn-add-insumo-row');
+  const template = document.getElementById('solicitacao-insumo-row-template');
+
+  if (!tbody || !addButton || !template) {
+    return;
+  }
+
+  function updateRemoveButtons() {
+    const rows = tbody.querySelectorAll('[data-insumo-row]');
+    rows.forEach(function (row) {
+      const removeButton = row.querySelector('.btn-remove-insumo-row');
+      if (removeButton) {
+        removeButton.disabled = rows.length === 1;
+      }
+    });
+  }
+
+  function createRow() {
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('[data-insumo-row]');
+    tbody.appendChild(clone);
+    updateRemoveButtons();
+    const firstSelect = row ? row.querySelector('select[name="insumo_nome[]"]') : null;
+    if (firstSelect) {
+      firstSelect.focus();
+    }
+  }
+
+  tbody.addEventListener('click', function (event) {
+    const removeButton = event.target.closest('.btn-remove-insumo-row');
+    if (!removeButton) {
+      return;
+    }
+
+    const row = removeButton.closest('[data-insumo-row]');
+    const rows = tbody.querySelectorAll('[data-insumo-row]');
+    if (!row || rows.length === 1) {
+      return;
+    }
+
+    row.remove();
+    updateRemoveButtons();
+  });
+
+  addButton.addEventListener('click', createRow);
+  updateRemoveButtons();
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

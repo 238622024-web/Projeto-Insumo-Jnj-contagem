@@ -63,6 +63,10 @@ function labelForStatus(string $status): string {
   return 'Pendente';
 }
 
+function canEditRequestStatus(string $status): bool {
+  return $status === 'pending';
+}
+
 function isDeletableStatus(string $status): bool {
   return in_array($status, ['pending', 'rejected'], true);
 }
@@ -83,6 +87,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $action = (string)($_POST['action'] ?? '');
   $insumoRequestId = (int)($_POST['insumo_request_id'] ?? 0);
+
+  if ($action === 'update_request_group') {
+    $editGroupKey = trim((string)($_POST['edit_group_key'] ?? ''));
+    $setor = trim((string)($_POST['setor'] ?? ''));
+    $dataEntrega = trim((string)($_POST['data_solicitada_entrega'] ?? ''));
+    $motivo = trim((string)($_POST['motivo_usuario'] ?? ''));
+    $requestIdsRaw = $_POST['insumo_request_id'] ?? [];
+    $insumoNomes = $_POST['insumo_nome'] ?? [];
+    $quantidadesRaw = $_POST['quantidade'] ?? [];
+    $unidadesRaw = $_POST['unidade'] ?? [];
+
+    $errors = [];
+    if ($editGroupKey === '') {
+      $errors[] = 'Pedido inválido para edição.';
+    }
+    if ($setor === '') {
+      $errors[] = 'Informe o setor solicitante.';
+    } elseif (!in_array($setor, ['Saidas', 'Recebimento', 'AdequaçãoAdm', 'Adequação', 'DPS/VLM', 'KIT-DPS', 'FATURAMENTO', 'QUALIDADE', 'INVENTÁRIO', 'EXPORTACÃO', 'REVERSA'], true)) {
+      $errors[] = 'Selecione um setor válido.';
+    }
+    if ($dataEntrega !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataEntrega)) {
+      $errors[] = 'A data solicitada para entrega é inválida.';
+    }
+
+    $ids = array_values(array_filter(array_map('intval', (array)$requestIdsRaw), static fn(int $id): bool => $id > 0));
+    if (empty($ids)) {
+      $errors[] = 'Nenhuma linha foi selecionada para edição.';
+    }
+
+    $existingRows = [];
+    if (!$errors) {
+      $placeholders = implode(',', array_fill(0, count($ids), '?'));
+      $stmt = $pdo->prepare('SELECT * FROM insumo_requests WHERE user_id = ? AND id IN (' . $placeholders . ') ORDER BY id ASC');
+      $stmt->execute(array_merge([$userId], $ids));
+      $existingRows = $stmt->fetchAll() ?: [];
+
+      if (count($existingRows) !== count($ids)) {
+        $errors[] = 'Algumas linhas não foram encontradas para este pedido.';
+      } else {
+        $currentGroupKey = null;
+        foreach ($existingRows as $existingRow) {
+          if (!canEditRequestStatus((string)($existingRow['status'] ?? ''))) {
+            $errors[] = 'Somente pedidos pendentes podem ser editados.';
+            break;
+          }
+
+          $rowKey = buildInsumoRequestGroupKey($existingRow);
+          if ($currentGroupKey === null) {
+            $currentGroupKey = $rowKey;
+          } elseif ($currentGroupKey !== $rowKey) {
+            $errors[] = 'As linhas selecionadas não pertencem ao mesmo pedido.';
+            break;
+          }
+        }
+
+        if ($currentGroupKey === null || $currentGroupKey !== $editGroupKey) {
+          $errors[] = 'O pedido selecionado não corresponde ao grupo de edição.';
+        }
+      }
+    }
+
+    $items = [];
+    if (!$errors) {
+      foreach ($existingRows as $index => $existingRow) {
+        $requestId = (int)($existingRow['id'] ?? 0);
+        $insumoNome = trim((string)($insumoNomes[$index] ?? ''));
+        $quantidadeRaw = str_replace(',', '.', trim((string)($quantidadesRaw[$index] ?? '')));
+        $quantidade = (float)$quantidadeRaw;
+        $unidade = strtoupper(trim((string)($unidadesRaw[$index] ?? 'UN')));
+
+        if ($insumoNome === '') {
+          $errors[] = 'Preencha o tipo de insumo da linha ' . ((int)$index + 1) . '.';
+          continue;
+        }
+        if (!in_array($insumoNome, $nomesInsumos, true)) {
+          $errors[] = 'O tipo de insumo da linha ' . ((int)$index + 1) . ' não está na lista disponível.';
+          continue;
+        }
+        if ($quantidade <= 0) {
+          $errors[] = 'Preencha uma quantidade válida na linha ' . ((int)$index + 1) . '.';
+          continue;
+        }
+        if (!array_key_exists($unidade, $units)) {
+          $unidade = 'UN';
+        }
+
+        $items[] = [
+          'id' => $requestId,
+          'insumo_nome' => mb_substr($insumoNome, 0, 190),
+          'quantidade' => number_format($quantidade, 2, '.', ''),
+          'unidade' => $unidade,
+        ];
+      }
+    }
+
+    if (empty($items)) {
+      $errors[] = 'Adicione pelo menos um insumo válido para atualizar.';
+    }
+
+    if (!$errors) {
+      $pdo->beginTransaction();
+      try {
+        $updateStmt = $pdo->prepare(
+          "UPDATE insumo_requests
+             SET setor = ?, data_solicitada_entrega = ?, insumo_nome = ?, quantidade = ?, unidade = ?, motivo_usuario = ?, status = 'pending', admin_note = NULL, processed_at = NULL, processed_by = NULL
+           WHERE id = ? AND user_id = ? AND status = 'pending'"
+        );
+
+        foreach ($items as $item) {
+          $updateStmt->execute([
+            $setor,
+            $dataEntrega !== '' ? $dataEntrega : null,
+            $item['insumo_nome'],
+            $item['quantidade'],
+            $item['unidade'],
+            $motivo,
+            $item['id'],
+            $userId,
+          ]);
+        }
+
+        $pdo->commit();
+        flash('success', 'Pedido atualizado com sucesso.');
+        header('Location: meus-pedidos-insumos.php');
+        exit;
+      } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+          $pdo->rollBack();
+        }
+        $errors[] = 'Não foi possível atualizar o pedido. Tente novamente.';
+      }
+    }
+
+    flash('error', implode(' ', $errors));
+    header('Location: meus-pedidos-insumos.php?edit=' . rawurlencode($editGroupKey));
+    exit;
+  }
 
   if ($action === 'delete_request') {
     if ($insumoRequestId <= 0) {
@@ -114,6 +255,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       flash('success', 'Pedido excluído com sucesso.');
     } else {
       flash('error', 'Não foi possível excluir o pedido.');
+    }
+
+    header('Location: meus-pedidos-insumos.php');
+    exit;
+  }
+
+  if ($action === 'delete_all_requests') {
+    $deleteAllStmt = $pdo->prepare('DELETE FROM insumo_requests WHERE user_id = ?');
+    $deleteAllStmt->execute([$userId]);
+
+    if ($deleteAllStmt->rowCount() > 0) {
+      flash('success', 'Todos os seus pedidos foram apagados com sucesso.');
+    } else {
+      flash('info', 'Não havia pedidos para apagar.');
     }
 
     header('Location: meus-pedidos-insumos.php');
@@ -213,6 +368,12 @@ foreach ($groups as $group) {
   }
 }
 
+$editGroupKey = trim((string)($_GET['edit'] ?? ''));
+$editGroup = null;
+if ($editGroupKey !== '' && isset($groups[$editGroupKey]) && canEditRequestStatus((string)$groups[$editGroupKey]['status'])) {
+  $editGroup = $groups[$editGroupKey];
+}
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -229,6 +390,15 @@ require_once __DIR__ . '/includes/header.php';
           <a href="solicitar-insumo.php" class="btn btn-outline-primary">
             <i class="fa-solid fa-file-signature me-1"></i>Nova solicitação
           </a>
+          <?php if ($totalDocuments > 0): ?>
+            <form method="post" class="m-0" onsubmit="return confirm('Apagar todos os seus pedidos, inclusive aprovados e rejeitados? Esta ação não pode ser desfeita.');">
+              <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+              <input type="hidden" name="action" value="delete_all_requests">
+              <button type="submit" class="btn btn-outline-danger w-100">
+                <i class="fa-solid fa-trash-can me-1"></i>Apagar tudo
+              </button>
+            </form>
+          <?php endif; ?>
           <small class="text-muted d-block">Você vê apenas os pedidos da sua própria conta.</small>
         </div>
       </div>
@@ -305,6 +475,91 @@ require_once __DIR__ . '/includes/header.php';
   <?php if (empty($groups)): ?>
     <div class="alert alert-info">Você ainda não possui pedidos de insumo nesse filtro.</div>
   <?php else: ?>
+    <?php if ($editGroup !== null): ?>
+      <div class="section-card card border-0 shadow-sm mb-4 pending-insumos-card">
+        <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+              <h2 class="h6 mb-1"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar pedido pendente</h2>
+              <div class="text-muted small">Ajuste os itens enviados errado antes do atendimento do admin.</div>
+            </div>
+            <a href="meus-pedidos-insumos.php" class="btn btn-sm btn-outline-secondary">Cancelar edição</a>
+          </div>
+        </div>
+        <div class="card-body pt-0">
+          <form method="post" class="row g-3 form-responsive">
+            <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+            <input type="hidden" name="action" value="update_request_group">
+            <input type="hidden" name="edit_group_key" value="<?= h($editGroupKey) ?>">
+            <?php foreach ($editGroup['ids'] as $editId): ?>
+              <input type="hidden" name="insumo_request_id[]" value="<?= (int)$editId ?>">
+            <?php endforeach; ?>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Setor</label>
+              <select class="form-select" name="setor" required>
+                <option value="">Selecione o setor</option>
+                <?php foreach ($setoresDisponiveis as $setorItem): ?>
+                  <option value="<?= h($setorItem) ?>" <?= ((string)$editGroup['sector'] === $setorItem) ? 'selected' : '' ?>><?= h($setorItem) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Data solicitada para entrega</label>
+              <input type="date" class="form-control" name="data_solicitada_entrega" value="<?= h((string)($editGroup['items'][0]['data_solicitada_entrega'] ?? '')) ?>">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Motivo da solicitação</label>
+              <textarea class="form-control" name="motivo_usuario" rows="3" placeholder="Explique a necessidade do insumo"><?= h((string)($editGroup['motivo_usuario'] ?? '')) ?></textarea>
+            </div>
+
+            <div class="col-12">
+              <div class="table-responsive request-table-wrap">
+                <table class="table table-bordered align-middle mb-0 request-table solicitacao-document-table js-no-datatable">
+                  <thead>
+                    <tr>
+                      <th style="width: 36%;">Tipo de insumo</th>
+                      <th style="width: 18%;">Quantidade solicitada</th>
+                      <th style="width: 12%;">Unidade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($editGroup['items'] as $index => $item): ?>
+                      <tr>
+                        <td>
+                          <select class="form-select" name="insumo_nome[]" required>
+                            <option value="">Selecione o material</option>
+                            <?php foreach ($nomesInsumos as $nomeItem): ?>
+                              <option value="<?= h($nomeItem) ?>" <?= ((string)$item['insumo_nome'] === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
+                            <?php endforeach; ?>
+                          </select>
+                        </td>
+                        <td>
+                          <input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" value="<?= h(number_format((float)$item['quantidade'], 2, '.', '')) ?>" required>
+                        </td>
+                        <td>
+                          <select class="form-select" name="unidade[]" required>
+                            <?php $currentUnit = strtoupper((string)($item['unidade'] ?? 'UN')); ?>
+                            <?php foreach ($units as $unitCode => $unitLabel): ?>
+                              <option value="<?= h($unitCode) ?>" <?= $currentUnit === $unitCode ? 'selected' : '' ?>><?= h($unitCode) ?></option>
+                            <?php endforeach; ?>
+                          </select>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="col-12 d-grid d-md-flex justify-content-md-end">
+              <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-floppy-disk me-2"></i>Salvar alterações</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    <?php endif; ?>
+
     <?php foreach ($groups as $group): ?>
       <div class="section-card card border-0 shadow-sm mb-4 pending-insumos-card">
         <div class="section-card-header card-header bg-white border-0 pt-3 pb-0">
@@ -377,14 +632,21 @@ require_once __DIR__ . '/includes/header.php';
 
           <?php if (isDeletableStatus((string)$group['status'])): ?>
             <div class="mt-3 d-flex justify-content-end">
-              <form method="post" onsubmit="return confirm('Excluir este pedido? Esta ação não pode ser desfeita.');">
-                <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
-                <input type="hidden" name="insumo_request_id" value="<?= (int)($group['ids'][0] ?? 0) ?>">
-                <input type="hidden" name="action" value="delete_request">
-                <button type="submit" class="btn btn-sm btn-outline-danger">
-                  <i class="fa-solid fa-trash-can me-1"></i>Excluir pedido
-                </button>
-              </form>
+              <div class="d-flex gap-2 flex-wrap">
+                <?php if (canEditRequestStatus((string)$group['status'])): ?>
+                  <a class="btn btn-sm btn-outline-primary" href="meus-pedidos-insumos.php?edit=<?= h(rawurlencode((string)$group['group_key'])) ?>">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>Editar pedido
+                  </a>
+                <?php endif; ?>
+                <form method="post" onsubmit="return confirm('Excluir este pedido? Esta ação não pode ser desfeita.');">
+                  <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                  <input type="hidden" name="insumo_request_id" value="<?= (int)($group['ids'][0] ?? 0) ?>">
+                  <input type="hidden" name="action" value="delete_request">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-trash-can me-1"></i>Excluir pedido
+                  </button>
+                </form>
+              </div>
             </div>
           <?php endif; ?>
 

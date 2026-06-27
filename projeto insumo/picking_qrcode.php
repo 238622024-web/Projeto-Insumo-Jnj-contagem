@@ -205,14 +205,19 @@ if ($lookupCode !== '' && $lookupMode !== 'consume') {
   }
 }
 
-$recentStmt = $pdo->query(
-  'SELECT sc.id, sc.setor, sc.produto_nome, sc.quantidade, sc.unidade, sc.responsavel, sc.data_consumo, sc.created_at, u.nome AS created_by_name
-   FROM saida_consumo sc
-   LEFT JOIN usuarios u ON u.id = sc.created_by
-   ORDER BY sc.created_at DESC, sc.id DESC
-   LIMIT 6'
-);
-$recentConsumptions = $recentStmt->fetchAll() ?: [];
+$recentQrScan = null;
+if ($product && $lookupCode !== '') {
+  $recentQrScan = [
+    'scan_code' => $lookupCode,
+    'product_id' => (int)($product['id'] ?? 0),
+    'product_name' => (string)($product['nome'] ?? ''),
+    'product_quantity' => (float)($product['quantidade'] ?? 0),
+    'product_unit' => (string)($product['unidade'] ?? 'UN'),
+    'product_position' => (string)($product['posicao'] ?? ''),
+    'product_validity' => (string)($product['validade'] ?? ''),
+    'recorded_at' => date('c'),
+  ];
+}
 
 $summaryStmt = $pdo->query(
   "SELECT
@@ -277,6 +282,8 @@ include __DIR__ . '/includes/header.php';
             <button type="button" class="btn btn-primary" id="btn-start-picking-scan"><i class="fa-solid fa-camera me-1"></i>Iniciar câmera</button>
             <button type="button" class="btn btn-outline-secondary" id="btn-stop-picking-scan" style="display:none;"><i class="fa-solid fa-stop me-1"></i>Parar</button>
           </div>
+
+          <div id="picking-camera-status" class="alert alert-warning d-none mb-3" role="alert"></div>
 
           <form method="get" class="row g-2 align-items-end mb-3" id="picking-lookup-form">
             <div class="col-12">
@@ -414,49 +421,36 @@ include __DIR__ . '/includes/header.php';
       <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-3">
         <div>
           <span class="section-badge mb-2"><i class="fa-solid fa-clock-rotate-left"></i>Auditoria</span>
-          <h2 class="h5 mb-2">Baixas recentes via picking</h2>
-          <p class="section-card-subtitle mb-0">Últimos consumos confirmados para rastreabilidade rápida.</p>
+          <h2 class="h5 mb-2">QRs recentes lidos</h2>
+          <p class="section-card-subtitle mb-0">Mostra apenas os últimos códigos lidos neste navegador pelo fluxo de picking.</p>
         </div>
       </div>
 
-      <?php if (empty($recentConsumptions)): ?>
-        <div class="alert alert-info mb-0">Nenhuma baixa registrada ainda.</div>
-      <?php else: ?>
-        <div class="table-responsive request-table-wrap">
-          <table class="table table-hover align-middle mb-0 request-table js-no-datatable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Setor</th>
-                <th>Produto</th>
-                <th>Quantidade</th>
-                <th>Responsável</th>
-                <th>Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($recentConsumptions as $consumption): ?>
-                <tr>
-                  <td><?= (int)$consumption['id'] ?></td>
-                  <td><?= h((string)$consumption['setor']) ?></td>
-                  <td>
-                    <?= h((string)$consumption['produto_nome']) ?>
-                    <?php if (!empty($consumption['created_by_name'])): ?>
-                      <div class="text-muted small">por <?= h((string)$consumption['created_by_name']) ?></div>
-                    <?php endif; ?>
-                  </td>
-                  <td><?= h(number_format((float)$consumption['quantidade'], 2, ',', '.')) ?> <?= h((string)$consumption['unidade']) ?></td>
-                  <td><?= h((string)$consumption['responsavel']) ?></td>
-                  <td><?= !empty($consumption['created_at']) ? h(date('d/m/Y H:i', strtotime((string)$consumption['created_at']))) : '-' ?></td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
+      <div id="picking-recent-empty" class="alert alert-info mb-0">Nenhum QR lido ainda neste navegador.</div>
+
+      <div class="table-responsive request-table-wrap d-none" id="picking-recent-wrap">
+        <table class="table table-hover align-middle mb-0 request-table js-no-datatable">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Produto</th>
+              <th>Saldo</th>
+              <th>Localização</th>
+              <th>Lido em</th>
+            </tr>
+          </thead>
+          <tbody id="picking-recent-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
+
+<?php if ($recentQrScan !== null): ?>
+  <script>
+    window.__pickingRecentScan = <?= json_encode($recentQrScan, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+  </script>
+<?php endif; ?>
 
 <script src="assets/vendor/html5-qrcode/html5-qrcode.min.js" defer></script>
 <script src="assets/js/picking-qrcode.js" defer></script>

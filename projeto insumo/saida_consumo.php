@@ -52,6 +52,11 @@ $pdo = getPDO();
 ensureUserAuthSchema();
 ensureSaidaConsumoSchema($pdo);
 
+if (empty($_SESSION['csrf_token'])) {
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = (string)$_SESSION['csrf_token'];
+
 $current = currentUser() ?: [];
 $userId = (int)($current['id'] ?? 0);
 
@@ -90,6 +95,35 @@ sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
 $errorMessages = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $action = (string)($_POST['action'] ?? '');
+
+  if ($action === 'clear_all_saida_consumo') {
+    $postedToken = (string)($_POST['csrf_token'] ?? '');
+    if ($postedToken === '' || !hash_equals($csrfToken, $postedToken)) {
+      flash('error', 'Sessão inválida. Atualize a página e tente novamente.');
+      header('Location: saida_consumo.php');
+      exit;
+    }
+
+    try {
+      $pdo->beginTransaction();
+      $pdo->exec('DELETE FROM saida_consumo');
+      $pdo->commit();
+
+      flash('success', 'Todas as saídas registradas foram apagadas com sucesso.');
+      header('Location: saida_consumo.php');
+      exit;
+    } catch (Throwable $e) {
+      if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+      }
+
+      flash('error', 'Não foi possível apagar as saídas registradas.');
+      header('Location: saida_consumo.php');
+      exit;
+    }
+  }
+
   $setor = trim((string)($_POST['setor'] ?? ''));
   $produtoNome = trim((string)($_POST['produto_nome'] ?? ''));
   $quantidadeRaw = str_replace(',', '.', trim((string)($_POST['quantidade'] ?? '')));
@@ -201,6 +235,13 @@ include __DIR__ . '/includes/header.php';
         <div class="text-lg-end">
           <div class="solicitacoes-pill">Baixa automática</div>
           <small class="text-muted d-block mt-2">O saldo só é atualizado se houver quantidade suficiente.</small>
+          <form method="post" class="mt-3" onsubmit="return confirm('Apagar todas as saídas registradas? Esta ação não pode ser desfeita.');">
+            <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+            <input type="hidden" name="action" value="clear_all_saida_consumo">
+            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+              <i class="fa-solid fa-trash-can me-1"></i>Zerar saídas registradas
+            </button>
+          </form>
         </div>
       </div>
 
