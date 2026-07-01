@@ -11,10 +11,6 @@ $to = trim((string)($_GET['to'] ?? ''));
 $setor = trim((string)($_GET['setor'] ?? ''));
 $errors = [];
 
-if ($setor === '' && !empty($_SESSION['report_consumo_setor_last_setor'])) {
-  $setor = trim((string)$_SESSION['report_consumo_setor_last_setor']);
-}
-
 if ($from !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
   $errors[] = 'Data inicial inválida.';
   $from = '';
@@ -47,53 +43,41 @@ if ($setor !== '' && !in_array($setor, $sectorOptions, true)) {
   $setor = '';
 }
 
-if ($setor !== '') {
-  $_SESSION['report_consumo_setor_last_setor'] = $setor;
-}
-
-$hasSectorSelected = $setor !== '';
-
 $quantityExpr = 'COALESCE(quantidade_entregue, quantidade)';
 
-if (!$hasSectorSelected) {
-  $rows = [];
-  $summary = [
-    'movimentos' => 0,
-    'quantidade_total' => 0,
-  ];
-} else {
-  $where = ['1 = 1'];
-  $params = [];
-  if ($from !== '') {
-    $where[] = 'DATE(processed_at) >= ?';
-    $params[] = $from;
-  }
-  if ($to !== '') {
-    $where[] = 'DATE(processed_at) <= ?';
-    $params[] = $to;
-  }
+$where = ["status = 'approved'", 'processed_at IS NOT NULL', "processed_at <> ''", 'setor IS NOT NULL', "setor <> ''"];
+$params = [];
+if ($from !== '') {
+  $where[] = 'DATE(processed_at) >= ?';
+  $params[] = $from;
+}
+if ($to !== '') {
+  $where[] = 'DATE(processed_at) <= ?';
+  $params[] = $to;
+}
+if ($setor !== '') {
   $where[] = 'setor = ?';
   $params[] = $setor;
-  $whereSql = implode(' AND ', $where);
-
-  $stmt = $pdo->prepare(
-    "SELECT setor, COUNT(*) AS movimentos, SUM($quantityExpr) AS quantidade_total
-     FROM insumo_requests
-     WHERE status = 'approved' AND processed_at IS NOT NULL AND processed_at <> '' AND setor IS NOT NULL AND setor <> '' AND $whereSql
-     GROUP BY setor
-     ORDER BY quantidade_total DESC, setor ASC"
-  );
-  $stmt->execute($params);
-  $rows = $stmt->fetchAll() ?: [];
-
-  $summaryStmt = $pdo->prepare(
-    "SELECT COUNT(*) AS movimentos, COALESCE(SUM($quantityExpr), 0) AS quantidade_total
-     FROM insumo_requests
-     WHERE status = 'approved' AND processed_at IS NOT NULL AND processed_at <> '' AND setor IS NOT NULL AND setor <> '' AND $whereSql"
-  );
-  $summaryStmt->execute($params);
-  $summary = $summaryStmt->fetch() ?: [];
 }
+$whereSql = implode(' AND ', $where);
+
+$stmt = $pdo->prepare(
+  "SELECT setor, COUNT(*) AS movimentos, SUM($quantityExpr) AS quantidade_total
+   FROM insumo_requests
+   WHERE $whereSql
+   GROUP BY setor
+   ORDER BY quantidade_total DESC, setor ASC"
+);
+$stmt->execute($params);
+$rows = $stmt->fetchAll() ?: [];
+
+$summaryStmt = $pdo->prepare(
+  "SELECT COUNT(*) AS movimentos, COALESCE(SUM($quantityExpr), 0) AS quantidade_total
+   FROM insumo_requests
+   WHERE $whereSql"
+);
+$summaryStmt->execute($params);
+$summary = $summaryStmt->fetch() ?: [];
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -158,8 +142,8 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label small text-muted mb-1">Setor</label>
-          <select name="setor" class="form-select" required>
-            <option value="" disabled <?= $setor === '' ? 'selected' : '' ?>>Selecione o setor</option>
+          <select name="setor" class="form-select">
+            <option value="" <?= $setor === '' ? 'selected' : '' ?>>Todos os setores</option>
             <?php foreach ($sectorOptions as $sectorOption): ?>
               <option value="<?= h((string)$sectorOption) ?>" <?= $setor === (string)$sectorOption ? 'selected' : '' ?>><?= h((string)$sectorOption) ?></option>
             <?php endforeach; ?>
@@ -178,10 +162,8 @@ include __DIR__ . '/includes/header.php';
       <span class="section-badge mb-2"><i class="fa-solid fa-chart-column"></i>Resumo por setor</span>
       <h2 class="h5 mb-3">Consumo agrupado</h2>
 
-      <?php if (!$hasSectorSelected): ?>
-        <div class="alert alert-info mb-0">Escolha um setor acima para mostrar o consumo correspondente.</div>
-      <?php elseif (empty($rows)): ?>
-        <div class="alert alert-info mb-0">Nenhum consumo encontrado para o setor selecionado no período.</div>
+      <?php if (empty($rows)): ?>
+        <div class="alert alert-info mb-0"><?= $setor === '' ? 'Nenhum consumo encontrado para o período selecionado.' : 'Nenhum consumo encontrado para o setor selecionado no período.' ?></div>
       <?php else: ?>
         <div class="table-responsive request-table-wrap">
           <table class="table table-hover align-middle mb-0 request-table js-no-datatable">

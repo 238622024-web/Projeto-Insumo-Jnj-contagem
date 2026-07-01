@@ -13,10 +13,6 @@ $to = trim((string)($_GET['to'] ?? ''));
 $produto = trim((string)($_GET['produto'] ?? ''));
 $errors = [];
 
-if ($produto === '' && !empty($_SESSION['report_consumo_produto_last_produto'])) {
-  $produto = trim((string)$_SESSION['report_consumo_produto_last_produto']);
-}
-
 if ($from !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
   $errors[] = 'Data inicial inválida.';
   $from = '';
@@ -45,12 +41,6 @@ if ($produto !== '' && !in_array($produto, $productOptions, true)) {
   $produto = '';
 }
 
-$hasProductSelected = $produto !== '';
-
-if ($produto !== '') {
-  $_SESSION['report_consumo_produto_last_produto'] = $produto;
-}
-
 $quantityExpr = 'COALESCE(ir.quantidade_entregue, ir.quantidade)';
 $unitExpr = "COALESCE(NULLIF(ir.unidade_entregue, ''), ir.unidade)";
 
@@ -64,7 +54,7 @@ if ($to !== '') {
   $where[] = 'DATE(processed_at) <= ?';
   $params[] = $to;
 }
-if ($hasProductSelected) {
+if ($produto !== '') {
   $where[] = 'insumo_nome = ?';
   $params[] = $produto;
 }
@@ -151,8 +141,8 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label small text-muted mb-1">Produto</label>
-          <select name="produto" class="form-select" required>
-            <option value="" disabled <?= $produto === '' ? 'selected' : '' ?>>Selecione o produto</option>
+          <select name="produto" class="form-select">
+            <option value="" <?= $produto === '' ? 'selected' : '' ?>>Todos os produtos</option>
             <?php foreach ($productOptions as $productOption): ?>
               <option value="<?= h((string)$productOption) ?>" <?= $produto === (string)$productOption ? 'selected' : '' ?>><?= h((string)$productOption) ?></option>
             <?php endforeach; ?>
@@ -161,6 +151,11 @@ include __DIR__ . '/includes/header.php';
         <div class="col-12 col-md-4 d-flex gap-2">
           <button type="submit" class="btn btn-primary flex-fill"><i class="fa-solid fa-filter me-1"></i>Filtrar</button>
           <a href="relatorio_consumo_produto.php" class="btn btn-outline-secondary"><i class="fa-solid fa-rotate-left me-1"></i>Limpar</a>
+          <a href="export_relatorio_consumo_produto.php?<?= h(http_build_query(array_filter([
+            'from' => $from,
+            'to' => $to,
+            'produto' => $produto,
+          ], static fn ($value) => $value !== ''))) ?>" class="btn btn-outline-success"><i class="fa-solid fa-file-excel me-1"></i>Exportar</a>
         </div>
       </form>
     </div>
@@ -171,10 +166,8 @@ include __DIR__ . '/includes/header.php';
       <span class="section-badge mb-2"><i class="fa-solid fa-ranking-star"></i>Ranking</span>
       <h2 class="h5 mb-3">Produtos mais consumidos</h2>
 
-      <?php if (!$hasProductSelected): ?>
-        <div class="alert alert-info mb-0">Escolha um produto acima para mostrar o consumo correspondente.</div>
-      <?php elseif (empty($rows)): ?>
-        <div class="alert alert-info mb-0">Nenhum consumo encontrado para o produto selecionado no período.</div>
+      <?php if (empty($rows)): ?>
+        <div class="alert alert-info mb-0"><?= $produto === '' ? 'Nenhum consumo encontrado para o período selecionado.' : 'Nenhum consumo encontrado para o produto selecionado no período.' ?></div>
       <?php else: ?>
         <div class="table-responsive request-table-wrap">
           <table class="table table-hover align-middle mb-0 request-table js-no-datatable">

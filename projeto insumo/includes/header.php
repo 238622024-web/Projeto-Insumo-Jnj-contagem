@@ -42,7 +42,6 @@ $reportMenuPages = [
   'relatorio_consumo_setor.php',
   'relatorio_consumo_produto.php',
   'pedidos_insumos_pendentes.php',
-  'historico_insumos.php',
   'historico-pedidos-insumos.php',
   'estoque_baixo.php',
 ];
@@ -50,10 +49,24 @@ $reportMenuOpen = in_array($currentPage, $reportMenuPages, true);
 
 $pendingInsumoSolicitationsCount = 0;
 $pendingInsumoNotifications = [];
+$pendingUserAccountsCount = 0;
+$pendingUserAccountsNotifications = [];
 if ($user && isAdmin()) {
   try {
     $pdo = getPDO();
     ensureInsumoRequestsSchema($pdo);
+    $pendingUsersStmt = $pdo->query(
+      "SELECT id, nome, email, role, criado_em
+       FROM usuarios
+       WHERE aprovado = 0
+       ORDER BY criado_em DESC, id DESC
+       LIMIT 5"
+    );
+    $pendingUserAccountsNotifications = $pendingUsersStmt->fetchAll() ?: [];
+
+    $pendingUsersCountStmt = $pdo->query('SELECT COUNT(*) AS c FROM usuarios WHERE aprovado = 0');
+    $pendingUserAccountsCount = (int)($pendingUsersCountStmt->fetch()['c'] ?? 0);
+
     $pendingStmt = $pdo->query(
       "SELECT COUNT(*) AS c
        FROM (
@@ -95,6 +108,8 @@ if ($user && isAdmin()) {
   } catch (Throwable $e) {
     $pendingInsumoSolicitationsCount = 0;
     $pendingInsumoNotifications = [];
+    $pendingUserAccountsCount = 0;
+    $pendingUserAccountsNotifications = [];
   }
 }
 
@@ -303,7 +318,6 @@ if ($logoUrl === '') {
             <a class="sidebar-submenu-link <?= $currentPage === 'relatorio_consumo_produto.php' ? 'active' : '' ?>" href="relatorio_consumo_produto.php"><i class="fa-solid fa-boxes-stacked me-2" aria-hidden="true"></i>Consumo por Produto</a>
             <a class="sidebar-submenu-link <?= $currentPage === 'pedidos_insumos_pendentes.php' ? 'active' : '' ?>" href="pedidos_insumos_pendentes.php"><i class="fa-solid fa-hourglass-half me-2" aria-hidden="true"></i>Pedidos de Insumos Pendentes</a>
             <a class="sidebar-submenu-link <?= $currentPage === 'historico-pedidos-insumos.php' ? 'active' : '' ?>" href="historico-pedidos-insumos.php"><i class="fa-solid fa-box-archive me-2" aria-hidden="true"></i>Histórico de Pedidos de Insumos</a>
-            <a class="sidebar-submenu-link <?= $currentPage === 'historico_insumos.php' ? 'active' : '' ?>" href="historico_insumos.php"><i class="fa-solid fa-clock-rotate-left me-2" aria-hidden="true"></i>Histórico de Insumos</a>
             <a class="sidebar-submenu-link <?= $currentPage === 'estoque_baixo.php' ? 'active' : '' ?>" href="estoque_baixo.php"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Estoque Baixo</a>
           </div>
         </div>
@@ -321,17 +335,17 @@ if ($logoUrl === '') {
       <button class="sidebar-toggle sidebar-toggle-inline" type="button" data-sidebar-toggle aria-label="Recolher menu">
         <i class="fa-solid fa-bars"></i>
       </button>
-      <label class="sidebar-toggle sidebar-toggle-mobile" for="mobile-sidebar-toggle" aria-label="Abrir menu">
+      <button class="sidebar-toggle sidebar-toggle-mobile" type="button" data-sidebar-toggle aria-label="Abrir menu">
         <i class="fa-solid fa-bars"></i>
-      </label>
+      </button>
       <div class="app-topbar-title">
         <span><?= h(t('app.title')) ?></span>
       </div>
       <div class="app-topbar-actions">
-        <?php if (isAdmin() && $pendingInsumoSolicitationsCount > 0): ?>
-          <button class="btn btn-sm btn-outline-warning app-notification-btn" type="button" data-bs-toggle="modal" data-bs-target="#insumoNotificationsModal" aria-label="Abrir mensagens de solicitações de insumo pendentes" title="<?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?> solicitações pendentes">
+        <?php if (isAdmin() && (($pendingInsumoSolicitationsCount + $pendingUserAccountsCount) > 0)): ?>
+          <button class="btn btn-sm btn-outline-warning app-notification-btn" type="button" data-bs-toggle="modal" data-bs-target="#insumoNotificationsModal" aria-label="Abrir mensagens de solicitações pendentes" title="<?= h(number_format(($pendingInsumoSolicitationsCount + $pendingUserAccountsCount), 0, ',', '.')) ?> solicitações pendentes">
             <i class="fa-solid fa-bell"></i>
-            <span class="app-notification-count"><?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?></span>
+            <span class="app-notification-count"><?= h(number_format(($pendingInsumoSolicitationsCount + $pendingUserAccountsCount), 0, ',', '.')) ?></span>
           </button>
         <?php endif; ?>
         <a class="btn btn-sm btn-outline-secondary app-theme-btn" href="toggletheme.php" aria-label="Alternar tema" title="<?= h($temaAtual === 'escuro' ? 'Mudar para tema claro' : 'Mudar para tema escuro') ?>">
@@ -351,13 +365,61 @@ if ($logoUrl === '') {
             <div class="modal-header border-0 pb-0">
               <div>
                 <p class="insumo-notification-kicker mb-1">Central de mensagens</p>
-                <h5 class="modal-title" id="insumoNotificationsModalLabel">Solicitações de insumo por setor</h5>
+                <h5 class="modal-title" id="insumoNotificationsModalLabel">Solicitações pendentes</h5>
               </div>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body pt-3">
+              <?php if (!empty($pendingUserAccountsNotifications)): ?>
+                <div class="insumo-notification-list mb-4">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="mb-0">Cadastros pendentes</h6>
+                    <span class="badge rounded-pill text-bg-light border"><?= h(number_format($pendingUserAccountsCount, 0, ',', '.')) ?></span>
+                  </div>
+                  <?php foreach ($pendingUserAccountsNotifications as $pendingUser): ?>
+                    <div class="insumo-notification-item">
+                      <div class="insumo-notification-icon">
+                        <i class="fa-solid fa-user-clock"></i>
+                      </div>
+                      <div class="insumo-notification-content">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+                          <div>
+                            <h6 class="mb-1"><?= h((string)($pendingUser['nome'] ?? 'Usuário')) ?></h6>
+                            <p class="mb-1 text-muted small">
+                              <?= h((string)($pendingUser['email'] ?? '')) ?>
+                              <?php if (($pendingUser['role'] ?? 'user') === 'admin'): ?>
+                                - solicitação de administrador
+                              <?php else: ?>
+                                - conta normal
+                              <?php endif; ?>
+                            </p>
+                          </div>
+                          <span class="insumo-notification-badge badge rounded-pill text-bg-light border align-self-start">Cadastro</span>
+                        </div>
+                        <div class="insumo-notification-message">
+                          Novo cadastro aguardando aprovação.
+                          <?= !empty($pendingUser['criado_em']) ? ' Recebido em ' . h(date('d/m/Y H:i', strtotime((string)$pendingUser['criado_em']))) . '.' : '' ?>
+                        </div>
+                        <div class="mt-2">
+                          <a class="btn btn-sm btn-outline-primary" href="usuarios_pendentes.php">
+                            <i class="fa-solid fa-arrow-right me-1"></i>Abrir cadastros pendentes
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+
               <?php if (!empty($pendingInsumoNotifications)): ?>
+                <?php if (!empty($pendingUserAccountsNotifications)): ?>
+                  <hr class="my-4">
+                <?php endif; ?>
                 <div class="insumo-notification-list">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h6 class="mb-0">Pedidos de insumo pendentes</h6>
+                    <span class="badge rounded-pill text-bg-light border"><?= h(number_format($pendingInsumoSolicitationsCount, 0, ',', '.')) ?></span>
+                  </div>
                   <?php foreach ($pendingInsumoNotifications as $notification): ?>
                     <div class="insumo-notification-item">
                       <div class="insumo-notification-icon">
@@ -394,21 +456,23 @@ if ($logoUrl === '') {
                     </div>
                   <?php endforeach; ?>
                 </div>
-              <?php else: ?>
+              <?php endif; ?>
+
+              <?php if (empty($pendingUserAccountsNotifications) && empty($pendingInsumoNotifications)): ?>
                 <div class="insumo-notification-empty">
                   <div class="insumo-notification-icon">
                     <i class="fa-regular fa-circle-check"></i>
                   </div>
                   <div>
                     <h6 class="mb-1">Nenhuma solicitação pendente no momento</h6>
-                    <p class="mb-0 text-muted">Quando um setor enviar um novo pedido, ele aparecerá aqui com o resumo da mensagem.</p>
+                    <p class="mb-0 text-muted">Quando um setor enviar um novo pedido ou um usuário se cadastrar, a notificação aparecerá aqui.</p>
                   </div>
                 </div>
               <?php endif; ?>
             </div>
             <div class="modal-footer border-0 pt-0">
-              <a href="pedidos-insumos-pendentes.php" class="btn btn-primary">
-                <i class="fa-solid fa-arrow-right me-1"></i>Ver fila completa
+              <a href="solicitacoes.php" class="btn btn-primary">
+                <i class="fa-solid fa-arrow-right me-1"></i>Ver solicitações
               </a>
             </div>
           </div>

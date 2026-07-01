@@ -8,6 +8,35 @@ $pdo = getPDO();
 ensureInsumoRequestsSchema($pdo);
 $current = currentUser() ?: [];
 $userId = (int)($current['id'] ?? 0);
+$nomesInsumos = require __DIR__ . '/materiais-lista.php';
+sort($nomesInsumos, SORT_NATURAL | SORT_FLAG_CASE);
+$units = [
+  'UN' => 'Unidade',
+  'CX' => 'Caixa',
+  'PCT' => 'Pacote',
+  'KG' => 'Quilograma',
+  'G' => 'Grama',
+  'L' => 'Litro',
+  'ML' => 'Mililitro',
+  'M' => 'Metro',
+  'CM' => 'Centímetro',
+  'PAR' => 'Par',
+  'FD' => 'Fardo',
+  'RO' => 'Rolo',
+];
+$setoresDisponiveis = [
+  'Saidas',
+  'Recebimento',
+  'AdequaçãoAdm',
+  'Adequação',
+  'DPS/VLM',
+  'KIT-DPS',
+  'FATURAMENTO',
+  'QUALIDADE',
+  'INVENTÁRIO',
+  'EXPORTACÃO',
+  'REVERSA',
+];
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
   session_start();
@@ -18,6 +47,12 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 $csrfToken = (string)$_SESSION['csrf_token'];
+
+$editFormOld = [];
+if (!empty($_SESSION['meus_pedidos_edit_old']) && is_array($_SESSION['meus_pedidos_edit_old'])) {
+  $editFormOld = $_SESSION['meus_pedidos_edit_old'];
+  unset($_SESSION['meus_pedidos_edit_old']);
+}
 
 function buildInsumoRequestGroupKey(array $request): string {
   $batchId = trim((string)($request['batch_id'] ?? ''));
@@ -111,13 +146,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $errors[] = 'A data solicitada para entrega é inválida.';
     }
 
-    $ids = array_values(array_filter(array_map('intval', (array)$requestIdsRaw), static fn(int $id): bool => $id > 0));
-    if (empty($ids)) {
+    $submittedRowCount = max(
+      count((array)$requestIdsRaw),
+      count((array)$insumoNomes),
+      count((array)$quantidadesRaw),
+      count((array)$unidadesRaw)
+    );
+    if ($submittedRowCount === 0) {
       $errors[] = 'Nenhuma linha foi selecionada para edição.';
     }
 
     $existingRows = [];
+    $existingRowsById = [];
     if (!$errors) {
+      $ids = array_values(array_filter(array_map('intval', (array)$requestIdsRaw), static fn(int $id): bool => $id > 0));
       $placeholders = implode(',', array_fill(0, count($ids), '?'));
       $stmt = $pdo->prepare('SELECT * FROM insumo_requests WHERE user_id = ? AND id IN (' . $placeholders . ') ORDER BY id ASC');
       $stmt->execute(array_merge([$userId], $ids));
@@ -128,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       } else {
         $currentGroupKey = null;
         foreach ($existingRows as $existingRow) {
+          $existingRowsById[(int)($existingRow['id'] ?? 0)] = $existingRow;
           if (!canEditRequestStatus((string)($existingRow['status'] ?? ''))) {
             $errors[] = 'Somente pedidos pendentes podem ser editados.';
             break;
@@ -148,20 +191,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
 
-    $items = [];
+    $itemsToUpdate = [];
+    $itemsToInsert = [];
     if (!$errors) {
-      foreach ($existingRows as $index => $existingRow) {
-        $requestId = (int)($existingRow['id'] ?? 0);
-        $insumoNome = trim((string)($insumoNomes[$index] ?? ''));
-        $quantidadeRaw = str_replace(',', '.', trim((string)($quantidadesRaw[$index] ?? '')));
+      $baseRow = $existingRows[0] ?? null;
+      $baseRequestedAt = trim((string)($baseRow['requested_at'] ?? ''));
+      if ($baseRequestedAt === '') {
+        $baseRequestedAt = appDateTimeNow();
+      }
+      $baseBatchId = trim((string)($baseRow['batch_id'] ?? ''));
+      $batchIdValue = $baseBatchId !== '' ? $baseBatchId : null;
+
+      for ($index = 0; $index < $submittedRowCount; $index++) {
+        $requestId = (int)($requestIdsRaw[$index] ?? 0);
+        $postedInsumoNome = trim((string)($insumoNomes[$index] ?? ''));
+        $postedQuantidadeText = trim((string)($quantidadesRaw[$index] ?? ''));
+        $quantidadeRaw = str_replace(',', '.', $postedQuantidadeText);
         $quantidade = (float)$quantidadeRaw;
         $unidade = strtoupper(trim((string)($unidadesRaw[$index] ?? 'UN')));
 
-        if ($insumoNome === '') {
+        if ($requestId <= 0 && $postedInsumoNome === '' && $postedQuantidadeText === '') {
+          continue;
+        }
+
+        $sourceRow = $requestId > 0 ? ($existingRowsById[$requestId] ?? null) : $baseRow;
+        if ($requestId > 0 && $sourceRow === null) {
+          $errors[] = 'Uma das linhas originais não foi encontrada para edição.';
+          continue;
+        }
+
+        if ($postedInsumoNome === '') {
           $errors[] = 'Preencha o tipo de insumo da linha ' . ((int)$index + 1) . '.';
           continue;
         }
-        if (!in_array($insumoNome, $nomesInsumos, true)) {
+
+        $originalInsumoNome = trim((string)($sourceRow['insumo_nome'] ?? ''));
+        if (!in_array($postedInsumoNome, $nomesInsumos, true) && $postedInsumoNome !== $originalInsumoNome) {
           $errors[] = 'O tipo de insumo da linha ' . ((int)$index + 1) . ' não está na lista disponível.';
           continue;
         }
@@ -173,16 +238,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $unidade = 'UN';
         }
 
-        $items[] = [
-          'id' => $requestId,
-          'insumo_nome' => mb_substr($insumoNome, 0, 190),
+        $rowData = [
+          'insumo_nome' => mb_substr($postedInsumoNome, 0, 190),
           'quantidade' => number_format($quantidade, 2, '.', ''),
           'unidade' => $unidade,
         ];
+
+        if ($requestId > 0) {
+          $rowData['id'] = $requestId;
+          $itemsToUpdate[] = $rowData;
+        } else {
+          $itemsToInsert[] = $rowData;
+        }
       }
     }
 
-    if (empty($items)) {
+    if (empty($itemsToUpdate) && empty($itemsToInsert)) {
       $errors[] = 'Adicione pelo menos um insumo válido para atualizar.';
     }
 
@@ -195,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            WHERE id = ? AND user_id = ? AND status = 'pending'"
         );
 
-        foreach ($items as $item) {
+        foreach ($itemsToUpdate as $item) {
           $updateStmt->execute([
             $setor,
             $dataEntrega !== '' ? $dataEntrega : null,
@@ -208,7 +279,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           ]);
         }
 
+        if (!empty($itemsToInsert)) {
+          $insertStmt = $pdo->prepare(
+            'INSERT INTO insumo_requests (user_id, user_nome, user_email, user_role, batch_id, setor, data_solicitada_entrega, insumo_nome, quantidade, unidade, motivo_usuario, status, requested_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          );
+
+          foreach ($itemsToInsert as $item) {
+            $insertStmt->execute([
+              $userId,
+              (string)($current['nome'] ?? ''),
+              (string)($current['email'] ?? ''),
+              (string)($current['role'] ?? 'user'),
+              $batchIdValue,
+              $setor,
+              $dataEntrega !== '' ? $dataEntrega : null,
+              $item['insumo_nome'],
+              $item['quantidade'],
+              $item['unidade'],
+              $motivo,
+              'pending',
+              $baseRequestedAt,
+            ]);
+          }
+        }
+
         $pdo->commit();
+        unset($_SESSION['meus_pedidos_edit_old']);
         flash('success', 'Pedido atualizado com sucesso.');
         header('Location: meus-pedidos-insumos.php');
         exit;
@@ -219,6 +315,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Não foi possível atualizar o pedido. Tente novamente.';
       }
     }
+
+    $_SESSION['meus_pedidos_edit_old'] = [
+      'setor' => $setor,
+      'data_solicitada_entrega' => $dataEntrega,
+      'motivo_usuario' => $motivo,
+      'insumo_nome' => array_map(static fn($value) => trim((string)$value), (array)$insumoNomes),
+      'quantidade' => array_map(static fn($value) => trim((string)$value), (array)$quantidadesRaw),
+      'unidade' => array_map(static fn($value) => strtoupper(trim((string)$value)), (array)$unidadesRaw),
+    ];
 
     flash('error', implode(' ', $errors));
     header('Location: meus-pedidos-insumos.php?edit=' . rawurlencode($editGroupKey));
@@ -335,6 +440,7 @@ foreach ($rows as $row) {
   $groupKey = buildInsumoRequestGroupKey($row);
   if (!isset($groups[$groupKey])) {
     $groups[$groupKey] = [
+      'group_key' => $groupKey,
       'batch_id' => trim((string)($row['batch_id'] ?? '')),
       'sector' => trim((string)($row['setor'] ?? '')) !== '' ? trim((string)$row['setor']) : 'Sem setor',
       'requested_at' => $row['requested_at'] ?? null,
@@ -491,62 +597,78 @@ require_once __DIR__ . '/includes/header.php';
             <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
             <input type="hidden" name="action" value="update_request_group">
             <input type="hidden" name="edit_group_key" value="<?= h($editGroupKey) ?>">
-            <?php foreach ($editGroup['ids'] as $editId): ?>
-              <input type="hidden" name="insumo_request_id[]" value="<?= (int)$editId ?>">
-            <?php endforeach; ?>
 
             <div class="col-12 col-md-6">
               <label class="form-label">Setor</label>
               <select class="form-select" name="setor" required>
                 <option value="">Selecione o setor</option>
                 <?php foreach ($setoresDisponiveis as $setorItem): ?>
-                  <option value="<?= h($setorItem) ?>" <?= ((string)$editGroup['sector'] === $setorItem) ? 'selected' : '' ?>><?= h($setorItem) ?></option>
+                  <option value="<?= h($setorItem) ?>" <?= ((string)($editFormOld['setor'] ?? $editGroup['sector']) === $setorItem) ? 'selected' : '' ?>><?= h($setorItem) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Data solicitada para entrega</label>
-              <input type="date" class="form-control" name="data_solicitada_entrega" value="<?= h((string)($editGroup['items'][0]['data_solicitada_entrega'] ?? '')) ?>">
+              <input type="date" class="form-control" name="data_solicitada_entrega" value="<?= h((string)($editFormOld['data_solicitada_entrega'] ?? $editGroup['items'][0]['data_solicitada_entrega'] ?? '')) ?>">
             </div>
             <div class="col-12">
               <label class="form-label">Motivo da solicitação</label>
-              <textarea class="form-control" name="motivo_usuario" rows="3" placeholder="Explique a necessidade do insumo"><?= h((string)($editGroup['motivo_usuario'] ?? '')) ?></textarea>
+              <textarea class="form-control" name="motivo_usuario" rows="3" placeholder="Explique a necessidade do insumo"><?= h((string)($editFormOld['motivo_usuario'] ?? $editGroup['motivo_usuario'] ?? '')) ?></textarea>
             </div>
 
             <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="small text-muted">Adicione mais insumos ao mesmo pedido antes de salvar.</div>
+                <button type="button" class="btn btn-outline-primary btn-sm solicitacao-add-row-btn" id="btn-add-edit-insumo-row">
+                  <i class="fa-solid fa-circle-plus me-1"></i>Adicionar linha
+                </button>
+              </div>
               <div class="table-responsive request-table-wrap">
-                <table class="table table-bordered align-middle mb-0 request-table solicitacao-document-table js-no-datatable">
+                <?php $editRenderedRowCount = max(count($editGroup['items']), count((array)($editFormOld['insumo_nome'] ?? [])), count((array)($editFormOld['quantidade'] ?? [])), count((array)($editFormOld['unidade'] ?? []))); ?>
+                <table class="table table-bordered align-middle mb-0 request-table solicitacao-document-table js-no-datatable" id="edit-insumo-itens-table">
                   <thead>
                     <tr>
+                      <th style="width: 8%;">#</th>
                       <th style="width: 36%;">Tipo de insumo</th>
                       <th style="width: 18%;">Quantidade solicitada</th>
                       <th style="width: 12%;">Unidade</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <?php foreach ($editGroup['items'] as $index => $item): ?>
+                  <tbody id="edit-insumo-itens-body">
+                    <?php for ($index = 0; $index < $editRenderedRowCount; $index++): ?>
+                      <?php $item = $editGroup['items'][$index] ?? []; ?>
+                      <?php $rowId = (int)($editGroup['ids'][$index] ?? 0); ?>
+                      <?php $currentInsumoNome = (string)($editFormOld['insumo_nome'][$index] ?? ($item['insumo_nome'] ?? '')); ?>
+                      <?php $currentQuantity = (string)($editFormOld['quantidade'][$index] ?? (isset($item['quantidade']) ? number_format((float)$item['quantidade'], 2, '.', '') : '')); ?>
+                      <?php $currentUnit = strtoupper((string)($editFormOld['unidade'][$index] ?? ($item['unidade'] ?? 'UN'))); ?>
                       <tr>
+                        <td class="align-middle text-muted small">
+                          <input type="hidden" name="insumo_request_id[]" value="<?= (int)$rowId ?>">
+                          <?= (int)($index + 1) ?>
+                        </td>
                         <td>
                           <select class="form-select" name="insumo_nome[]" required>
                             <option value="">Selecione o material</option>
+                            <?php if ($currentInsumoNome !== '' && !in_array($currentInsumoNome, $nomesInsumos, true)): ?>
+                              <option value="<?= h($currentInsumoNome) ?>" selected><?= h($currentInsumoNome) ?> (não disponível no cadastro)</option>
+                            <?php endif; ?>
                             <?php foreach ($nomesInsumos as $nomeItem): ?>
-                              <option value="<?= h($nomeItem) ?>" <?= ((string)$item['insumo_nome'] === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
+                              <option value="<?= h($nomeItem) ?>" <?= ($currentInsumoNome === $nomeItem) ? 'selected' : '' ?>><?= h($nomeItem) ?></option>
                             <?php endforeach; ?>
                           </select>
                         </td>
                         <td>
-                          <input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" value="<?= h(number_format((float)$item['quantidade'], 2, '.', '')) ?>" required>
+                          <input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" value="<?= h($currentQuantity) ?>" required>
                         </td>
                         <td>
                           <select class="form-select" name="unidade[]" required>
-                            <?php $currentUnit = strtoupper((string)($item['unidade'] ?? 'UN')); ?>
                             <?php foreach ($units as $unitCode => $unitLabel): ?>
                               <option value="<?= h($unitCode) ?>" <?= $currentUnit === $unitCode ? 'selected' : '' ?>><?= h($unitCode) ?></option>
                             <?php endforeach; ?>
                           </select>
                         </td>
                       </tr>
-                    <?php endforeach; ?>
+                    <?php endfor; ?>
                   </tbody>
                 </table>
               </div>
@@ -559,6 +681,69 @@ require_once __DIR__ . '/includes/header.php';
         </div>
       </div>
     <?php endif; ?>
+
+    <template id="edit-insumo-row-template">
+      <tr>
+        <td class="align-middle text-muted small">
+          <input type="hidden" name="insumo_request_id[]" value="">
+          <span class="edit-row-number"></span>
+        </td>
+        <td>
+          <select class="form-select" name="insumo_nome[]" required>
+            <option value="">Selecione o material</option>
+            <?php foreach ($nomesInsumos as $nomeItem): ?>
+              <option value="<?= h($nomeItem) ?>"><?= h($nomeItem) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </td>
+        <td>
+          <input type="number" class="form-control" name="quantidade[]" min="0.01" step="0.01" placeholder="0" required>
+        </td>
+        <td>
+          <select class="form-select" name="unidade[]" required>
+            <?php foreach ($units as $unitCode => $unitLabel): ?>
+              <option value="<?= h($unitCode) ?>" <?= $unitCode === 'UN' ? 'selected' : '' ?>><?= h($unitCode) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </td>
+      </tr>
+    </template>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const tbody = document.getElementById('edit-insumo-itens-body');
+      const addButton = document.getElementById('btn-add-edit-insumo-row');
+      const template = document.getElementById('edit-insumo-row-template');
+
+      if (!tbody || !addButton || !template) {
+        return;
+      }
+
+      function renumberRows() {
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(function (row, index) {
+          const number = row.querySelector('.edit-row-number');
+          if (number) {
+            number.textContent = String(index + 1);
+          }
+        });
+      }
+
+      function addRow() {
+        const fragment = template.content.cloneNode(true);
+        tbody.appendChild(fragment);
+        renumberRows();
+        const lastRow = tbody.querySelector('tr:last-child');
+        const firstField = lastRow ? lastRow.querySelector('select[name="insumo_nome[]"]') : null;
+        if (firstField) {
+          firstField.focus();
+        }
+      }
+
+      addButton.addEventListener('click', addRow);
+      renumberRows();
+    });
+    </script>
 
     <?php foreach ($groups as $group): ?>
       <div class="section-card card border-0 shadow-sm mb-4 pending-insumos-card">
@@ -634,7 +819,8 @@ require_once __DIR__ . '/includes/header.php';
             <div class="mt-3 d-flex justify-content-end">
               <div class="d-flex gap-2 flex-wrap">
                 <?php if (canEditRequestStatus((string)$group['status'])): ?>
-                  <a class="btn btn-sm btn-outline-primary" href="meus-pedidos-insumos.php?edit=<?= h(rawurlencode((string)$group['group_key'])) ?>">
+                  <?php $editUrl = 'meus-pedidos-insumos.php?edit=' . rawurlencode((string)($group['group_key'] ?? '')); ?>
+                  <a class="btn btn-sm btn-outline-primary" href="<?= h($editUrl) ?>">
                     <i class="fa-solid fa-pen-to-square me-1"></i>Editar pedido
                   </a>
                 <?php endif; ?>

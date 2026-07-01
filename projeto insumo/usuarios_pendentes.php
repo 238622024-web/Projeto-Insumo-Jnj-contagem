@@ -5,10 +5,13 @@ require_once __DIR__ . '/settings.php';
 requireAdmin();
 
 $pdo = getPDO();
+$current = currentUser();
+$primaryAdminId = getPrimaryAdminId();
 
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+$csrfToken = (string)$_SESSION['csrf_token'];
 
 $q = trim((string)($_GET['q'] ?? ''));
 $roleFilter = (string)($_GET['role'] ?? 'all');
@@ -18,6 +21,75 @@ if (!in_array($roleFilter, ['all', 'admin', 'user'], true)) {
 
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
+
+$buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $page): string {
+  $base = [
+    'q' => $q,
+    'role' => $roleFilter,
+    'page' => $page,
+  ];
+  $params = array_merge($base, $overrides);
+  foreach ($params as $key => $value) {
+    if ($value === '' || $value === null) {
+      unset($params[$key]);
+    }
+  }
+  return 'usuarios_pendentes.php' . (!empty($params) ? '?' . http_build_query($params) : '');
+};
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $postedToken = (string)($_POST['csrf_token'] ?? '');
+  if ($postedToken === '' || !hash_equals((string)$_SESSION['csrf_token'], $postedToken)) {
+    flash('error', 'Sessão inválida. Atualize a página e tente novamente.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  $action = (string)($_POST['action'] ?? '');
+  $userId = (int)($_POST['user_id'] ?? 0);
+  $reason = trim((string)($_POST['reason'] ?? ''));
+
+  if ($userId <= 0 || !in_array($action, ['approve', 'reject'], true)) {
+    flash('error', 'Ação inválida.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  $targetStmt = $pdo->prepare('SELECT id, nome, email, role FROM usuarios WHERE id = ? AND aprovado = 0 LIMIT 1');
+  $targetStmt->execute([$userId]);
+  $target = $targetStmt->fetch();
+
+  if (!$target) {
+    flash('error', 'Solicitação não encontrada ou já processada.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  if (($target['role'] ?? 'user') === 'admin' && (int)($current['id'] ?? 0) !== $primaryAdminId) {
+    flash('error', $action === 'approve' ? 'Apenas o administrador principal pode aprovar novas contas de administrador.' : 'Apenas o administrador principal pode rejeitar solicitações de administrador.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  if ($action === 'approve') {
+    $stmt = $pdo->prepare('UPDATE usuarios SET aprovado = 1, aprovado_em = NOW(), aprovado_por = ? WHERE id = ? AND aprovado = 0');
+    $stmt->execute([(int)($current['id'] ?? 0), $userId]);
+    flash($stmt->rowCount() > 0 ? 'success' : 'error', $stmt->rowCount() > 0 ? 'Solicitação aprovada com sucesso.' : 'Não foi possível aprovar esta solicitação.');
+  } elseif ($action === 'reject') {
+    if ($reason === '') {
+      flash('error', 'Informe o motivo da rejeição.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    $stmt = $pdo->prepare('DELETE FROM usuarios WHERE id = ? AND aprovado = 0');
+    $stmt->execute([$userId]);
+    flash($stmt->rowCount() > 0 ? 'success' : 'error', $stmt->rowCount() > 0 ? 'Solicitação rejeitada e removida.' : 'Não foi possível rejeitar esta solicitação.');
+  }
+
+  header('Location: ' . $buildQuery());
+  exit;
+}
 
 $where = ['aprovado = 0'];
 $params = [];
@@ -49,21 +121,6 @@ $users = $stmt->fetchAll();
 $showingStart = $totalUsers > 0 ? (($page - 1) * $perPage) + 1 : 0;
 $showingEnd = min($totalUsers, $page * $perPage);
 
-$buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $page): string {
-  $base = [
-    'q' => $q,
-    'role' => $roleFilter,
-    'page' => $page,
-  ];
-  $params = array_merge($base, $overrides);
-  foreach ($params as $key => $value) {
-    if ($value === '' || $value === null) {
-      unset($params[$key]);
-    }
-  }
-  return 'usuarios_pendentes.php' . (!empty($params) ? '?' . http_build_query($params) : '');
-};
-
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -74,11 +131,11 @@ require_once __DIR__ . '/includes/header.php';
         <div>
           <span class="solicitacoes-kicker">Base em análise</span>
           <h1 class="display-6 fw-semibold mb-2">Usuários pendentes</h1>
-          <p class="solicitacoes-subtitle mb-0">Veja as contas que ainda aguardam aprovação no sistema.</p>
+          <p class="solicitacoes-subtitle mb-0">Veja as contas que ainda aguardam aprovação no sistema e aprove direto por aqui.</p>
         </div>
         <div class="text-lg-end">
-          <div class="solicitacoes-pill">Listagem somente leitura</div>
-          <small class="text-muted d-block mt-2">Os pedidos são aprovados na tela de Administração central.</small>
+          <div class="solicitacoes-pill">Aprovação por linha</div>
+          <small class="text-muted d-block mt-2">Use os botões da tabela para liberar cada conta.</small>
         </div>
       </div>
 
@@ -167,7 +224,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="approved-table-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
           <div class="approved-table-note">
             <i class="fa-solid fa-circle-info me-1 text-primary"></i>
-            As ações de aprovação continuam na tela de Administração central.
+            As ações de aprovação e rejeição funcionam nesta própria tela.
           </div>
           <div class="approved-table-chip">
             <i class="fa-solid fa-layer-group"></i>
@@ -183,11 +240,16 @@ require_once __DIR__ . '/includes/header.php';
                 <th>E-mail</th>
                 <th>Perfil</th>
                 <th>Criado em</th>
+                <th class="text-end">Ações</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($users as $user): ?>
+                <?php
+                  $isAdminRequest = (($user['role'] ?? 'user') === 'admin');
+                  $adminRequestBlocked = $isAdminRequest && ((int)$current['id'] !== $primaryAdminId);
+                ?>
                 <tr>
                   <td><?= (int)$user['id'] ?></td>
                   <td><?= h((string)$user['nome']) ?></td>
@@ -200,6 +262,23 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                   </td>
                   <td><?= !empty($user['criado_em']) ? h(date('d/m/Y H:i', strtotime((string)$user['criado_em']))) : '-' ?></td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                      <form method="post" action="<?= h($buildQuery()) ?>" class="m-0 d-inline">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                        <input type="hidden" name="user_id" value="<?= (int)$user['id'] ?>">
+                        <input type="hidden" name="action" value="approve">
+                        <button type="submit" class="btn btn-sm btn-success" <?= $adminRequestBlocked ? 'disabled title="Apenas o administrador principal pode aprovar este pedido"' : '' ?>>Aprovar</button>
+                      </form>
+                      <form method="post" action="<?= h($buildQuery()) ?>" class="m-0 d-inline" onsubmit="return requestActionReason(this, 'rejeitar esta solicitação');">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                        <input type="hidden" name="user_id" value="<?= (int)$user['id'] ?>">
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="reason" value="">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" <?= $adminRequestBlocked ? 'disabled title="Apenas o administrador principal pode rejeitar este pedido"' : '' ?>>Rejeitar</button>
+                      </form>
+                    </div>
+                  </td>
                   <td><span class="badge bg-warning text-dark">Pendente</span></td>
                 </tr>
               <?php endforeach; ?>
@@ -222,5 +301,25 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+
+<script>
+function requestActionReason(form, actionLabel) {
+  var promptText = 'Digite o motivo para ' + actionLabel + ':';
+  var reason = window.prompt(promptText, '');
+  if (reason === null) {
+    return false;
+  }
+  reason = reason.trim();
+  if (reason.length === 0) {
+    alert('Motivo é obrigatório.');
+    return false;
+  }
+  var input = form.querySelector('input[name="reason"]');
+  if (input) {
+    input.value = reason;
+  }
+  return true;
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

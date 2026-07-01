@@ -12,6 +12,7 @@ $primaryAdminId = getPrimaryAdminId();
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+$csrfToken = (string)$_SESSION['csrf_token'];
 
 $q = trim((string)($_GET['q'] ?? ''));
 $roleFilter = (string)($_GET['role'] ?? 'all');
@@ -21,6 +22,142 @@ if (!in_array($roleFilter, ['all', 'admin', 'user'], true)) {
 
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
+
+$buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $page): string {
+  $base = [
+    'q' => $q,
+    'role' => $roleFilter,
+    'page' => $page,
+  ];
+  $params = array_merge($base, $overrides);
+  foreach ($params as $key => $value) {
+    if ($value === '' || $value === null) {
+      unset($params[$key]);
+    }
+  }
+  return 'usuarios_aprovados.php' . (!empty($params) ? '?' . http_build_query($params) : '');
+};
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $postedToken = (string)($_POST['csrf_token'] ?? '');
+  if ($postedToken === '' || !hash_equals((string)$_SESSION['csrf_token'], $postedToken)) {
+    flash('error', 'Sessão inválida. Atualize a página e tente novamente.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  $action = (string)($_POST['action'] ?? '');
+  $userId = (int)($_POST['user_id'] ?? 0);
+  $reason = trim((string)($_POST['reason'] ?? ''));
+
+  if ($userId <= 0 || !in_array($action, ['delete_account', 'toggle_block'], true)) {
+    flash('error', 'Ação inválida.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  $targetStmt = $pdo->prepare('SELECT id, nome, email, setor, telefone, role, aprovado, bloqueado, bloqueado_em FROM usuarios WHERE id = ? AND aprovado = 1 LIMIT 1');
+  $targetStmt->execute([$userId]);
+  $target = $targetStmt->fetch();
+
+  if (!$target) {
+    flash('error', 'Conta não encontrada ou ainda não aprovada.');
+    header('Location: ' . $buildQuery());
+    exit;
+  }
+
+  $isAdminRow = (($target['role'] ?? 'user') === 'admin');
+  $isPrimaryAdminRow = ((int)$target['id'] === $primaryAdminId);
+  $isCurrentUserRow = ((int)$target['id'] === $adminId);
+
+  if ($action === 'delete_account') {
+    if ($isCurrentUserRow) {
+      flash('error', 'Você não pode apagar sua própria conta por esta tela.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($isPrimaryAdminRow) {
+      flash('error', 'A conta do administrador principal não pode ser apagada.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($isAdminRow && $adminId !== $primaryAdminId) {
+      flash('error', 'Apenas o administrador principal pode apagar contas de administrador.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($reason === '') {
+      flash('error', 'Informe o motivo para apagar a conta.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($isAdminRow) {
+      $adminCountStmt = $pdo->query("SELECT COUNT(*) AS c FROM usuarios WHERE role = 'admin' AND aprovado = 1");
+      $adminCount = (int)($adminCountStmt->fetch()['c'] ?? 0);
+      if ($adminCount <= 1) {
+        flash('error', 'Não é possível apagar o último administrador aprovado do sistema.');
+        header('Location: ' . $buildQuery());
+        exit;
+      }
+    }
+
+    $stmt = $pdo->prepare('DELETE FROM usuarios WHERE id = ? AND aprovado = 1');
+    $stmt->execute([$userId]);
+    flash($stmt->rowCount() > 0 ? 'success' : 'error', $stmt->rowCount() > 0 ? 'Conta apagada com sucesso.' : 'Não foi possível apagar esta conta.');
+  } elseif ($action === 'toggle_block') {
+    if ($isPrimaryAdminRow) {
+      flash('error', 'A conta do administrador principal não pode ser bloqueada.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($isCurrentUserRow) {
+      flash('error', 'Você não pode bloquear sua própria conta por esta tela.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    if ($isAdminRow && $adminId !== $primaryAdminId) {
+      flash('error', 'Apenas o administrador principal pode bloquear contas de administrador.');
+      header('Location: ' . $buildQuery());
+      exit;
+    }
+
+    $isBlocked = (int)($target['bloqueado'] ?? 0) === 1;
+    if (!$isBlocked) {
+      if ($reason === '') {
+        flash('error', 'Informe o motivo para bloquear a conta.');
+        header('Location: ' . $buildQuery());
+        exit;
+      }
+
+      if ($isAdminRow) {
+        $adminCountStmt = $pdo->query("SELECT COUNT(*) AS c FROM usuarios WHERE role = 'admin' AND aprovado = 1");
+        $adminCount = (int)($adminCountStmt->fetch()['c'] ?? 0);
+        if ($adminCount <= 1) {
+          flash('error', 'Não é possível bloquear o último administrador aprovado do sistema.');
+          header('Location: ' . $buildQuery());
+          exit;
+        }
+      }
+
+      $stmt = $pdo->prepare('UPDATE usuarios SET bloqueado = 1, bloqueado_em = NOW(), bloqueado_por = ?, bloqueio_motivo = ? WHERE id = ? AND aprovado = 1');
+      $stmt->execute([$adminId, $reason, $userId]);
+      flash($stmt->rowCount() > 0 ? 'success' : 'error', $stmt->rowCount() > 0 ? 'Conta bloqueada com sucesso.' : 'Não foi possível bloquear esta conta.');
+    } else {
+      $stmt = $pdo->prepare('UPDATE usuarios SET bloqueado = 0, bloqueado_em = NULL, bloqueado_por = NULL, bloqueio_motivo = NULL WHERE id = ? AND aprovado = 1');
+      $stmt->execute([$userId]);
+      flash($stmt->rowCount() > 0 ? 'success' : 'error', $stmt->rowCount() > 0 ? 'Conta desbloqueada com sucesso.' : 'Não foi possível desbloquear esta conta.');
+    }
+  }
+
+  header('Location: ' . $buildQuery());
+  exit;
+}
 
 $where = ['aprovado = 1'];
 $params = [];
@@ -45,28 +182,13 @@ $totalPages = max(1, (int)ceil($totalUsers / $perPage));
 $page = min($page, $totalPages);
 $offset = ($page - 1) * $perPage;
 
-$sql = 'SELECT id, nome, email, role, aprovado_em, criado_em FROM usuarios WHERE ' . $whereSql . ' ORDER BY role DESC, nome ASC LIMIT ? OFFSET ?';
+$sql = 'SELECT id, nome, email, setor, telefone, role, aprovado_em, criado_em, bloqueado, bloqueado_em FROM usuarios WHERE ' . $whereSql . ' ORDER BY role DESC, nome ASC LIMIT ? OFFSET ?';
 $stmt = $pdo->prepare($sql);
 $stmt->execute(array_merge($params, [$perPage, $offset]));
 $users = $stmt->fetchAll();
 
 $showingStart = $totalUsers > 0 ? (($page - 1) * $perPage) + 1 : 0;
 $showingEnd = min($totalUsers, $page * $perPage);
-
-$buildQuery = static function (array $overrides = []) use ($q, $roleFilter, $page): string {
-  $base = [
-    'q' => $q,
-    'role' => $roleFilter,
-    'page' => $page,
-  ];
-  $params = array_merge($base, $overrides);
-  foreach ($params as $key => $value) {
-    if ($value === '' || $value === null) {
-      unset($params[$key]);
-    }
-  }
-  return 'usuarios_aprovados.php' . (!empty($params) ? '?' . http_build_query($params) : '');
-};
 ?>
 
 <?php
@@ -83,7 +205,7 @@ require_once __DIR__ . '/includes/header.php';
           <p class="solicitacoes-subtitle mb-0">Consulte as contas já liberadas no sistema e mantenha a base de acesso organizada.</p>
         </div>
         <div class="text-lg-end">
-          <div class="solicitacoes-pill">Listagem somente leitura</div>
+          <div class="solicitacoes-pill">Gestão da base ativa</div>
           <small class="text-muted d-block mt-2">Use os filtros para localizar por nome, e-mail ou perfil.</small>
         </div>
       </div>
@@ -173,7 +295,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="approved-table-toolbar d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
           <div class="approved-table-note">
             <i class="fa-solid fa-circle-info me-1 text-primary"></i>
-            Esta listagem é somente para consulta.
+            Use as ações para bloquear, desbloquear ou apagar contas.
           </div>
           <div class="approved-table-chip">
             <i class="fa-solid fa-layer-group"></i>
@@ -187,9 +309,12 @@ require_once __DIR__ . '/includes/header.php';
                 <th>ID</th>
                 <th>Nome</th>
                 <th>E-mail</th>
+                <th>Setor</th>
+                <th>Telefone</th>
                 <th>Perfil</th>
                 <th>Aprovado em</th>
                 <th>Status</th>
+                <th class="text-end">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -198,6 +323,10 @@ require_once __DIR__ . '/includes/header.php';
                   $isPrimaryAdminRow = ((int)$user['id'] === $primaryAdminId);
                   $isCurrentUserRow = ((int)$user['id'] === $adminId);
                   $isAdminRow = (($user['role'] ?? 'user') === 'admin');
+                  $isBlocked = (int)($user['bloqueado'] ?? 0) === 1;
+                  $blockedTitle = $isBlocked && !empty($user['bloqueado_em']) ? 'Bloqueada em ' . date('d/m/Y H:i', strtotime((string)$user['bloqueado_em'])) : '';
+                  $deleteBlocked = $isPrimaryAdminRow || $isCurrentUserRow || ($isAdminRow && $adminId !== $primaryAdminId);
+                  $blockBlocked = $isPrimaryAdminRow || $isCurrentUserRow || ($isAdminRow && $adminId !== $primaryAdminId);
                 ?>
                 <tr>
                   <td><?= (int)$user['id'] ?></td>
@@ -211,6 +340,8 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endif; ?>
                   </td>
                   <td><?= h((string)$user['email']) ?></td>
+                  <td><?= trim((string)($user['setor'] ?? '')) !== '' ? h((string)$user['setor']) : '<span class="text-muted">-</span>' ?></td>
+                  <td><?= trim((string)($user['telefone'] ?? '')) !== '' ? h((string)$user['telefone']) : '<span class="text-muted">-</span>' ?></td>
                   <td>
                     <?php if ($isAdminRow): ?>
                       <span class="badge bg-warning text-dark">Administrador</span>
@@ -222,11 +353,31 @@ require_once __DIR__ . '/includes/header.php';
                   <td>
                     <?php if ($isPrimaryAdminRow): ?>
                       <span class="badge bg-primary">Principal</span>
+                    <?php elseif ($isBlocked): ?>
+                      <span class="badge bg-danger" <?= $blockedTitle !== '' ? 'title="'.h($blockedTitle).'"' : '' ?>>Bloqueada</span>
                     <?php elseif ($isCurrentUserRow): ?>
                       <span class="badge bg-light text-dark border">Ativa</span>
                     <?php else: ?>
                       <span class="badge bg-success">Ativa</span>
                     <?php endif; ?>
+                  </td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                      <form method="post" action="<?= h($buildQuery()) ?>" class="m-0 d-inline" onsubmit="return <?= $isBlocked ? 'true' : "requestActionReason(this, 'bloquear esta conta')" ?>;">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                        <input type="hidden" name="user_id" value="<?= (int)$user['id'] ?>">
+                        <input type="hidden" name="action" value="toggle_block">
+                        <input type="hidden" name="reason" value="">
+                        <button type="submit" class="btn btn-sm <?= $isBlocked ? 'btn-outline-success' : 'btn-outline-warning' ?>" <?= $blockBlocked ? 'disabled' : '' ?>><?= $isBlocked ? 'Desbloquear' : 'Bloquear' ?></button>
+                      </form>
+                      <form method="post" action="<?= h($buildQuery()) ?>" class="m-0 d-inline" onsubmit="return requestActionReason(this, 'apagar esta conta de usuário');">
+                        <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                        <input type="hidden" name="user_id" value="<?= (int)$user['id'] ?>">
+                        <input type="hidden" name="action" value="delete_account">
+                        <input type="hidden" name="reason" value="">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" <?= $deleteBlocked ? 'disabled' : '' ?>>Apagar</button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -249,5 +400,25 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+
+<script>
+function requestActionReason(form, actionLabel) {
+  var promptText = 'Digite o motivo para ' + actionLabel + ':';
+  var reason = window.prompt(promptText, '');
+  if (reason === null) {
+    return false;
+  }
+  reason = reason.trim();
+  if (reason.length === 0) {
+    alert('Motivo é obrigatório.');
+    return false;
+  }
+  var input = form.querySelector('input[name="reason"]');
+  if (input) {
+    input.value = reason;
+  }
+  return true;
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -295,9 +295,7 @@
         }
       }, { passive: false });
       button.addEventListener('click', function(event) {
-        if (isMobileViewport()) {
-          handleSidebarToggle(event);
-        }
+        handleSidebarToggle(event);
       });
       button.addEventListener('dblclick', handleSidebarDoubleClick);
     });

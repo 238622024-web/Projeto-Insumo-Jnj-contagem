@@ -4,11 +4,22 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/settings.php';
 $loggedUser = currentUser();
 if ($loggedUser) {
+  if (isAccountBlocked($loggedUser)) {
+    logout();
+    header('Location: login.php?blocked=1');
+    exit;
+  }
   if (mustChangePassword($loggedUser)) {
     header('Location: perfil.php?force_password_change=1');
   } else {
     header('Location: index.php');
   }
+  exit;
+}
+
+if (!empty($_GET['blocked'])) {
+  flash('error', 'Sua conta está bloqueada. Entre em contato com o administrador.');
+  header('Location: login.php');
   exit;
 }
 

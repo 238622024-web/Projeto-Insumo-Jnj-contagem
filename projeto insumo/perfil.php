@@ -11,7 +11,7 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrfToken = (string)$_SESSION['csrf_token'];
 
-$userStmt = $pdo->prepare('SELECT id,nome,email,avatar,senha_hash,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em FROM usuarios WHERE id = ? LIMIT 1');
+$userStmt = $pdo->prepare('SELECT id,nome,email,avatar,setor,telefone,senha_hash,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em FROM usuarios WHERE id = ? LIMIT 1');
 $userStmt->execute([$_SESSION['usuario_id']]);
 $me = $userStmt->fetch();
 
@@ -95,13 +95,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($profileAction === 'details') {
     $tabToActivate = 'dados';
     $nome = trim((string)($_POST['nome'] ?? ''));
+    $setor = trim((string)($_POST['setor'] ?? ''));
+    $telefone = trim((string)($_POST['telefone'] ?? ''));
     if ($nome === '') {
       $errors[] = 'Nome obrigatório.';
     }
 
+    if (mb_strlen($setor) > 120) {
+      $errors[] = 'O setor deve ter no máximo 120 caracteres.';
+    }
+    if (mb_strlen($telefone) > 40) {
+      $errors[] = 'O telefone deve ter no máximo 40 caracteres.';
+    }
+
     if (!$errors) {
-      $stmt = $pdo->prepare('UPDATE usuarios SET nome = ? WHERE id = ?');
-      $stmt->execute([$nome, (int)$me['id']]);
+      $stmt = $pdo->prepare('UPDATE usuarios SET nome = ?, setor = ?, telefone = ? WHERE id = ?');
+      $stmt->execute([$nome, $setor !== '' ? $setor : null, $telefone !== '' ? $telefone : null, (int)$me['id']]);
       $_SESSION['usuario_nome'] = $nome;
       logUserActivity((int)$me['id'], 'profile_update', 'Dados pessoais atualizados', 'Nome atualizado para ' . $nome . '.');
       flash('success', 'Seus dados pessoais foram atualizados.');
@@ -242,6 +251,8 @@ $accountStatusClass = (int)($me['aprovado'] ?? 0) === 1 ? 'success' : 'warning';
 $roleLabel = (($me['role'] ?? 'user') === 'admin') ? 'Administrador' : 'Conta normal';
 $roleBadgeClass = (($me['role'] ?? 'user') === 'admin') ? 'primary' : 'secondary';
 $avatarUrl = !empty($me['avatar']) ? 'assets/uploads/' . h((string)$me['avatar']) : '';
+$setorLabel = trim((string)($me['setor'] ?? '')) !== '' ? (string)$me['setor'] : 'Não informado';
+$telefoneLabel = trim((string)($me['telefone'] ?? '')) !== '' ? (string)$me['telefone'] : 'Não informado';
 $preferredTheme = (string)profilePreferenceValue($me, 'preferred_theme', 'claro');
 $preferredLanguage = (string)profilePreferenceValue($me, 'preferred_language', 'pt-br');
 $emailNotifications = (int)profilePreferenceValue($me, 'email_notifications', 1) === 1;
@@ -283,6 +294,14 @@ include __DIR__ . '/includes/header.php';
           <div class="profile-summary-item">
             <span>Senha temporária</span>
             <strong><?= !empty($me['temp_password_expires_at']) ? profileFormatDate($me['temp_password_expires_at'], 'd/m/Y H:i') : 'Sem expiração' ?></strong>
+          </div>
+          <div class="profile-summary-item">
+            <span>Setor</span>
+            <strong><?= h($setorLabel) ?></strong>
+          </div>
+          <div class="profile-summary-item">
+            <span>Telefone</span>
+            <strong><?= h($telefoneLabel) ?></strong>
           </div>
         </div>
       </div>
@@ -361,6 +380,16 @@ include __DIR__ . '/includes/header.php';
               <div class="col-12 col-md-4">
                 <label class="form-label">Criado em</label>
                 <input class="form-control" value="<?= h(profileFormatDate($me['criado_em'] ?? null)) ?>" readonly />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Setor</label>
+                <input class="form-control" name="setor" value="<?= h((string)($me['setor'] ?? '')) ?>" placeholder="Ex.: Almoxarifado, Produção, Administrativo" maxlength="120" />
+                <div class="form-text">Ajuda a identificar de qual área a conta faz parte.</div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Telefone</label>
+                <input class="form-control" name="telefone" value="<?= h((string)($me['telefone'] ?? '')) ?>" placeholder="Ex.: (11) 99999-9999" maxlength="40" />
+                <div class="form-text">Opcional, para contato rápido com o usuário.</div>
               </div>
             </div>
             <div class="profile-form-actions mt-3 d-flex flex-wrap gap-2">

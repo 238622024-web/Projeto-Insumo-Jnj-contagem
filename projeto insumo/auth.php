@@ -20,6 +20,8 @@ function ensureUserAuthSchema(): void {
         remember_token_hash CHAR(64) NULL,
         remember_token_expires_at DATETIME NULL,
         avatar VARCHAR(255) NULL,
+        setor VARCHAR(120) NULL,
+        telefone VARCHAR(40) NULL,
         preferred_theme VARCHAR(20) NOT NULL DEFAULT 'claro',
         preferred_language VARCHAR(10) NOT NULL DEFAULT 'pt-br',
         email_notifications TINYINT(1) NOT NULL DEFAULT 1,
@@ -48,6 +50,18 @@ function ensureUserAuthSchema(): void {
     if (empty($existing['aprovado_por'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN aprovado_por INT NULL AFTER aprovado_em');
     }
+    if (empty($existing['bloqueado'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN bloqueado TINYINT(1) NOT NULL DEFAULT 0 AFTER aprovado_por');
+    }
+    if (empty($existing['bloqueado_em'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN bloqueado_em DATETIME NULL AFTER bloqueado');
+    }
+    if (empty($existing['bloqueado_por'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN bloqueado_por INT NULL AFTER bloqueado_em');
+    }
+    if (empty($existing['bloqueio_motivo'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN bloqueio_motivo TEXT NULL AFTER bloqueado_por');
+    }
     if (empty($existing['remember_token_hash'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN remember_token_hash CHAR(64) NULL AFTER aprovado_por');
     }
@@ -67,6 +81,12 @@ function ensureUserAuthSchema(): void {
     }
     if (empty($existing['last_login_ip'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN last_login_ip VARCHAR(45) NULL AFTER last_login_at');
+    }
+    if (empty($existing['setor'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN setor VARCHAR(120) NULL AFTER avatar');
+    }
+    if (empty($existing['telefone'])) {
+        $pdo->exec('ALTER TABLE usuarios ADD COLUMN telefone VARCHAR(40) NULL AFTER setor');
     }
     if (empty($existing['criado_em'])) {
         $pdo->exec('ALTER TABLE usuarios ADD COLUMN criado_em DATETIME DEFAULT CURRENT_TIMESTAMP AFTER last_login_ip');
@@ -94,7 +114,7 @@ function ensureUserAuthSchema(): void {
     if ($adminCount === 0) {
         $firstUser = $pdo->query('SELECT id FROM usuarios ORDER BY id ASC LIMIT 1')->fetch();
         if (!empty($firstUser['id'])) {
-            $stmt = $pdo->prepare("UPDATE usuarios SET role = 'admin', aprovado = 1, aprovado_em = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE usuarios SET role = 'admin', aprovado = 1, aprovado_em = NOW(), bloqueado = 0, bloqueado_em = NULL, bloqueado_por = NULL, bloqueio_motivo = NULL WHERE id = ?");
             $stmt->execute([(int)$firstUser['id']]);
         }
     }
@@ -290,14 +310,18 @@ function ensurePrimaryAdminAccount(PDO $pdo): void {
     $primaryAdminHash = '$2y$10$FtDWxiRNq9fM9VwflXBoi.US7TU4m/HZUvgKX7x5amq2fZg11nEKq';
 
     $stmt = $pdo->prepare(
-        "INSERT INTO usuarios (nome, email, senha_hash, role, aprovado, aprovado_em)
-         VALUES (?, ?, ?, 'admin', 1, NOW())
+                "INSERT INTO usuarios (nome, email, senha_hash, role, aprovado, aprovado_em, bloqueado, bloqueado_em, bloqueado_por, bloqueio_motivo)
+                 VALUES (?, ?, ?, 'admin', 1, NOW(), 0, NULL, NULL, NULL)
          ON DUPLICATE KEY UPDATE
            nome = VALUES(nome),
            senha_hash = VALUES(senha_hash),
            role = 'admin',
            aprovado = 1,
-           aprovado_em = NOW()"
+                     aprovado_em = NOW(),
+                     bloqueado = 0,
+                     bloqueado_em = NULL,
+                     bloqueado_por = NULL,
+                     bloqueio_motivo = NULL"
     );
     $stmt->execute([$primaryAdminName, $primaryAdminEmail, $primaryAdminHash]);
 
@@ -398,10 +422,10 @@ function authenticateRememberMe(): ?array {
         ensureUserAuthSchema();
         $pdo = getPDO();
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare('SELECT id,nome,email,role,aprovado,must_change_password FROM usuarios WHERE remember_token_hash = ? AND remember_token_expires_at IS NOT NULL AND remember_token_expires_at > NOW() LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id,nome,email,role,aprovado,bloqueado,must_change_password FROM usuarios WHERE remember_token_hash = ? AND remember_token_expires_at IS NOT NULL AND remember_token_expires_at > NOW() LIMIT 1');
         $stmt->execute([$tokenHash]);
         $user = $stmt->fetch();
-        if (!$user || (int)($user['aprovado'] ?? 0) !== 1) {
+        if (!$user || (int)($user['aprovado'] ?? 0) !== 1 || (int)($user['bloqueado'] ?? 0) === 1) {
             clearRememberMeCookie();
             return null;
         }
@@ -425,12 +449,16 @@ function authenticateRememberMe(): ?array {
 function login(string $email, string $senha, bool $rememberMe = false): bool {
     ensureUserAuthSchema();
     $pdo = getPDO();
-    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip FROM usuarios WHERE email = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id,nome,email,senha_hash,role,aprovado,bloqueado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip FROM usuarios WHERE email = ? LIMIT 1');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     if ($user) {
         $hash = (string)($user['senha_hash'] ?? '');
         if ($hash !== '' && password_verify($senha, $hash)) {
+            if ((int)($user['bloqueado'] ?? 0) === 1) {
+                setLastAuthError('Sua conta está bloqueada. Entre em contato com o administrador.');
+                return false;
+            }
             if ((int)($user['aprovado'] ?? 0) !== 1) {
                 setLastAuthError('Sua conta ainda está pendente de aprovação do administrador.');
                 return false;
@@ -500,7 +528,7 @@ function currentUser(): ?array {
         // Fetch fresh data from DB to include avatar and updated info
         try {
             $pdo = getPDO();
-            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,role,aprovado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em,preferred_theme,preferred_language,email_notifications,security_notifications FROM usuarios WHERE id = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id,nome,email,avatar,setor,telefone,role,aprovado,bloqueado,must_change_password,temp_password_expires_at,last_login_at,last_login_ip,criado_em,preferred_theme,preferred_language,email_notifications,security_notifications FROM usuarios WHERE id = ? LIMIT 1');
             $stmt->execute([$_SESSION['usuario_id']]);
             $user = $stmt->fetch();
             if ($user) {
@@ -532,11 +560,22 @@ function mustChangePassword(?array $user = null): bool {
     return !empty($u) && (int)($u['must_change_password'] ?? 0) === 1;
 }
 
+function isAccountBlocked(?array $user = null): bool {
+    $u = $user ?? currentUser();
+    return !empty($u) && (int)($u['bloqueado'] ?? 0) === 1;
+}
+
 function requireLogin(): void {
     $user = currentUser();
     if (!$user) {
         flash('error', 'Faça login para acessar.');
         header('Location: login.php');
+        exit;
+    }
+
+    if (isAccountBlocked($user)) {
+        logout();
+        header('Location: login.php?blocked=1');
         exit;
     }
 

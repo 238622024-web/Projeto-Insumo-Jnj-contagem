@@ -223,7 +223,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
             <div class="small text-muted">Adicione ou remova linhas antes de enviar.</div>
-            <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-insumo-row">
+            <button type="button" class="btn btn-outline-primary btn-sm solicitacao-add-row-btn" id="btn-add-insumo-row">
               <i class="fa-solid fa-circle-plus me-1"></i>Adicionar linha
             </button>
           </div>
